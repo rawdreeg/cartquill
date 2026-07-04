@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace FlowForge\Engine;
 
+use FlowForge\Compliance\UnsubscribeLink;
 use FlowForge\Flow\FlowStep;
 use FlowForge\Flow\Renderer;
 use FlowForge\Model\Message;
@@ -29,6 +30,7 @@ final class MessageComposer {
 		private readonly Renderer $renderer,
 		private readonly Settings $settings,
 		?LinkTracker $tracker = null,
+		private readonly ?UnsubscribeLink $unsubscribe_link = null,
 	) {
 		$this->tracker = $tracker ?? new NullLinkTracker();
 	}
@@ -38,7 +40,7 @@ final class MessageComposer {
 	 *                        tracking to this send (0 disables tracking).
 	 */
 	public function compose( FlowStep $step, string $recipient, int $flow_id, int $step_index, ?int $enrollment_id, int $message_id = 0 ): Message {
-		$unsubscribe = $this->unsubscribe_target();
+		$unsubscribe = $this->unsubscribe_target( $recipient );
 
 		$context = array(
 			'customer_email'  => $recipient,
@@ -66,7 +68,14 @@ final class MessageComposer {
 		);
 	}
 
-	private function unsubscribe_target(): string {
+	/**
+	 * The unsubscribe target for this recipient: a real one-click HTTP link when
+	 * available, falling back to a mailto to the store address.
+	 */
+	private function unsubscribe_target( string $recipient ): string {
+		if ( null !== $this->unsubscribe_link ) {
+			return $this->unsubscribe_link->url( $recipient );
+		}
 		$from = $this->settings->from_email();
 		return '' !== $from ? 'mailto:' . $from . '?subject=unsubscribe' : '';
 	}

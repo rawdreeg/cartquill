@@ -67,6 +67,20 @@ interface MessageRepository {
 	public function stats_by_flow(): array;
 
 	/**
+	 * All messages to a recipient (GDPR export).
+	 *
+	 * @return list<MessageRecord>
+	 */
+	public function for_recipient( string $email ): array;
+
+	/**
+	 * Delete all messages to a recipient (GDPR erase).
+	 *
+	 * @return int Number deleted.
+	 */
+	public function delete_for_recipient( string $email ): int;
+
+	/**
 	 * All records (primarily for tests and reporting).
 	 *
 	 * @return list<MessageRecord>

@@ -37,4 +37,9 @@ interface CartCaptureStore {
 	public function due( string $cutoff ): array;
 
 	public function find( string $email ): ?CartCaptureRecord;
+
+	/**
+	 * Delete a capture (GDPR erase).
+	 */
+	public function delete( string $email ): void;
 }

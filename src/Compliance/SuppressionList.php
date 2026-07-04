@@ -27,4 +27,9 @@ interface SuppressionList {
 	 * @param string $reason Free-text origin (e.g. "unsubscribe", "bounce").
 	 */
 	public function suppress( string $email, string $reason = '' ): void;
+
+	/**
+	 * Remove an address from the list (GDPR erase).
+	 */
+	public function remove( string $email ): void;
 }

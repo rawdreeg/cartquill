@@ -47,6 +47,10 @@ final class InMemoryCartCaptureStore implements CartCaptureStore {
 		return $this->records[ $this->normalize( $email ) ] ?? null;
 	}
 
+	public function delete( string $email ): void {
+		unset( $this->records[ $this->normalize( $email ) ] );
+	}
+
 	private function set_status( string $email, string $status ): void {
 		$key = $this->normalize( $email );
 		if ( isset( $this->records[ $key ] ) ) {

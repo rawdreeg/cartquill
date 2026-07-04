@@ -31,6 +31,10 @@ final class ArraySuppressionList implements SuppressionList {
 		$this->suppressed[ $this->normalize( $email ) ] = $reason;
 	}
 
+	public function remove( string $email ): void {
+		unset( $this->suppressed[ $this->normalize( $email ) ] );
+	}
+
 	private function normalize( string $email ): string {
 		return strtolower( trim( $email ) );
 	}
