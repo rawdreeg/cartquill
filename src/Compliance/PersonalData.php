@@ -77,7 +77,13 @@ final class PersonalData {
 	}
 
 	/**
-	 * Delete all FlowForge personal data for the email.
+	 * Delete FlowForge personal data for the email.
+	 *
+	 * Enrollments, messages and the cart capture are removed. The suppression
+	 * entry is deliberately RETAINED: it is the record of a prior opt-out, and
+	 * deleting it would let the address be re-emailed if it were ever re-added.
+	 * Retaining a suppression flag to honor an unsubscribe is standard practice
+	 * under the legal-obligation basis.
 	 *
 	 * @return int Number of records removed (enrollments + messages).
 	 */
@@ -86,7 +92,13 @@ final class PersonalData {
 		$removed = $this->enrollments->delete_for_customer( $email );
 		$removed += $this->messages->delete_for_recipient( $email );
 		$this->captures->delete( $email );
-		$this->suppression->remove( $email );
 		return $removed;
+	}
+
+	/**
+	 * Whether the address remains suppressed (opt-out retained after erase).
+	 */
+	public function is_suppressed( string $email ): bool {
+		return $this->suppression->is_suppressed( strtolower( trim( $email ) ) );
 	}
 }

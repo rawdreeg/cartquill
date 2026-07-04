@@ -75,12 +75,15 @@ final class PrivacyHooks {
 	 * @return array{items_removed: bool, items_retained: bool, messages: list<string>, done: bool}
 	 */
 	public function erase( string $email, int $page = 1 ): array {
-		$removed = $this->data->erase( $email );
+		$removed  = $this->data->erase( $email );
+		$retained = $this->data->is_suppressed( $email );
 
 		return array(
 			'items_removed'  => $removed > 0,
-			'items_retained' => false,
-			'messages'       => array(),
+			'items_retained' => $retained,
+			'messages'       => $retained
+				? array( \__( 'A suppression (opt-out) record was retained to honor the prior unsubscribe.', 'flowforge' ) )
+				: array(),
 			'done'           => true,
 		);
 	}

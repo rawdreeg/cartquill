@@ -39,6 +39,13 @@ final class SelfHostedLinkTracker implements LinkTracker {
 			function ( array $m ) use ( $message_id ): string {
 				$quote  = $m[1];
 				$target = htmlspecialchars_decode( $m[2] );
+
+				// Never wrap our own endpoints (already-tracked links, or the
+				// one-click unsubscribe link, which must reach the user intact).
+				if ( str_contains( $target, 'flowforge_track' ) || str_contains( $target, 'flowforge_unsubscribe' ) ) {
+					return $m[0];
+				}
+
 				$wrapped = $this->urls->click_url( $message_id, $target );
 				return 'href=' . $quote . $this->escape( $wrapped ) . $quote;
 			},

@@ -60,14 +60,16 @@ final class PersonalDataTest extends TestCase {
 		$this->assertSame( array(), $this->data->export( 'nobody@example.com' ) );
 	}
 
-	public function test_erase_removes_everything_for_the_email(): void {
+	public function test_erase_removes_data_but_retains_the_opt_out(): void {
 		$removed = $this->data->erase( 'buyer@example.com' );
 
 		$this->assertGreaterThan( 0, $removed );
 		$this->assertCount( 0, $this->enrollments->for_customer( 'buyer@example.com' ) );
 		$this->assertCount( 0, $this->messages->for_recipient( 'buyer@example.com' ) );
 		$this->assertNull( $this->captures->find( 'buyer@example.com' ) );
-		$this->assertFalse( $this->suppression->is_suppressed( 'buyer@example.com' ) );
-		$this->assertSame( array(), $this->data->export( 'buyer@example.com' ) );
+
+		// Suppression is deliberately retained so a re-added address stays opted out.
+		$this->assertTrue( $this->suppression->is_suppressed( 'buyer@example.com' ) );
+		$this->assertTrue( $this->data->is_suppressed( 'buyer@example.com' ) );
 	}
 }

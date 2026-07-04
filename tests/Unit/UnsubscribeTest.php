@@ -101,7 +101,7 @@ final class UnsubscribeTest extends TestCase {
 		$this->assertSame( 0, $sender->count(), 'suppression is honored before the send' );
 	}
 
-	public function test_composed_email_carries_the_http_unsubscribe_link(): void {
+	public function test_composed_email_carries_the_http_unsubscribe_link_and_one_click_header(): void {
 		$composer = new MessageComposer( new Renderer(), new ArraySettings( 'Acme', 'hello@acme.test' ), null, $this->link );
 		$message  = $composer->compose(
 			new \FlowForge\Flow\FlowStep( 0, 'Hi', '<p>Body</p>' ),
@@ -113,5 +113,31 @@ final class UnsubscribeTest extends TestCase {
 
 		$this->assertStringContainsString( UnsubscribeLink::PARAM, $message->body );
 		$this->assertStringContainsString( 'https://shop.test/', (string) $message->unsubscribe );
+		// RFC 8058 one-click header present for an http(s) unsubscribe.
+		$this->assertContains( 'List-Unsubscribe-Post: List-Unsubscribe=One-Click', $message->header_lines() );
+	}
+
+	public function test_unsubscribe_link_is_not_click_wrapped_when_tracking_is_on(): void {
+		$signer   = new Signer( 'secret' );
+		$urls     = new \FlowForge\Tracking\TrackingUrls( 'https://shop.test/', $signer );
+		$tracker  = new \FlowForge\Tracking\SelfHostedLinkTracker( $urls );
+		$link     = new UnsubscribeLink( 'https://shop.test/', $signer );
+		$composer = new MessageComposer( new Renderer(), new ArraySettings( 'Acme', 'hello@acme.test' ), $tracker, $link );
+
+		$message = $composer->compose(
+			new \FlowForge\Flow\FlowStep( 0, 'Hi', '<p>Body</p>' ),
+			'buyer@example.com',
+			1,
+			0,
+			5
+		);
+
+		// The unsubscribe link must reach the user intact — never wrapped through
+		// the click tracker (which would double-count and break one-click POST).
+		$this->assertSame(
+			1,
+			preg_match( '/href="([^"]*flowforge_unsubscribe[^"]*)"/', $message->body, $m )
+		);
+		$this->assertStringNotContainsString( 'flowforge_track', $m[1] );
 	}
 }
