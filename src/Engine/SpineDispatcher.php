@@ -53,17 +53,23 @@ final class SpineDispatcher {
 			throw new \InvalidArgumentException( "Flow has no step at index {$step_index}." );
 		}
 
+		$unsubscribe = $this->unsubscribe_target();
+
 		$context = array(
 			'customer_email' => $recipient,
 			'store_name'     => $this->settings->from_name(),
+			'unsubscribe_url' => $unsubscribe,
 		);
+
+		$body = $this->renderer->render( $step->body, $context );
 
 		$message = new Message(
 			to: $recipient,
 			subject: $this->renderer->render( $step->subject, $context ),
-			body: $this->renderer->render( $step->body, $context ),
+			body: $this->with_unsubscribe_footer( $body, $unsubscribe ),
 			from_name: $this->settings->from_name(),
 			from_email: $this->settings->from_email(),
+			unsubscribe: '' !== $unsubscribe ? $unsubscribe : null,
 			enrollment_id: $enrollment_id,
 			flow_id: $flow->id,
 			step_index: $step_index,
@@ -88,5 +94,35 @@ final class SpineDispatcher {
 		);
 
 		return $this->messages->save( $record );
+	}
+
+	/**
+	 * The unsubscribe target used for the List-Unsubscribe header and footer.
+	 *
+	 * The spine uses a mailto: back to the store's from-address, which is a
+	 * valid unsubscribe mechanism and needs no endpoint. The compliance slice
+	 * replaces this with a one-click HTTP link wired to global suppression.
+	 */
+	private function unsubscribe_target(): string {
+		$from = $this->settings->from_email();
+		return '' !== $from ? 'mailto:' . $from . '?subject=unsubscribe' : '';
+	}
+
+	/**
+	 * Guarantee an unsubscribe link on every email regardless of the template,
+	 * honouring the "unsubscribe link on every email" compliance rule.
+	 */
+	private function with_unsubscribe_footer( string $body, string $unsubscribe ): string {
+		if ( '' === $unsubscribe ) {
+			return $body;
+		}
+
+		$footer = sprintf(
+			'<p style="font-size:12px;color:#888;margin-top:24px">'
+				. '<a href="%s">Unsubscribe</a> from these emails.</p>',
+			$unsubscribe
+		);
+
+		return $body . "\n" . $footer;
 	}
 }

@@ -12,6 +12,8 @@ namespace FlowForge\Integration;
 use FlowForge\Engine\SpineDispatcher;
 use FlowForge\Flow\FlowDefinition;
 use FlowForge\Flow\FlowStep;
+use FlowForge\Persistence\EnrollmentRecord;
+use FlowForge\Persistence\EnrollmentRepository;
 
 /**
  * Wires a WooCommerce hook to the spine dispatcher to prove the trigger ->
@@ -22,7 +24,10 @@ use FlowForge\Flow\FlowStep;
  */
 final class WooOrderTrigger {
 
-	public function __construct( private readonly SpineDispatcher $dispatcher ) {}
+	public function __construct(
+		private readonly SpineDispatcher $dispatcher,
+		private readonly EnrollmentRepository $enrollments,
+	) {}
 
 	public function register(): void {
 		\add_action( 'woocommerce_thankyou', array( $this, 'on_order_received' ), 10, 1 );
@@ -48,7 +53,18 @@ final class WooOrderTrigger {
 			return;
 		}
 
-		$this->dispatcher->dispatch( $this->spine_flow(), 0, (string) $email );
+		$flow = $this->spine_flow();
+
+		$enrollment = $this->enrollments->save(
+			new EnrollmentRecord(
+				id: null,
+				flow_id: $flow->id,
+				customer_email: (string) $email,
+				status: EnrollmentRecord::STATUS_ACTIVE,
+			)
+		);
+
+		$this->dispatcher->dispatch( $flow, 0, (string) $email, $enrollment->id );
 
 		$order->update_meta_data( '_flowforge_spine_sent', '1' );
 		$order->save();

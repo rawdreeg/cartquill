@@ -1,0 +1,34 @@
+<?php
+/**
+ * The in-memory enrollment repository behaves like an auto-increment table.
+ *
+ * @package FlowForge
+ */
+
+declare(strict_types=1);
+
+namespace FlowForge\Tests\Unit;
+
+use FlowForge\Persistence\EnrollmentRecord;
+use FlowForge\Persistence\InMemoryEnrollmentRepository;
+use PHPUnit\Framework\TestCase;
+
+final class InMemoryEnrollmentRepositoryTest extends TestCase {
+
+	public function test_save_assigns_sequential_ids_and_is_retrievable(): void {
+		$repo = new InMemoryEnrollmentRepository();
+
+		$first  = $repo->save( new EnrollmentRecord( null, 0, 'a@example.com' ) );
+		$second = $repo->save( new EnrollmentRecord( null, 0, 'b@example.com' ) );
+
+		$this->assertSame( 1, $first->id );
+		$this->assertSame( 2, $second->id );
+		$this->assertSame( EnrollmentRecord::STATUS_ACTIVE, $first->status );
+		$this->assertSame( 'a@example.com', $repo->find( 1 )->customer_email );
+		$this->assertCount( 2, $repo->all() );
+	}
+
+	public function test_find_returns_null_for_unknown_id(): void {
+		$this->assertNull( ( new InMemoryEnrollmentRepository() )->find( 42 ) );
+	}
+}
