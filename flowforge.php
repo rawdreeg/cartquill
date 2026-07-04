@@ -25,7 +25,6 @@ define( 'FLOWFORGE_FILE', __FILE__ );
 define( 'FLOWFORGE_VERSION', '0.1.0' );
 define( 'FLOWFORGE_PATH', plugin_dir_path( __FILE__ ) );
 
-// Composer autoloader (PSR-4 for the FlowForge\ namespace).
 $flowforge_autoload = __DIR__ . '/vendor/autoload.php';
 if ( is_readable( $flowforge_autoload ) ) {
 	require_once $flowforge_autoload;

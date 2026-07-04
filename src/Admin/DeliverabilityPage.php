@@ -169,8 +169,6 @@ final class DeliverabilityPage {
 		<?php
 	}
 
-	// --- Helpers ----------------------------------------------------------
-
 	private function render_status(): void {
 		$snapshot = \get_transient( self::STATUS_TRANSIENT );
 		if ( ! is_array( $snapshot ) ) {

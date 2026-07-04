@@ -34,7 +34,6 @@ final class Activation {
 
 		Schema::install();
 
-		// Send the admin to onboarding on the next page load.
 		( new Onboarding() )->flag_for_redirect();
 	}
 

@@ -95,12 +95,10 @@ final class Plugin {
 		$suppression = new WpdbSuppressionList();
 		$activity    = new WooCustomerActivity();
 
-		// Self-hosted open/click tracking.
 		$signer        = new Signer( (string) \wp_salt( 'auth' ) );
 		$tracking_urls = new TrackingUrls( \home_url( '/' ), $signer );
 		( new TrackingEndpoint( $messages, $signer, $tracking_urls ) )->register();
 
-		// Compliance: one-click unsubscribe + global suppression + GDPR tools.
 		$unsubscribe_link = new UnsubscribeLink( \home_url( '/' ), $signer );
 		( new UnsubscribeEndpoint( $signer, $unsubscribe_link, $suppression, $enrollments ) )->register();
 		( new PrivacyHooks( new PersonalData( $enrollments, $messages, $captures, $suppression ) ) )->register();
@@ -171,16 +169,13 @@ final class Plugin {
 		( new SettingsPage( $settings ) )->register();
 		( new OnboardingPage( new Onboarding(), $settings ) )->register();
 
-		// Flow library screens ($library built above, shared with the AI add-on).
 		( new FlowLibraryPage( $library, new FlowInstaller( $library, $flows ), $flows ) )->register();
 		( new FlowEditorPage( $flows, new FlowEditor() ) )->register();
 
-		// Revenue attribution + reporting dashboard.
 		$attributions = new WpdbAttributionRepository();
 		( new AttributionTrigger( new Attributor( $messages, $attributions ) ) )->register();
 		( new ReportingPage( $flows, $messages, $attributions, $license ) )->register();
 
-		// Abandoned-cart tracking: capture emails, scan on a recurring tick.
 		( new AbandonedCartTracker( $captures, $clock ) )->register();
 
 		$cart_scanner = new AbandonedCartScanner( $captures, $flows, $enroller, $clock );
@@ -193,7 +188,6 @@ final class Plugin {
 			}
 		);
 
-		// Win-back: enroll lapsed customers on a daily scan.
 		$win_back = new WinBackScanner( new WooLapsedCustomerFinder(), $flows, $enrollments, $enroller, $clock );
 		\add_action(
 			WinBackScanner::HOOK,

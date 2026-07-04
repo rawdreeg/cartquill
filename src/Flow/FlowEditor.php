@@ -38,7 +38,6 @@ final class FlowEditor {
 		foreach ( (array) ( $input['steps'] ?? array() ) as $raw ) {
 			$raw = (array) $raw;
 
-			// A step flagged for removal is dropped, letting the editor delete steps.
 			if ( ! empty( $raw['remove'] ) ) {
 				continue;
 			}
