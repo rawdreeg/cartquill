@@ -35,6 +35,9 @@ register_activation_hook( __FILE__, array( \FlowForge\Activation::class, 'activa
 add_action(
 	'plugins_loaded',
 	static function (): void {
+		// Apply pending schema migrations before the engine touches the tables:
+		// WordPress does not fire the activation hook on in-place updates.
+		( new \FlowForge\Persistence\Migrator() )->maybe_upgrade();
 		\FlowForge\Plugin::boot();
 	}
 );
