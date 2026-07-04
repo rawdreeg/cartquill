@@ -19,7 +19,7 @@ namespace FlowForge\Persistence;
  */
 final class Schema {
 
-	/** Bumped whenever the DDL changes so activation can re-run dbDelta. */
+	/** Bumped whenever the DDL changes so {@see Migrator} re-applies dbDelta on update. */
 	public const VERSION = '6';
 
 	public const OPTION_DB_VERSION = 'flowforge_db_version';
@@ -59,8 +59,10 @@ final class Schema {
 	}
 
 	/**
-	 * Create/upgrade all tables. Safe to call repeatedly (dbDelta is idempotent
-	 * and additive, so re-running with new columns migrates existing installs).
+	 * Create or upgrade all tables via dbDelta (idempotent and additive). Runs
+	 * on activation and, via {@see Migrator}, on the first normal request after
+	 * the stored DB version falls behind {@see self::VERSION} — WordPress does
+	 * not fire the activation hook on in-place updates.
 	 */
 	public static function install(): void {
 		global $wpdb;
