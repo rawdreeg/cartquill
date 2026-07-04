@@ -19,6 +19,10 @@ use FlowForge\Persistence\MessageRepository;
  * open. Every request is signature-verified, and the click redirect returns a
  * target only when the URL was one we signed — so this can never be used as an
  * open redirect.
+ *
+ * Note: because status is a single field, a click supersedes `opened`. The
+ * reporting slice therefore counts an open as (opened OR clicked) so clicks
+ * are not lost from the open rate.
  */
 final class TrackingEndpoint {
 
@@ -84,7 +88,9 @@ final class TrackingEndpoint {
 		}
 
 		if ( TrackingUrls::ACTION_CLICK === $action ) {
-			$url      = isset( $_GET['url'] ) ? rawurldecode( \wp_unslash( $_GET['url'] ) ) : '';
+			// PHP already percent-decodes $_GET once; do NOT decode again, or a
+			// target containing % / + would no longer match the signed payload.
+			$url      = isset( $_GET['url'] ) ? (string) \wp_unslash( $_GET['url'] ) : '';
 			$redirect = $this->handle_click( $message_id, $url, $token );
 
 			// The signature guarantees we generated this exact URL, so an

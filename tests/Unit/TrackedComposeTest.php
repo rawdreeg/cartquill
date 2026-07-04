@@ -43,20 +43,24 @@ final class TrackedComposeTest extends TestCase {
 		$id = (int) $record->id;
 		$messages->update_status( $id, MessageRecord::STATUS_SENT );
 
-		$step    = new FlowStep( 0, 'Hi', '<p><a href="https://shop.test/deal">Shop the deal</a></p>' );
+		// Target already contains percent-encoding (e.g. an encoded query value),
+		// which would break under a double-decode.
+		$target  = 'https://shop.test/deal?q=a%20b';
+		$step    = new FlowStep( 0, 'Hi', '<p><a href="' . $target . '">Shop the deal</a></p>' );
 		$message = $composer->compose( $step, 'buyer@example.com', 1, 0, 1, $id );
 
 		// Pixel embedded, and the content link is wrapped through the redirect.
 		$this->assertStringContainsString( 'flowforge_track=open', $message->body );
 		$this->assertStringContainsString( 'flowforge_track=click', $message->body );
 
-		// Recover the signed click URL from the body and drive it.
+		// Recover the signed click URL and simulate the browser + PHP decoding
+		// $_GET exactly once (parse_str), then drive the endpoint.
 		$this->assertSame( 1, preg_match( '/href="([^"]*flowforge_track=click[^"]*)"/', $message->body, $m ) );
 		parse_str( (string) parse_url( html_entity_decode( $m[1] ), PHP_URL_QUERY ), $q );
 
-		$redirect = $endpoint->handle_click( (int) $q['mid'], rawurldecode( $q['url'] ), $q['t'] );
+		$redirect = $endpoint->handle_click( (int) $q['mid'], (string) $q['url'], (string) $q['t'] );
 
-		$this->assertSame( 'https://shop.test/deal', $redirect );
+		$this->assertSame( $target, $redirect );
 		$this->assertSame( MessageRecord::STATUS_CLICKED, $messages->find( $id )->status );
 	}
 }
