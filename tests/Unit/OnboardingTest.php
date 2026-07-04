@@ -65,7 +65,7 @@ final class OnboardingTest extends TestCase {
 	public function test_flag_for_redirect_sets_a_transient(): void {
 		Functions\expect( 'set_transient' )
 			->once()
-			->with( Onboarding::TRANSIENT_REDIRECT, 1, 60 );
+			->with( Onboarding::TRANSIENT_REDIRECT, 1, Onboarding::REDIRECT_TTL );
 
 		( new Onboarding() )->flag_for_redirect();
 	}

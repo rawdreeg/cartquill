@@ -19,6 +19,9 @@ final class Onboarding {
 	public const OPTION_COMPLETE    = 'flowforge_onboarding_complete';
 	public const TRANSIENT_REDIRECT = 'flowforge_activation_redirect';
 
+	/** How long the post-activation redirect stays pending. */
+	public const REDIRECT_TTL = 300;
+
 	public function is_complete(): bool {
 		return (bool) \get_option( self::OPTION_COMPLETE, false );
 	}
@@ -32,7 +35,7 @@ final class Onboarding {
 	 * (called from the activation hook).
 	 */
 	public function flag_for_redirect(): void {
-		\set_transient( self::TRANSIENT_REDIRECT, 1, 60 );
+		\set_transient( self::TRANSIENT_REDIRECT, 1, self::REDIRECT_TTL );
 	}
 
 	/**

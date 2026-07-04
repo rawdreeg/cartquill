@@ -28,6 +28,7 @@ final class OnboardingPage {
 	public function register(): void {
 		\add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		\add_action( 'admin_init', array( $this, 'maybe_redirect' ) );
+		\add_action( 'admin_notices', array( $this, 'maybe_notice' ) );
 		\add_action( 'admin_post_flowforge_finish_onboarding', array( $this, 'handle_finish' ) );
 	}
 
@@ -46,7 +47,7 @@ final class OnboardingPage {
 	 * Send the user to onboarding once, right after activation.
 	 */
 	public function maybe_redirect(): void {
-		if ( \wp_doing_ajax() || ( defined( 'DOING_CRON' ) && DOING_CRON ) ) {
+		if ( \wp_doing_ajax() || ( defined( 'DOING_CRON' ) && DOING_CRON ) || \is_network_admin() ) {
 			return;
 		}
 		if ( ! \current_user_can( 'manage_options' ) ) {
@@ -58,13 +59,34 @@ final class OnboardingPage {
 		}
 	}
 
+	/**
+	 * Fallback discovery: if onboarding was never completed (e.g. the redirect
+	 * was missed), show a dismissible notice linking to it.
+	 */
+	public function maybe_notice(): void {
+		if ( ! \current_user_can( 'manage_options' ) || $this->onboarding->is_complete() ) {
+			return;
+		}
+		$url = \admin_url( 'admin.php?page=' . self::SLUG );
+		echo '<div class="notice notice-info is-dismissible"><p>';
+		printf(
+			/* translators: %s: onboarding page URL. */
+			\wp_kses_post( __( 'Finish setting up FlowForge to send your first flow. <a href="%s">Complete setup</a>.', 'flowforge' ) ),
+			\esc_url( $url )
+		);
+		echo '</p></div>';
+	}
+
 	public function handle_finish(): void {
 		if ( ! \current_user_can( 'manage_options' ) || ! \check_admin_referer( 'flowforge_finish_onboarding' ) ) {
 			\wp_die( \esc_html__( 'Not allowed.', 'flowforge' ) );
 		}
 
-		// Persist the from-identity if provided, then mark onboarding complete.
-		if ( isset( $_POST['from_name'], $_POST['from_email'] ) ) {
+		$skip = isset( $_POST['skip'] );
+
+		// Persist the from-identity if provided (unless the user is skipping),
+		// then mark onboarding complete either way so it never re-appears.
+		if ( ! $skip && isset( $_POST['from_name'], $_POST['from_email'] ) ) {
 			$this->settings->update(
 				\sanitize_text_field( \wp_unslash( $_POST['from_name'] ) ),
 				\sanitize_email( \wp_unslash( $_POST['from_email'] ) )
@@ -110,6 +132,7 @@ final class OnboardingPage {
 				<p>
 					<button type="submit" name="go_to_library" value="1" class="button button-primary"><?php echo \esc_html__( 'Finish and go to the flow library', 'flowforge' ); ?></button>
 					<button type="submit" class="button"><?php echo \esc_html__( 'Finish', 'flowforge' ); ?></button>
+					<button type="submit" name="skip" value="1" class="button-link" style="margin-left:8px"><?php echo \esc_html__( 'Skip for now', 'flowforge' ); ?></button>
 				</p>
 			</form>
 		</div>
