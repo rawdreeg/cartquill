@@ -29,11 +29,13 @@ final class Enroller {
 	) {}
 
 	/**
+	 * @param string $source Consent/trigger source recorded on the enrollment.
+	 *
 	 * @return EnrollmentRecord|null The new enrollment, or null if the flow is
 	 *                               not enrollable or the customer is already
 	 *                               enrolled.
 	 */
-	public function enroll( FlowRecord $flow, string $email ): ?EnrollmentRecord {
+	public function enroll( FlowRecord $flow, string $email, string $source = '' ): ?EnrollmentRecord {
 		if ( null === $flow->id || ! $flow->is_active() || array() === $flow->steps ) {
 			return null;
 		}
@@ -51,6 +53,7 @@ final class Enroller {
 				current_step: 0,
 				next_run_at: null,
 				created_at: $this->clock->now_mysql(),
+				source: $source,
 			)
 		);
 

@@ -54,7 +54,7 @@ final class WelcomeTrigger {
 			return;
 		}
 
-		$this->enroller->enroll( DefaultFlows::TYPE_WELCOME, (string) $email );
+		$this->enroller->enroll( DefaultFlows::TYPE_WELCOME, (string) $email, 'first_order' );
 	}
 
 	/**
@@ -64,6 +64,6 @@ final class WelcomeTrigger {
 		if ( ! $email || ! \is_email( $email ) ) {
 			return;
 		}
-		$this->enroller->enroll( DefaultFlows::TYPE_WELCOME, (string) $email );
+		$this->enroller->enroll( DefaultFlows::TYPE_WELCOME, (string) $email, 'newsletter' );
 	}
 }

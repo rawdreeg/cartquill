@@ -39,6 +39,6 @@ final class PostPurchaseTrigger {
 			return;
 		}
 
-		$this->enroller->enroll( DefaultFlows::TYPE_POST_PURCHASE, (string) $email );
+		$this->enroller->enroll( DefaultFlows::TYPE_POST_PURCHASE, (string) $email, 'post_purchase' );
 	}
 }
