@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace FlowForge;
 
+use FlowForge\Admin\Onboarding;
 use FlowForge\Persistence\Schema;
 use FlowForge\Support\Requirements;
 
@@ -32,6 +33,9 @@ final class Activation {
 		}
 
 		Schema::install();
+
+		// Send the admin to onboarding on the next page load.
+		( new Onboarding() )->flag_for_redirect();
 	}
 
 	/**
