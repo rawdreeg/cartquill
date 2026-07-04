@@ -26,6 +26,14 @@ interface MessageRepository {
 	public function find( int $id ): ?MessageRecord;
 
 	/**
+	 * Whether a message has already been recorded for this (enrollment, step).
+	 *
+	 * The engine's idempotency guard: a step that already produced a message is
+	 * never sent again. Backed by the unique (enrollment_id, step_index) index.
+	 */
+	public function exists_for_step( int $enrollment_id, int $step_index ): bool;
+
+	/**
 	 * All records (primarily for tests and reporting).
 	 *
 	 * @return list<MessageRecord>

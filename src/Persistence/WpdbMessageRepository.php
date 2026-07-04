@@ -54,6 +54,21 @@ final class WpdbMessageRepository implements MessageRepository {
 		return $row ? $this->hydrate( $row ) : null;
 	}
 
+	public function exists_for_step( int $enrollment_id, int $step_index ): bool {
+		global $wpdb;
+		$table = Schema::messages_table();
+
+		$count = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE enrollment_id = %d AND step_index = %d", // phpcs:ignore WordPress.DB.PreparedSQL
+				$enrollment_id,
+				$step_index
+			)
+		);
+
+		return (int) $count > 0;
+	}
+
 	public function all(): array {
 		global $wpdb;
 		$table = Schema::messages_table();
