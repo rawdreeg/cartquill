@@ -18,5 +18,8 @@ final class FlowReportRow {
 		public readonly int $opened,
 		public readonly int $clicked,
 		public readonly float $revenue,
+		public readonly int $delivered = 0,
+		public readonly int $bounced = 0,
+		public readonly int $complained = 0,
 	) {}
 }
