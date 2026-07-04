@@ -11,10 +11,13 @@ namespace FlowForge;
 
 use FlowForge\Admin\FlowEditorPage;
 use FlowForge\Admin\FlowLibraryPage;
+use FlowForge\Admin\LicensePage;
 use FlowForge\Admin\Onboarding;
 use FlowForge\Admin\OnboardingPage;
 use FlowForge\Admin\ReportingPage;
 use FlowForge\Admin\SettingsPage;
+use FlowForge\Licensing\OptionLicense;
+use FlowForge\Sender\SenderRegistry;
 use FlowForge\Attribution\Attributor;
 use FlowForge\Compliance\PersonalData;
 use FlowForge\Compliance\PrivacyHooks;
@@ -98,12 +101,28 @@ final class Plugin {
 		( new UnsubscribeEndpoint( $signer, $unsubscribe_link, $suppression, $enrollments ) )->register();
 		( new PrivacyHooks( new PersonalData( $enrollments, $messages, $captures, $suppression ) ) )->register();
 
+		// Licensing + sender registry: paid add-ons register their capabilities
+		// here, gated by the license. Core ships wp_mail as the default sender.
+		$license = new OptionLicense();
+		( new LicensePage( $license ) )->register();
+
+		$senders = new SenderRegistry( 'wp_mail' );
+		$senders->register( new WpMailSender() );
+		/**
+		 * Add-ons register senders and other capabilities here (license-gated).
+		 *
+		 * @param SenderRegistry $senders The sender registry.
+		 * @param License        $license The licensing gate.
+		 */
+		\do_action( 'flowforge_register_senders', $senders, $license );
+		$senders->set_active( (string) \apply_filters( 'flowforge_active_sender', 'wp_mail' ) );
+
 		$runner = new StepRunner(
 			$flows,
 			$enrollments,
 			$messages,
 			new MessageComposer( new Renderer(), $settings, new SelfHostedLinkTracker( $tracking_urls ), $unsubscribe_link ),
-			new WpMailSender(),
+			$senders->active(),
 			$suppression,
 			new ConditionEvaluator( $activity ),
 			$scheduler,
