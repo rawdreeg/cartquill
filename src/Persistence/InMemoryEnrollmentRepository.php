@@ -53,6 +53,37 @@ final class InMemoryEnrollmentRepository implements EnrollmentRepository {
 		return false;
 	}
 
+	public function for_customer( string $customer_email ): array {
+		$email = strtolower( trim( $customer_email ) );
+		return array_values(
+			array_filter( $this->records, static fn( $r ) => strtolower( $r->customer_email ) === $email )
+		);
+	}
+
+	public function unsubscribe_customer( string $customer_email ): int {
+		$email = strtolower( trim( $customer_email ) );
+		$count = 0;
+		foreach ( $this->records as $id => $record ) {
+			if ( strtolower( $record->customer_email ) === $email && $record->is_active() ) {
+				$this->records[ $id ] = $record->with_status( EnrollmentRecord::STATUS_UNSUBSCRIBED );
+				++$count;
+			}
+		}
+		return $count;
+	}
+
+	public function delete_for_customer( string $customer_email ): int {
+		$email = strtolower( trim( $customer_email ) );
+		$count = 0;
+		foreach ( $this->records as $id => $record ) {
+			if ( strtolower( $record->customer_email ) === $email ) {
+				unset( $this->records[ $id ] );
+				++$count;
+			}
+		}
+		return $count;
+	}
+
 	public function all(): array {
 		return array_values( $this->records );
 	}

@@ -46,6 +46,15 @@ final class WpdbSuppressionList implements SuppressionList {
 		);
 	}
 
+	public function remove( string $email ): void {
+		global $wpdb;
+		$wpdb->delete(
+			Schema::settings_table(),
+			array( 'setting_key' => $this->key( $email ) ),
+			array( '%s' )
+		);
+	}
+
 	private function key( string $email ): string {
 		return 'suppress:' . strtolower( trim( $email ) );
 	}

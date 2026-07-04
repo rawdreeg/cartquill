@@ -35,6 +35,27 @@ interface EnrollmentRepository {
 	public function has_any( int $flow_id, string $customer_email ): bool;
 
 	/**
+	 * All enrollments for a customer (any flow, any status).
+	 *
+	 * @return list<EnrollmentRecord>
+	 */
+	public function for_customer( string $customer_email ): array;
+
+	/**
+	 * Mark every active enrollment for this customer as unsubscribed.
+	 *
+	 * @return int Number of enrollments updated.
+	 */
+	public function unsubscribe_customer( string $customer_email ): int;
+
+	/**
+	 * Delete all enrollments for a customer (GDPR erase).
+	 *
+	 * @return int Number of enrollments deleted.
+	 */
+	public function delete_for_customer( string $customer_email ): int;
+
+	/**
 	 * @return list<EnrollmentRecord>
 	 */
 	public function all(): array;
