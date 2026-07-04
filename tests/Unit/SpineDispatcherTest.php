@@ -67,9 +67,25 @@ final class SpineDispatcherTest extends TestCase {
 
 		$message = $this->sender->last();
 		$this->assertSame( 'Thanks buyer@example.com', $message->subject );
-		$this->assertSame( '<p>Welcome to Acme Store.</p>', $message->body );
+		$this->assertStringContainsString( '<p>Welcome to Acme Store.</p>', $message->body );
 		$this->assertSame( 'Acme Store', $message->from_name );
 		$this->assertSame( 'hello@acme.test', $message->from_email );
+	}
+
+	public function test_every_email_carries_an_unsubscribe_link_and_header(): void {
+		$this->dispatcher->dispatch( $this->spine_flow(), 0, 'buyer@example.com' );
+
+		$message  = $this->sender->last();
+		$expected = 'mailto:hello@acme.test?subject=unsubscribe';
+
+		// Locked compliance rule: unsubscribe link on every email.
+		$this->assertStringContainsString( 'Unsubscribe', $message->body );
+		$this->assertStringContainsString( $expected, $message->body );
+		$this->assertSame( $expected, $message->unsubscribe );
+		$this->assertContains(
+			'List-Unsubscribe: <' . $expected . '>',
+			$message->header_lines()
+		);
 	}
 
 	public function test_successful_send_records_a_sent_message_row(): void {
