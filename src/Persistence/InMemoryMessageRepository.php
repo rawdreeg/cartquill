@@ -71,6 +71,47 @@ final class InMemoryMessageRepository implements MessageRepository {
 		return isset( $this->unique[ $enrollment_id . ':' . $step_index ] );
 	}
 
+	public function latest_to_recipient_between( string $email, string $from, string $to ): ?MessageRecord {
+		$email = strtolower( trim( $email ) );
+		$best  = null;
+		foreach ( $this->records as $record ) {
+			if ( strtolower( $record->recipient ) !== $email
+				|| MessageRecord::STATUS_QUEUED === $record->status
+				|| MessageRecord::STATUS_FAILED === $record->status
+				|| null === $record->sent_at
+				|| $record->sent_at < $from
+				|| $record->sent_at > $to
+			) {
+				continue;
+			}
+			if ( null === $best || $record->sent_at > $best->sent_at ) {
+				$best = $record;
+			}
+		}
+		return $best;
+	}
+
+	public function stats_by_flow(): array {
+		$stats = array();
+		foreach ( $this->records as $record ) {
+			if ( in_array( $record->status, array( MessageRecord::STATUS_QUEUED, MessageRecord::STATUS_FAILED ), true ) ) {
+				continue;
+			}
+			$flow = $record->flow_id;
+			if ( ! isset( $stats[ $flow ] ) ) {
+				$stats[ $flow ] = array( 'sent' => 0, 'opened' => 0, 'clicked' => 0 );
+			}
+			++$stats[ $flow ]['sent'];
+			if ( in_array( $record->status, array( MessageRecord::STATUS_OPENED, MessageRecord::STATUS_CLICKED ), true ) ) {
+				++$stats[ $flow ]['opened'];
+			}
+			if ( MessageRecord::STATUS_CLICKED === $record->status ) {
+				++$stats[ $flow ]['clicked'];
+			}
+		}
+		return $stats;
+	}
+
 	public function all(): array {
 		return array_values( $this->records );
 	}
