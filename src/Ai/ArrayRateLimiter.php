@@ -1,0 +1,29 @@
+<?php
+/**
+ * In-memory RateLimiter for tests.
+ *
+ * @package FlowForge
+ */
+
+declare(strict_types=1);
+
+namespace FlowForge\Ai;
+
+final class ArrayRateLimiter implements RateLimiter {
+
+	private int $used = 0;
+
+	public function __construct( private readonly int $limit ) {}
+
+	public function try_consume(): bool {
+		if ( $this->used >= $this->limit ) {
+			return false;
+		}
+		++$this->used;
+		return true;
+	}
+
+	public function remaining(): int {
+		return max( 0, $this->limit - $this->used );
+	}
+}
