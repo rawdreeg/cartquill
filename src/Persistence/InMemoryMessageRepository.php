@@ -57,6 +57,18 @@ final class InMemoryMessageRepository implements MessageRepository {
 		return $this->records[ $id ] ?? null;
 	}
 
+	public function find_by_external_id( string $external_id ): ?MessageRecord {
+		if ( '' === $external_id ) {
+			return null;
+		}
+		foreach ( $this->records as $record ) {
+			if ( $external_id === $record->external_id ) {
+				return $record;
+			}
+		}
+		return null;
+	}
+
 	public function update_status( int $id, string $status ): void {
 		if ( isset( $this->records[ $id ] ) ) {
 			$this->records[ $id ] = $this->records[ $id ]->with_result(
@@ -119,6 +131,34 @@ final class InMemoryMessageRepository implements MessageRepository {
 			if ( MessageRecord::STATUS_CLICKED === $record->status ) {
 				++$stats[ $flow ]['clicked'];
 			}
+		}
+		return $stats;
+	}
+
+	public function delivery_stats_by_flow(): array {
+		// A delivered message that was later opened/clicked has moved past the
+		// `delivered` status, but it was still delivered — so opens/clicks count
+		// toward delivered, mirroring how stats_by_flow folds clicks into opens.
+		$delivered = array( MessageRecord::STATUS_DELIVERED, MessageRecord::STATUS_OPENED, MessageRecord::STATUS_CLICKED );
+
+		$stats = array();
+		foreach ( $this->records as $record ) {
+			$bucket = null;
+			if ( in_array( $record->status, $delivered, true ) ) {
+				$bucket = 'delivered';
+			} elseif ( MessageRecord::STATUS_BOUNCED === $record->status ) {
+				$bucket = 'bounced';
+			} elseif ( MessageRecord::STATUS_COMPLAINED === $record->status ) {
+				$bucket = 'complained';
+			}
+			if ( null === $bucket ) {
+				continue;
+			}
+			$flow = $record->flow_id;
+			if ( ! isset( $stats[ $flow ] ) ) {
+				$stats[ $flow ] = array( 'delivered' => 0, 'bounced' => 0, 'complained' => 0 );
+			}
+			++$stats[ $flow ][ $bucket ];
 		}
 		return $stats;
 	}

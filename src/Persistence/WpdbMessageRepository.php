@@ -83,6 +83,21 @@ final class WpdbMessageRepository implements MessageRepository {
 		return $row ? $this->hydrate( $row ) : null;
 	}
 
+	public function find_by_external_id( string $external_id ): ?MessageRecord {
+		if ( '' === $external_id ) {
+			return null;
+		}
+		global $wpdb;
+		$table = Schema::messages_table();
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE external_id = %s ORDER BY id DESC LIMIT 1", $external_id ), // phpcs:ignore WordPress.DB.PreparedSQL
+			ARRAY_A
+		);
+
+		return $row ? $this->hydrate( $row ) : null;
+	}
+
 	public function update_status( int $id, string $status ): void {
 		global $wpdb;
 		$wpdb->update(
@@ -148,6 +163,30 @@ final class WpdbMessageRepository implements MessageRepository {
 				'sent'    => (int) $row['sent'],
 				'opened'  => (int) $row['opened'],
 				'clicked' => (int) $row['clicked'],
+			);
+		}
+		return $stats;
+	}
+
+	public function delivery_stats_by_flow(): array {
+		global $wpdb;
+		$table = Schema::messages_table();
+
+		$rows = $wpdb->get_results(
+			"SELECT flow_id,
+				SUM(CASE WHEN status IN ('delivered','opened','clicked') THEN 1 ELSE 0 END) AS delivered,
+				SUM(CASE WHEN status = 'bounced' THEN 1 ELSE 0 END) AS bounced,
+				SUM(CASE WHEN status = 'complained' THEN 1 ELSE 0 END) AS complained
+			FROM {$table} GROUP BY flow_id", // phpcs:ignore WordPress.DB
+			ARRAY_A
+		);
+
+		$stats = array();
+		foreach ( $rows ?: array() as $row ) {
+			$stats[ (int) $row['flow_id'] ] = array(
+				'delivered'  => (int) $row['delivered'],
+				'bounced'    => (int) $row['bounced'],
+				'complained' => (int) $row['complained'],
 			);
 		}
 		return $stats;

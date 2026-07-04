@@ -20,7 +20,7 @@ namespace FlowForge\Persistence;
 final class Schema {
 
 	/** Bumped whenever the DDL changes so activation can re-run dbDelta. */
-	public const VERSION = '5';
+	public const VERSION = '6';
 
 	public const OPTION_DB_VERSION = 'flowforge_db_version';
 
@@ -119,7 +119,8 @@ final class Schema {
 			PRIMARY KEY  (id),
 			UNIQUE KEY enrollment_step (enrollment_id, step_index),
 			KEY flow_id (flow_id),
-			KEY recipient (recipient)
+			KEY recipient (recipient),
+			KEY external_id (external_id)
 		) {$charset_collate};";
 
 		$statements[] = "CREATE TABLE {$attributions} (

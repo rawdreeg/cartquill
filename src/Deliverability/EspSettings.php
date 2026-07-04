@@ -42,6 +42,28 @@ final class EspSettings {
 		\update_option( self::OPTION, $data );
 	}
 
+	public function webhook_secret(): string {
+		$data = $this->data();
+		if ( empty( $data['webhook_secret'] ) ) {
+			return '';
+		}
+		return (string) ( $this->crypto->decrypt( (string) $data['webhook_secret'] ) ?? '' );
+	}
+
+	public function set_webhook_secret( string $secret ): void {
+		$data = $this->data();
+		if ( '' === $secret ) {
+			unset( $data['webhook_secret'] );
+		} else {
+			$data['webhook_secret'] = $this->crypto->encrypt( $secret );
+		}
+		\update_option( self::OPTION, $data );
+	}
+
+	public function has_webhook_secret(): bool {
+		return '' !== $this->webhook_secret();
+	}
+
 	public function domain(): string {
 		return (string) ( $this->data()['domain'] ?? '' );
 	}

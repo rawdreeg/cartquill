@@ -61,6 +61,11 @@ final class DeliverabilityPage {
 			$this->esp->set_domain( \sanitize_text_field( \wp_unslash( $_POST['domain'] ) ) );
 		}
 
+		$secret = isset( $_POST['webhook_secret'] ) ? \sanitize_text_field( \wp_unslash( $_POST['webhook_secret'] ) ) : '';
+		if ( '' !== $secret && self::MASK !== $secret ) {
+			$this->esp->set_webhook_secret( $secret );
+		}
+
 		\delete_transient( self::STATUS_TRANSIENT );
 		$this->redirect_back( 'saved' );
 	}
@@ -125,6 +130,18 @@ final class DeliverabilityPage {
 						<th scope="row"><label for="ff-esp-domain"><?php echo \esc_html__( 'Sending domain', 'flowforge' ); ?></label></th>
 						<td><input type="text" id="ff-esp-domain" name="domain" class="regular-text"
 							value="<?php echo \esc_attr( $this->esp->domain() ); ?>" placeholder="mail.example.com" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="ff-esp-secret"><?php echo \esc_html__( 'Webhook signing secret', 'flowforge' ); ?></label></th>
+						<td>
+							<input type="text" id="ff-esp-secret" name="webhook_secret" class="regular-text" autocomplete="off"
+								value="<?php echo $this->esp->has_webhook_secret() ? \esc_attr( self::MASK ) : ''; ?>"
+								placeholder="whsec_..." />
+							<p class="description">
+								<?php echo \esc_html__( 'Point a Resend webhook at the URL below and paste its signing secret here to receive delivery, bounce and complaint events:', 'flowforge' ); ?>
+								<br /><code><?php echo \esc_html( \add_query_arg( \FlowForge\Deliverability\WebhookEndpoint::PARAM, 'resend', \home_url( '/' ) ) ); ?></code>
+							</p>
+						</td>
 					</tr>
 				</table>
 				<?php \submit_button( \__( 'Save connection', 'flowforge' ) ); ?>
