@@ -17,7 +17,10 @@ use FlowForge\Engine\MessageComposer;
 use FlowForge\Engine\StepRunner;
 use FlowForge\Engine\WooCustomerActivity;
 use FlowForge\Flow\Renderer;
+use FlowForge\Integration\AbandonedCartScanner;
+use FlowForge\Integration\AbandonedCartTracker;
 use FlowForge\Integration\WooOrderTrigger;
+use FlowForge\Persistence\WpdbCartCaptureStore;
 use FlowForge\Persistence\WpdbEnrollmentRepository;
 use FlowForge\Persistence\WpdbFlowRepository;
 use FlowForge\Persistence\WpdbMessageRepository;
@@ -85,6 +88,37 @@ final class Plugin {
 
 		( new WooOrderTrigger( $enroller, $flows ) )->register();
 		( new SettingsPage( $settings ) )->register();
+
+		// Abandoned-cart tracking: capture emails, scan on a recurring tick.
+		$captures = new WpdbCartCaptureStore();
+		( new AbandonedCartTracker( $captures, $clock ) )->register();
+
+		$scanner = new AbandonedCartScanner( $captures, $flows, $enroller, $clock );
+		\add_action(
+			AbandonedCartScanner::HOOK,
+			static function () use ( $scanner ): void {
+				$scanner->scan( AbandonedCartScanner::DEFAULT_THRESHOLD );
+			}
+		);
+		\add_action( 'init', array( $this, 'schedule_abandoned_cart_scan' ) );
+	}
+
+	/**
+	 * Ensure the recurring abandoned-cart scan is scheduled (once).
+	 */
+	public function schedule_abandoned_cart_scan(): void {
+		if ( ! function_exists( 'as_has_scheduled_action' ) || ! function_exists( 'as_schedule_recurring_action' ) ) {
+			return;
+		}
+		if ( ! \as_has_scheduled_action( AbandonedCartScanner::HOOK ) ) {
+			\as_schedule_recurring_action(
+				time(),
+				AbandonedCartScanner::SCAN_INTERVAL,
+				AbandonedCartScanner::HOOK,
+				array(),
+				'flowforge'
+			);
+		}
 	}
 
 	public function render_missing_woo_notice(): void {

@@ -20,7 +20,7 @@ namespace FlowForge\Persistence;
 final class Schema {
 
 	/** Bumped whenever the DDL changes so activation can re-run dbDelta. */
-	public const VERSION = '3';
+	public const VERSION = '4';
 
 	public const OPTION_DB_VERSION = 'flowforge_db_version';
 
@@ -47,6 +47,15 @@ final class Schema {
 	public static function settings_table(): string {
 		global $wpdb;
 		return $wpdb->prefix . 'flowforge_settings';
+	}
+
+	/**
+	 * Trigger-support table for abandoned-cart tracking (not part of the core
+	 * five-table data model; it feeds the abandoned-cart trigger).
+	 */
+	public static function cart_captures_table(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'flowforge_cart_captures';
 	}
 
 	/**
@@ -130,6 +139,17 @@ final class Schema {
 			setting_value LONGTEXT NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY setting_key (setting_key)
+		) {$charset_collate};";
+
+		$captures = self::cart_captures_table();
+		$statements[] = "CREATE TABLE {$captures} (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			customer_email VARCHAR(191) NOT NULL DEFAULT '',
+			status VARCHAR(20) NOT NULL DEFAULT 'pending',
+			updated_at DATETIME NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY customer_email (customer_email),
+			KEY status (status)
 		) {$charset_collate};";
 
 		foreach ( $statements as $sql ) {
