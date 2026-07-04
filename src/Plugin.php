@@ -11,6 +11,8 @@ namespace FlowForge;
 
 use FlowForge\Admin\FlowEditorPage;
 use FlowForge\Admin\FlowLibraryPage;
+use FlowForge\Admin\Onboarding;
+use FlowForge\Admin\OnboardingPage;
 use FlowForge\Admin\ReportingPage;
 use FlowForge\Admin\SettingsPage;
 use FlowForge\Attribution\Attributor;
@@ -124,6 +126,7 @@ final class Plugin {
 		( new PostPurchaseTrigger( $type_enroller ) )->register();
 		( new WelcomeTrigger( $type_enroller, $activity ) )->register();
 		( new SettingsPage( $settings ) )->register();
+		( new OnboardingPage( new Onboarding(), $settings ) )->register();
 
 		// Flow library + editor.
 		$library = new FlowLibrary();
