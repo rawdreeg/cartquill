@@ -40,6 +40,16 @@ final class DefaultFlowsTest extends TestCase {
 		}
 	}
 
+	public function test_win_back_flow_has_exit_conditions_and_follow_up(): void {
+		$flow = DefaultFlows::win_back();
+
+		$this->assertSame( DefaultFlows::TYPE_WIN_BACK, $flow->type );
+		$this->assertSame( array( 0, 604800 ), array_map( static fn( $s ) => $s->delay, $flow->steps ) );
+		foreach ( $flow->steps as $step ) {
+			$this->assertSame( array( array( 'type' => 'exit_if_ordered' ) ), $step->conditions );
+		}
+	}
+
 	public function test_status_override_is_applied(): void {
 		$this->assertTrue( DefaultFlows::welcome( FlowRecord::STATUS_ACTIVE )->is_active() );
 	}
