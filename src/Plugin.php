@@ -9,7 +9,9 @@ declare(strict_types=1);
 
 namespace FlowForge;
 
+use FlowForge\Admin\ReportingPage;
 use FlowForge\Admin\SettingsPage;
+use FlowForge\Attribution\Attributor;
 use FlowForge\Compliance\WpdbSuppressionList;
 use FlowForge\Engine\ConditionEvaluator;
 use FlowForge\Engine\Enroller;
@@ -21,9 +23,11 @@ use FlowForge\Flow\Renderer;
 use FlowForge\Engine\WooLapsedCustomerFinder;
 use FlowForge\Integration\AbandonedCartScanner;
 use FlowForge\Integration\AbandonedCartTracker;
+use FlowForge\Integration\AttributionTrigger;
 use FlowForge\Integration\PostPurchaseTrigger;
 use FlowForge\Integration\WelcomeTrigger;
 use FlowForge\Integration\WinBackScanner;
+use FlowForge\Persistence\WpdbAttributionRepository;
 use FlowForge\Persistence\WpdbCartCaptureStore;
 use FlowForge\Persistence\WpdbEnrollmentRepository;
 use FlowForge\Persistence\WpdbFlowRepository;
@@ -104,6 +108,11 @@ final class Plugin {
 		( new PostPurchaseTrigger( $type_enroller ) )->register();
 		( new WelcomeTrigger( $type_enroller, $activity ) )->register();
 		( new SettingsPage( $settings ) )->register();
+
+		// Revenue attribution + reporting dashboard.
+		$attributions = new WpdbAttributionRepository();
+		( new AttributionTrigger( new Attributor( $messages, $attributions ) ) )->register();
+		( new ReportingPage( $flows, $messages, $attributions ) )->register();
 
 		// Abandoned-cart tracking: capture emails, scan on a recurring tick.
 		$captures = new WpdbCartCaptureStore();

@@ -109,6 +109,50 @@ final class WpdbMessageRepository implements MessageRepository {
 		return (int) $count > 0;
 	}
 
+	public function latest_to_recipient_between( string $email, string $from, string $to ): ?MessageRecord {
+		global $wpdb;
+		$table = Schema::messages_table();
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$table}
+				WHERE recipient = %s AND status NOT IN ('queued','failed','bounced','complained')
+				AND sent_at BETWEEN %s AND %s
+				ORDER BY sent_at DESC, id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL
+				strtolower( trim( $email ) ),
+				$from,
+				$to
+			),
+			ARRAY_A
+		);
+
+		return $row ? $this->hydrate( $row ) : null;
+	}
+
+	public function stats_by_flow(): array {
+		global $wpdb;
+		$table = Schema::messages_table();
+
+		$rows = $wpdb->get_results(
+			"SELECT flow_id,
+				SUM(CASE WHEN status NOT IN ('queued','failed') THEN 1 ELSE 0 END) AS sent,
+				SUM(CASE WHEN status IN ('opened','clicked') THEN 1 ELSE 0 END) AS opened,
+				SUM(CASE WHEN status = 'clicked' THEN 1 ELSE 0 END) AS clicked
+			FROM {$table} GROUP BY flow_id", // phpcs:ignore WordPress.DB
+			ARRAY_A
+		);
+
+		$stats = array();
+		foreach ( $rows ?: array() as $row ) {
+			$stats[ (int) $row['flow_id'] ] = array(
+				'sent'    => (int) $row['sent'],
+				'opened'  => (int) $row['opened'],
+				'clicked' => (int) $row['clicked'],
+			);
+		}
+		return $stats;
+	}
+
 	public function all(): array {
 		global $wpdb;
 		$table = Schema::messages_table();

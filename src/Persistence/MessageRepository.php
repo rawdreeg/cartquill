@@ -49,6 +49,24 @@ interface MessageRepository {
 	public function exists_for_step( int $enrollment_id, int $step_index ): bool;
 
 	/**
+	 * The most recent successfully-sent message to $email whose sent_at falls in
+	 * [$from, $to] (MySQL datetimes). This is the last-touch lookup used for
+	 * revenue attribution; null if the customer had no message in the window.
+	 */
+	public function latest_to_recipient_between( string $email, string $from, string $to ): ?MessageRecord;
+
+	/**
+	 * Per-flow engagement counts for reporting.
+	 *
+	 * `sent` counts every message that was sent (any status past queued/failed);
+	 * `opened` counts opened-or-clicked (a click implies an open); `clicked`
+	 * counts clicks.
+	 *
+	 * @return array<int, array{sent: int, opened: int, clicked: int}>
+	 */
+	public function stats_by_flow(): array;
+
+	/**
 	 * All records (primarily for tests and reporting).
 	 *
 	 * @return list<MessageRecord>
