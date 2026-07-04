@@ -71,20 +71,31 @@ final class InMemoryMessageRepository implements MessageRepository {
 		return isset( $this->unique[ $enrollment_id . ':' . $step_index ] );
 	}
 
+	/** Statuses that are never eligible for last-touch attribution. */
+	private const ATTRIBUTION_EXCLUDED = array(
+		MessageRecord::STATUS_QUEUED,
+		MessageRecord::STATUS_FAILED,
+		MessageRecord::STATUS_BOUNCED,
+		MessageRecord::STATUS_COMPLAINED,
+	);
+
 	public function latest_to_recipient_between( string $email, string $from, string $to ): ?MessageRecord {
 		$email = strtolower( trim( $email ) );
 		$best  = null;
 		foreach ( $this->records as $record ) {
 			if ( strtolower( $record->recipient ) !== $email
-				|| MessageRecord::STATUS_QUEUED === $record->status
-				|| MessageRecord::STATUS_FAILED === $record->status
+				|| in_array( $record->status, self::ATTRIBUTION_EXCLUDED, true )
 				|| null === $record->sent_at
 				|| $record->sent_at < $from
 				|| $record->sent_at > $to
 			) {
 				continue;
 			}
-			if ( null === $best || $record->sent_at > $best->sent_at ) {
+			// On equal sent_at, the higher id wins (matches the wpdb ORDER BY).
+			if ( null === $best
+				|| $record->sent_at > $best->sent_at
+				|| ( $record->sent_at === $best->sent_at && (int) $record->id > (int) $best->id )
+			) {
 				$best = $record;
 			}
 		}

@@ -116,7 +116,7 @@ final class WpdbMessageRepository implements MessageRepository {
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT * FROM {$table}
-				WHERE recipient = %s AND status NOT IN ('queued','failed')
+				WHERE recipient = %s AND status NOT IN ('queued','failed','bounced','complained')
 				AND sent_at BETWEEN %s AND %s
 				ORDER BY sent_at DESC, id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL
 				strtolower( trim( $email ) ),

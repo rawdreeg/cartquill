@@ -85,4 +85,21 @@ final class AttributorTest extends TestCase {
 
 		$this->assertNull( $this->attributor->attribute( 'buyer@example.com', 900, 10.0, self::ORDER_TS, self::WINDOW ) );
 	}
+
+	public function test_bounced_message_is_not_eligible_for_attribution(): void {
+		// A bounced message never reached the inbox, so it cannot win last-touch.
+		$this->sent_message( 1, 'buyer@example.com', self::ORDER_TS - 3600, MessageRecord::STATUS_BOUNCED );
+
+		$this->assertNull( $this->attributor->attribute( 'buyer@example.com', 900, 40.0, self::ORDER_TS, self::WINDOW ) );
+	}
+
+	public function test_tie_break_on_equal_sent_at_prefers_the_later_message(): void {
+		$ts = self::ORDER_TS - 3600;
+		$this->sent_message( 1, 'buyer@example.com', $ts ); // inserted first (lower id)
+		$this->sent_message( 2, 'buyer@example.com', $ts ); // same second, inserted later (higher id)
+
+		$record = $this->attributor->attribute( 'buyer@example.com', 900, 15.0, self::ORDER_TS, self::WINDOW );
+
+		$this->assertSame( 2, $record->flow_id, 'higher-id message wins the tie, matching the DB order' );
+	}
 }

@@ -14,6 +14,10 @@ use FlowForge\Attribution\Attributor;
 /**
  * On order placement, hands the order to the Attributor. The attribution window
  * is filterable and surfaced in the reporting UI.
+ *
+ * Hooks `woocommerce_checkout_order_processed` (fires when the order is created,
+ * regardless of whether the buyer returns to the thank-you page) so off-site
+ * gateways are covered. The unique (order, flow) key makes re-fires harmless.
  */
 final class AttributionTrigger {
 
@@ -23,7 +27,7 @@ final class AttributionTrigger {
 	public function __construct( private readonly Attributor $attributor ) {}
 
 	public function register(): void {
-		\add_action( 'woocommerce_thankyou', array( $this, 'on_order' ), 20, 1 );
+		\add_action( 'woocommerce_checkout_order_processed', array( $this, 'on_order' ), 20, 1 );
 	}
 
 	public static function window(): int {
