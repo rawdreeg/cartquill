@@ -48,6 +48,17 @@ final class StubResendClient implements ResendClient {
 		return $this->id_prefix . ( ++$this->counter );
 	}
 
+	/** @var list<string> Domains passed to create_domain(). */
+	public array $created = array();
+
+	public function create_domain( string $domain ): DomainStatus {
+		if ( $this->throw ) {
+			throw new ResendException( 'stub resend failure' );
+		}
+		$this->created[] = $domain;
+		return $this->domain_status ?? new DomainStatus( $domain, false, 'pending', array() );
+	}
+
 	public function domain_status( string $domain ): DomainStatus {
 		if ( $this->throw ) {
 			throw new ResendException( 'stub resend failure' );

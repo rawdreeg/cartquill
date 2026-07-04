@@ -21,19 +21,19 @@ final class SodiumCrypto implements Crypto {
 	private const VERSION = 'v1';
 
 	/** @var string 32-byte secretbox key. */
-	private string $key;
+	private readonly string $key;
 
 	/**
 	 * @param string $key Raw key material; hashed to the exact key length so any
 	 *                    WordPress salt string can be passed in.
 	 */
 	public function __construct( string $key ) {
-		$this->key = \sodium_crypto_generichash( $key, '', SODIUM_CRYPTO_SECRETBOX_KEYBYTES );
+		$this->key = sodium_crypto_generichash( $key, '', SODIUM_CRYPTO_SECRETBOX_KEYBYTES );
 	}
 
 	public function encrypt( string $plaintext ): string {
-		$nonce  = \random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
-		$cipher = \sodium_crypto_secretbox( $plaintext, $nonce, $this->key );
+		$nonce  = random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
+		$cipher = sodium_crypto_secretbox( $plaintext, $nonce, $this->key );
 
 		return self::VERSION . ':' . base64_encode( $nonce . $cipher );
 	}
@@ -52,7 +52,7 @@ final class SodiumCrypto implements Crypto {
 		$nonce  = substr( $raw, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
 		$cipher = substr( $raw, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
 
-		$plaintext = \sodium_crypto_secretbox_open( $cipher, $nonce, $this->key );
+		$plaintext = sodium_crypto_secretbox_open( $cipher, $nonce, $this->key );
 
 		return false === $plaintext ? null : $plaintext;
 	}

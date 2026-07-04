@@ -59,6 +59,12 @@ final class HttpResendClient implements ResendClient {
 		return (string) $data['id'];
 	}
 
+	public function create_domain( string $domain ): DomainStatus {
+		$data = $this->request( 'POST', '/domains', array( 'name' => $domain ) );
+
+		return DomainStatus::from_resend( $data + array( 'name' => $domain ) );
+	}
+
 	public function domain_status( string $domain ): DomainStatus {
 		$data = $this->request( 'GET', '/domains/' . rawurlencode( $domain ), null );
 

@@ -33,6 +33,7 @@ final class DeliverabilityPage {
 	public function register(): void {
 		\add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		\add_action( 'admin_post_flowforge_save_esp', array( $this, 'handle_save' ) );
+		\add_action( 'admin_post_flowforge_provision_domain', array( $this, 'handle_provision' ) );
 		\add_action( 'admin_post_flowforge_verify_domain', array( $this, 'handle_verify' ) );
 	}
 
@@ -62,6 +63,23 @@ final class DeliverabilityPage {
 
 		\delete_transient( self::STATUS_TRANSIENT );
 		$this->redirect_back( 'saved' );
+	}
+
+	public function handle_provision(): void {
+		$this->authorize( 'flowforge_provision_domain' );
+
+		$domain = $this->esp->domain();
+		if ( '' === $domain || ! $this->esp->has_key() ) {
+			$this->redirect_back( 'verify_error' );
+		}
+
+		try {
+			$status = ( new HttpResendClient( $this->esp->api_key() ) )->create_domain( $domain );
+			\set_transient( self::STATUS_TRANSIENT, $this->snapshot( $status ), MINUTE_IN_SECONDS );
+			$this->redirect_back( 'provisioned' );
+		} catch ( ResendException $e ) {
+			$this->redirect_back( 'verify_error' );
+		}
 	}
 
 	public function handle_verify(): void {
@@ -114,13 +132,21 @@ final class DeliverabilityPage {
 
 			<?php if ( $this->esp->has_key() && '' !== $this->esp->domain() ) : ?>
 				<h2><?php echo \esc_html__( 'Authenticate your domain', 'flowforge' ); ?></h2>
-				<p><?php echo \esc_html__( 'Add these SPF, DKIM and DMARC records at your DNS provider, then check verification. Authenticated domains land in the inbox instead of spam.', 'flowforge' ); ?></p>
-				<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
-					<?php \wp_nonce_field( 'flowforge_verify_domain' ); ?>
-					<input type="hidden" name="action" value="flowforge_verify_domain" />
-					<?php \submit_button( \__( 'Check verification status', 'flowforge' ), 'secondary' ); ?>
-				</form>
+				<p><?php echo \esc_html__( 'Step 1: register the domain in Resend to get your DNS records. Step 2: add the SPF, DKIM and DMARC records at your DNS provider. Step 3: check verification. Authenticated domains land in the inbox instead of spam.', 'flowforge' ); ?></p>
+				<p>
+					<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="display:inline">
+						<?php \wp_nonce_field( 'flowforge_provision_domain' ); ?>
+						<input type="hidden" name="action" value="flowforge_provision_domain" />
+						<button type="submit" class="button"><?php echo \esc_html__( 'Add domain to Resend', 'flowforge' ); ?></button>
+					</form>
+					<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="display:inline">
+						<?php \wp_nonce_field( 'flowforge_verify_domain' ); ?>
+						<input type="hidden" name="action" value="flowforge_verify_domain" />
+						<button type="submit" class="button button-primary"><?php echo \esc_html__( 'Check verification status', 'flowforge' ); ?></button>
+					</form>
+				</p>
 				<?php $this->render_status(); ?>
+				<?php $this->render_dmarc_guidance(); ?>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -137,10 +163,14 @@ final class DeliverabilityPage {
 		?>
 		<p>
 			<strong><?php echo \esc_html__( 'Status:', 'flowforge' ); ?></strong>
-			<?php if ( $verified ) : ?>
+			<?php
+			$state = (string) ( $snapshot['state'] ?? 'pending' );
+			if ( $verified ) : ?>
 				<span style="color:#008a20">&#10003; <?php echo \esc_html__( 'Verified', 'flowforge' ); ?></span>
+			<?php elseif ( 'failed' === $state ) : ?>
+				<span style="color:#b32d2e"><?php echo \esc_html__( 'Failed — check your DNS records', 'flowforge' ); ?></span>
 			<?php else : ?>
-				<span style="color:#b32d2e"><?php echo \esc_html( sprintf( \__( 'Pending (%s)', 'flowforge' ), (string) ( $snapshot['state'] ?? 'pending' ) ) ); ?></span>
+				<span style="color:#996800"><?php echo \esc_html( sprintf( \__( 'Pending (%s) — add the records below, DNS can take a while to propagate', 'flowforge' ), $state ) ); ?></span>
 			<?php endif; ?>
 		</p>
 		<table class="widefat striped" style="max-width:900px">
@@ -162,6 +192,35 @@ final class DeliverabilityPage {
 				</tr>
 			<?php endforeach; ?>
 			</tbody>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Resend authenticates SPF + DKIM but does not return a DMARC record, so the
+	 * wizard always shows a recommended DMARC policy to complete SPF/DKIM/DMARC
+	 * guidance. It is advisory — Resend can't verify it — so it is presented
+	 * separately from the verifiable records.
+	 */
+	private function render_dmarc_guidance(): void {
+		$domain = $this->esp->domain();
+		if ( '' === $domain ) {
+			return;
+		}
+		?>
+		<h3><?php echo \esc_html__( 'Recommended: DMARC', 'flowforge' ); ?></h3>
+		<p class="description"><?php echo \esc_html__( 'DMARC is not managed by Resend, but adding a policy record improves deliverability. Start with a monitoring policy and tighten it over time.', 'flowforge' ); ?></p>
+		<table class="widefat striped" style="max-width:900px">
+			<thead><tr>
+				<th><?php echo \esc_html__( 'Type', 'flowforge' ); ?></th>
+				<th><?php echo \esc_html__( 'Name', 'flowforge' ); ?></th>
+				<th><?php echo \esc_html__( 'Value', 'flowforge' ); ?></th>
+			</tr></thead>
+			<tbody><tr>
+				<td>TXT</td>
+				<td><code><?php echo \esc_html( '_dmarc.' . $domain ); ?></code></td>
+				<td><code>v=DMARC1; p=none; rua=mailto:dmarc@<?php echo \esc_html( $domain ); ?></code></td>
+			</tr></tbody>
 		</table>
 		<?php
 	}
@@ -190,6 +249,7 @@ final class DeliverabilityPage {
 	private function render_notice( string $notice ): void {
 		$map = array(
 			'saved'        => array( 'success', \__( 'Connection saved.', 'flowforge' ) ),
+			'provisioned'  => array( 'success', \__( 'Domain registered with Resend. Add the DNS records below, then check verification.', 'flowforge' ) ),
 			'verified'     => array( 'success', \__( 'Verification status refreshed.', 'flowforge' ) ),
 			'verify_error' => array( 'error', \__( 'Could not reach Resend. Check your API key and domain, then try again.', 'flowforge' ) ),
 		);
