@@ -36,7 +36,7 @@ final class FlowEditorPage {
 
 	public function add_menu(): void {
 		\add_submenu_page(
-			'',
+			null,
 			\__( 'Edit flow', 'flowforge' ),
 			\__( 'Edit flow', 'flowforge' ),
 			'manage_options',
@@ -53,17 +53,33 @@ final class FlowEditorPage {
 		$id   = isset( $_POST['flow'] ) ? (int) $_POST['flow'] : 0;
 		$flow = $this->flows->find( $id );
 		if ( null !== $flow ) {
-			// wp_unslash the posted step content; FlowEditor sanitizes shape.
+			$steps = $this->posted_steps();
+
+			// "Add step" appends a blank step for the user to fill in.
+			if ( isset( $_POST['add_step'] ) ) {
+				$steps[] = array( 'delay' => 0, 'subject' => '', 'body' => '', 'exit_if_ordered' => false );
+			}
+
+			// wp_unslash the posted content; FlowEditor validates the shape.
 			$input = array(
 				'name'   => isset( $_POST['name'] ) ? \sanitize_text_field( \wp_unslash( $_POST['name'] ) ) : $flow->name,
 				'status' => isset( $_POST['status'] ) ? \sanitize_text_field( \wp_unslash( $_POST['status'] ) ) : $flow->status,
-				'steps'  => $this->posted_steps(),
+				'steps'  => $steps,
 			);
 			$this->flows->save( $this->editor->apply( $flow, $input ) );
 		}
 
 		\wp_safe_redirect( \admin_url( 'admin.php?page=' . self::SLUG . '&flow=' . $id . '&updated=1' ) );
 		exit;
+	}
+
+	private function has_exit_condition( \FlowForge\Flow\FlowStep $step ): bool {
+		foreach ( $step->conditions as $condition ) {
+			if ( 'exit_if_ordered' === ( ( (array) $condition )['type'] ?? '' ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -79,6 +95,7 @@ final class FlowEditorPage {
 				'subject'         => \sanitize_text_field( (string) ( $step['subject'] ?? '' ) ),
 				'body'            => \wp_kses_post( (string) ( $step['body'] ?? '' ) ),
 				'exit_if_ordered' => ! empty( $step['exit_if_ordered'] ),
+				'remove'          => ! empty( $step['remove'] ),
 			);
 		}
 		return $steps;
@@ -141,12 +158,22 @@ final class FlowEditorPage {
 						</p>
 						<p>
 							<label>
-								<input type="checkbox" name="steps[<?php echo (int) $i; ?>][exit_if_ordered]" value="1" <?php \checked( ! empty( $step->conditions ) ); ?> />
+								<input type="checkbox" name="steps[<?php echo (int) $i; ?>][exit_if_ordered]" value="1" <?php \checked( $this->has_exit_condition( $step ) ); ?> />
 								<?php echo \esc_html__( 'Exit this flow if the customer places an order', 'flowforge' ); ?>
+							</label>
+						</p>
+						<p>
+							<label>
+								<input type="checkbox" name="steps[<?php echo (int) $i; ?>][remove]" value="1" />
+								<?php echo \esc_html__( 'Remove this step', 'flowforge' ); ?>
 							</label>
 						</p>
 					</fieldset>
 				<?php endforeach; ?>
+
+				<p>
+					<button type="submit" name="add_step" value="1" class="button"><?php echo \esc_html__( '+ Add step', 'flowforge' ); ?></button>
+				</p>
 
 				<?php \submit_button( \__( 'Save flow', 'flowforge' ) ); ?>
 			</form>

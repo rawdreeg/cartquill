@@ -68,6 +68,39 @@ final class FlowEditorTest extends TestCase {
 		$this->assertSame( FlowRecord::STATUS_DRAFT, $updated->status );
 	}
 
+	public function test_apply_removes_steps_flagged_for_removal(): void {
+		$flow    = DefaultFlows::welcome()->with_id( 1 ); // 2 steps
+		$updated = ( new FlowEditor() )->apply(
+			$flow,
+			array(
+				'steps' => array(
+					array( 'delay' => 0, 'subject' => 'Keep', 'body' => 'a' ),
+					array( 'delay' => 100, 'subject' => 'Drop', 'body' => 'b', 'remove' => '1' ),
+				),
+			)
+		);
+
+		$this->assertCount( 1, $updated->steps );
+		$this->assertSame( 'Keep', $updated->steps[0]->subject );
+	}
+
+	public function test_apply_can_grow_the_flow_with_new_steps(): void {
+		$flow    = DefaultFlows::welcome()->with_id( 1 ); // 2 steps
+		$updated = ( new FlowEditor() )->apply(
+			$flow,
+			array(
+				'steps' => array(
+					array( 'delay' => 0, 'subject' => 'One', 'body' => 'a' ),
+					array( 'delay' => 3600, 'subject' => 'Two', 'body' => 'b' ),
+					array( 'delay' => 7200, 'subject' => 'Three', 'body' => 'c' ),
+				),
+			)
+		);
+
+		$this->assertCount( 3, $updated->steps, 'editor can add steps' );
+		$this->assertSame( 'Three', $updated->steps[2]->subject );
+	}
+
 	public function test_install_activate_edit_is_honored_at_send_time(): void {
 		$flows       = new InMemoryFlowRepository();
 		$enrollments = new InMemoryEnrollmentRepository();

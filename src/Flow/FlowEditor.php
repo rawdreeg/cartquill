@@ -33,9 +33,16 @@ final class FlowEditor {
 			? (string) $input['status']
 			: $flow->status;
 
-		$steps = array();
+		$steps       = array();
+		$had_input   = isset( $input['steps'] ) && is_array( $input['steps'] );
 		foreach ( (array) ( $input['steps'] ?? array() ) as $raw ) {
-			$raw        = (array) $raw;
+			$raw = (array) $raw;
+
+			// A step flagged for removal is dropped, letting the editor delete steps.
+			if ( ! empty( $raw['remove'] ) ) {
+				continue;
+			}
+
 			$conditions = ! empty( $raw['exit_if_ordered'] )
 				? array( array( 'type' => 'exit_if_ordered' ) )
 				: array();
@@ -48,8 +55,9 @@ final class FlowEditor {
 			);
 		}
 
-		// Keep the flow's existing steps if the form submitted none.
-		if ( array() === $steps ) {
+		// Keep the flow's existing steps only when the form submitted no steps
+		// key at all (e.g. a name-only update). An explicit empty list clears them.
+		if ( ! $had_input ) {
 			$steps = $flow->steps;
 		}
 

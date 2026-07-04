@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace FlowForge\Flow;
 
+use FlowForge\Persistence\FlowRecord;
 use FlowForge\Persistence\FlowRepository;
 
 /**
@@ -24,10 +25,10 @@ final class FlowInstaller {
 	) {}
 
 	/**
-	 * @return \FlowForge\Persistence\FlowRecord|null The installed (draft) flow,
-	 *                                                or null for an unknown type.
+	 * @return FlowRecord|null The installed (draft) flow, or null for an
+	 *                         unknown type.
 	 */
-	public function install( string $type ): ?object {
+	public function install( string $type ): ?FlowRecord {
 		$template = $this->library->get( $type );
 		if ( null === $template ) {
 			return null;
