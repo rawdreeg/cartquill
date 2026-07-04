@@ -1,6 +1,6 @@
 <?php
 /**
- * Tracer-bullet trigger: a completed order fires the spine flow.
+ * Order-placed trigger: enrolls the buyer into active order-driven flows.
  *
  * @package FlowForge
  */
@@ -9,24 +9,26 @@ declare(strict_types=1);
 
 namespace FlowForge\Integration;
 
-use FlowForge\Engine\SpineDispatcher;
-use FlowForge\Flow\FlowDefinition;
-use FlowForge\Flow\FlowStep;
-use FlowForge\Persistence\EnrollmentRecord;
-use FlowForge\Persistence\EnrollmentRepository;
+use FlowForge\Engine\Enroller;
+use FlowForge\Persistence\FlowRepository;
 
 /**
- * Wires a WooCommerce hook to the spine dispatcher to prove the trigger ->
- * enroll -> send -> record path end-to-end.
+ * On a completed order, enrolls the buyer into every active flow of the
+ * order-driven type. The engine (Enroller + StepRunner) does the rest —
+ * scheduling, delays, conditions, sending. Enrollment idempotency lives in the
+ * Enroller, so WooCommerce firing `woocommerce_thankyou` twice does not enroll
+ * the buyer twice.
  *
- * This is deliberately a single hardcoded, single-step flow. The engine slice
- * replaces it with data-driven flows, real enrollment, delays and conditions.
+ * The post-purchase slice formalizes the default steps and adds the welcome /
+ * first-order triggers; here the wiring proves the engine runs from a real hook.
  */
 final class WooOrderTrigger {
 
+	private const FLOW_TYPE = 'post_purchase';
+
 	public function __construct(
-		private readonly SpineDispatcher $dispatcher,
-		private readonly EnrollmentRepository $enrollments,
+		private readonly Enroller $enroller,
+		private readonly FlowRepository $flows,
 	) {}
 
 	public function register(): void {
@@ -47,41 +49,8 @@ final class WooOrderTrigger {
 			return;
 		}
 
-		// Guard against WooCommerce firing woocommerce_thankyou more than once
-		// for the same order on page refresh.
-		if ( $order->get_meta( '_flowforge_spine_sent' ) ) {
-			return;
+		foreach ( $this->flows->active_by_type( self::FLOW_TYPE ) as $flow ) {
+			$this->enroller->enroll( $flow, (string) $email );
 		}
-
-		$flow = $this->spine_flow();
-
-		$enrollment = $this->enrollments->save(
-			new EnrollmentRecord(
-				id: null,
-				flow_id: $flow->id,
-				customer_email: (string) $email,
-				status: EnrollmentRecord::STATUS_ACTIVE,
-			)
-		);
-
-		$this->dispatcher->dispatch( $flow, 0, (string) $email, $enrollment->id );
-
-		$order->update_meta_data( '_flowforge_spine_sent', '1' );
-		$order->save();
-	}
-
-	private function spine_flow(): FlowDefinition {
-		return new FlowDefinition(
-			id: 0,
-			name: 'Spine — order received',
-			type: 'spine',
-			steps: array(
-				new FlowStep(
-					delay: 0,
-					subject: 'Thanks for your order',
-					body: '<p>Thanks for shopping with {{ store_name }}. This is FlowForge saying hello.</p>',
-				),
-			),
-		);
 	}
 }
