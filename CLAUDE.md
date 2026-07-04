@@ -35,7 +35,7 @@ Test **external behavior through the highest seam**, not private methods.
 - **Primary seam — `SenderInterface`:** inject a `FakeSender` that records calls. Assert enrollment creation, step scheduling/delays, conditions (exit-on-conversion, no send after purchase), suppression, and idempotency.
 - **Attribution seam:** given recorded messages + synthetic Woo orders inside/outside the window, assert revenue-per-flow output.
 - **Webhook seam (Deliverability add-on):** given a representative ESP payload, assert message status transitions and that bounced/complained addresses land on the suppression list.
-- **Tooling:** `WP_UnitTestCase` on the WordPress PHPUnit harness, WooCommerce test factories for orders/customers/products, Action Scheduler executed within tests to advance scheduled steps. Prefer integration-style trigger→sender tests over unit tests of private methods.
+- **Tooling (decided):** the **primary** suite is fast and DB-free — plain PHPUnit with the core wired through its injected seams (`FakeSender`, in-memory repositories, `ArraySettings`, `FixedClock`), and the few direct WP function calls stubbed with **Brain\Monkey**. This keeps CI dependency-free and pushes logic out of WP-coupled classes. A `WP_UnitTestCase` integration layer (WordPress PHPUnit harness + WooCommerce factories + Action Scheduler advanced in-test) is added later for the genuinely DB/hook-coupled paths; it is not required for slices whose behavior is observable at the `SenderInterface`/repository seam. Prefer integration-style trigger→sender tests over unit tests of private methods.
 
 ## Scope discipline
 

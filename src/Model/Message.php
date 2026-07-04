@@ -24,6 +24,7 @@ final class Message {
 	 * @param string                $from_name    Sender display name.
 	 * @param string                $from_email   Sender email address.
 	 * @param array<string, string> $headers      Additional headers, keyed by name.
+	 * @param string|null           $unsubscribe  Unsubscribe target for the List-Unsubscribe header (URL or mailto:).
 	 * @param int|null              $enrollment_id Owning enrollment, if any.
 	 * @param int|null              $flow_id      Owning flow, if any.
 	 * @param int|null              $step_index   Step index within the flow, if any.
@@ -35,6 +36,7 @@ final class Message {
 		public readonly string $from_name = '',
 		public readonly string $from_email = '',
 		public readonly array $headers = array(),
+		public readonly ?string $unsubscribe = null,
 		public readonly ?int $enrollment_id = null,
 		public readonly ?int $flow_id = null,
 		public readonly ?int $step_index = null,
@@ -53,6 +55,10 @@ final class Message {
 				? sprintf( '%s <%s>', $this->from_name, $this->from_email )
 				: $this->from_email;
 			$lines[] = 'From: ' . $from;
+		}
+
+		if ( null !== $this->unsubscribe && '' !== $this->unsubscribe ) {
+			$lines[] = 'List-Unsubscribe: <' . $this->unsubscribe . '>';
 		}
 
 		foreach ( $this->headers as $name => $value ) {

@@ -13,6 +13,7 @@ use FlowForge\Admin\SettingsPage;
 use FlowForge\Engine\SpineDispatcher;
 use FlowForge\Flow\Renderer;
 use FlowForge\Integration\WooOrderTrigger;
+use FlowForge\Persistence\WpdbEnrollmentRepository;
 use FlowForge\Persistence\WpdbMessageRepository;
 use FlowForge\Settings\OptionsSettings;
 use FlowForge\Support\SystemClock;
@@ -53,7 +54,7 @@ final class Plugin {
 			new SystemClock(),
 		);
 
-		( new WooOrderTrigger( $dispatcher ) )->register();
+		( new WooOrderTrigger( $dispatcher, new WpdbEnrollmentRepository() ) )->register();
 		( new SettingsPage( $settings ) )->register();
 	}
 
