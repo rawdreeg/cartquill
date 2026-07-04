@@ -28,6 +28,13 @@ interface EnrollmentRepository {
 	public function find_active( int $flow_id, string $customer_email ): ?EnrollmentRecord;
 
 	/**
+	 * Whether this customer has ever been enrolled in this flow (any status).
+	 *
+	 * Lets the win-back scan avoid re-engaging someone who already ran the flow.
+	 */
+	public function has_any( int $flow_id, string $customer_email ): bool;
+
+	/**
 	 * @return list<EnrollmentRecord>
 	 */
 	public function all(): array;

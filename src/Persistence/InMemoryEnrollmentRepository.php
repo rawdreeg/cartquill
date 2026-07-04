@@ -44,6 +44,15 @@ final class InMemoryEnrollmentRepository implements EnrollmentRepository {
 		return null;
 	}
 
+	public function has_any( int $flow_id, string $customer_email ): bool {
+		foreach ( $this->records as $record ) {
+			if ( $record->flow_id === $flow_id && $record->customer_email === $customer_email ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public function all(): array {
 		return array_values( $this->records );
 	}

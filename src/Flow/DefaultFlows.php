@@ -23,6 +23,7 @@ final class DefaultFlows {
 	public const TYPE_ABANDONED_CART = 'abandoned_cart';
 	public const TYPE_WELCOME        = 'welcome';
 	public const TYPE_POST_PURCHASE  = 'post_purchase';
+	public const TYPE_WIN_BACK       = 'win_back';
 
 	/**
 	 * The default abandoned-cart flow: a nudge at t+1h and a follow-up at t+24h,
@@ -105,6 +106,38 @@ final class DefaultFlows {
 					delay: 1209600, // t+14d
 					subject: 'You might also like…',
 					body: '<p>Based on your order, here are a few things other customers love.</p>',
+				),
+			),
+		);
+	}
+
+	/**
+	 * The default win-back flow: a re-engagement nudge plus an optional t+7d
+	 * follow-up, each of which exits the moment the customer orders again.
+	 *
+	 * @param string $status Initial status (defaults to draft).
+	 */
+	public static function win_back( string $status = FlowRecord::STATUS_DRAFT ): FlowRecord {
+		$exit = array( array( 'type' => 'exit_if_ordered' ) );
+
+		return new FlowRecord(
+			id: null,
+			name: 'Win-back',
+			type: self::TYPE_WIN_BACK,
+			status: $status,
+			source: FlowRecord::SOURCE_TEMPLATE,
+			steps: array(
+				new FlowStep(
+					delay: 0,
+					subject: 'We miss you at {{ store_name }}',
+					body: '<p>It has been a while! Here is a little nudge to come back to {{ store_name }}.</p>',
+					conditions: $exit,
+				),
+				new FlowStep(
+					delay: 604800, // t+7d follow-up
+					subject: 'One more reason to come back',
+					body: '<p>Still here whenever you are ready. Anything we can help with?</p>',
+					conditions: $exit,
 				),
 			),
 		);

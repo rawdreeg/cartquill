@@ -64,6 +64,21 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 		return $row ? $this->hydrate( $row ) : null;
 	}
 
+	public function has_any( int $flow_id, string $customer_email ): bool {
+		global $wpdb;
+		$table = Schema::enrollments_table();
+
+		$count = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE flow_id = %d AND customer_email = %s", // phpcs:ignore WordPress.DB.PreparedSQL
+				$flow_id,
+				$customer_email
+			)
+		);
+
+		return (int) $count > 0;
+	}
+
 	public function all(): array {
 		global $wpdb;
 		$table = Schema::enrollments_table();
