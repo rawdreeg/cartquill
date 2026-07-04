@@ -83,6 +83,17 @@ final class WpdbMessageRepository implements MessageRepository {
 		return $row ? $this->hydrate( $row ) : null;
 	}
 
+	public function update_status( int $id, string $status ): void {
+		global $wpdb;
+		$wpdb->update(
+			Schema::messages_table(),
+			array( 'status' => $status ),
+			array( 'id' => $id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+	}
+
 	public function exists_for_step( int $enrollment_id, int $step_index ): bool {
 		global $wpdb;
 		$table = Schema::messages_table();

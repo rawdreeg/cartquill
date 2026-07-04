@@ -13,6 +13,8 @@ use FlowForge\Flow\FlowStep;
 use FlowForge\Flow\Renderer;
 use FlowForge\Model\Message;
 use FlowForge\Settings\Settings;
+use FlowForge\Tracking\LinkTracker;
+use FlowForge\Tracking\NullLinkTracker;
 
 /**
  * Turns a step + recipient into a ready-to-send Message. Every message it
@@ -21,12 +23,21 @@ use FlowForge\Settings\Settings;
  */
 final class MessageComposer {
 
+	private readonly LinkTracker $tracker;
+
 	public function __construct(
 		private readonly Renderer $renderer,
 		private readonly Settings $settings,
-	) {}
+		?LinkTracker $tracker = null,
+	) {
+		$this->tracker = $tracker ?? new NullLinkTracker();
+	}
 
-	public function compose( FlowStep $step, string $recipient, int $flow_id, int $step_index, ?int $enrollment_id ): Message {
+	/**
+	 * @param int $message_id The claimed message row id, used to tie open/click
+	 *                        tracking to this send (0 disables tracking).
+	 */
+	public function compose( FlowStep $step, string $recipient, int $flow_id, int $step_index, ?int $enrollment_id, int $message_id = 0 ): Message {
 		$unsubscribe = $this->unsubscribe_target();
 
 		$context = array(
@@ -35,12 +46,17 @@ final class MessageComposer {
 			'unsubscribe_url' => $unsubscribe,
 		);
 
+		// Render content, wrap its links for click tracking, add the unsubscribe
+		// footer (not wrapped — it is a mailto:), then the open pixel last.
 		$body = $this->renderer->render( $step->body, $context );
+		$body = $this->tracker->wrap_links( $body, $message_id );
+		$body = $this->with_unsubscribe_footer( $body, $unsubscribe );
+		$body .= $this->tracker->pixel_html( $message_id );
 
 		return new Message(
 			to: $recipient,
 			subject: $this->renderer->render( $step->subject, $context ),
-			body: $this->with_unsubscribe_footer( $body, $unsubscribe ),
+			body: $body,
 			from_name: $this->settings->from_name(),
 			from_email: $this->settings->from_email(),
 			unsubscribe: '' !== $unsubscribe ? $unsubscribe : null,
