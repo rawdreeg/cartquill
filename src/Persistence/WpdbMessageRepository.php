@@ -153,6 +153,27 @@ final class WpdbMessageRepository implements MessageRepository {
 		return $stats;
 	}
 
+	public function for_recipient( string $email ): array {
+		global $wpdb;
+		$table = Schema::messages_table();
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE recipient = %s ORDER BY id ASC", strtolower( trim( $email ) ) ), // phpcs:ignore WordPress.DB.PreparedSQL
+			ARRAY_A
+		);
+
+		return array_map( array( $this, 'hydrate' ), $rows ?: array() );
+	}
+
+	public function delete_for_recipient( string $email ): int {
+		global $wpdb;
+		return (int) $wpdb->delete(
+			Schema::messages_table(),
+			array( 'recipient' => strtolower( trim( $email ) ) ),
+			array( '%s' )
+		);
+	}
+
 	public function all(): array {
 		global $wpdb;
 		$table = Schema::messages_table();

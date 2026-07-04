@@ -59,6 +59,11 @@ final class Message {
 
 		if ( null !== $this->unsubscribe && '' !== $this->unsubscribe ) {
 			$lines[] = 'List-Unsubscribe: <' . $this->unsubscribe . '>';
+			// RFC 8058 one-click: compliant clients POST rather than GET, so
+			// link prefetchers/scanners can't silently unsubscribe the user.
+			if ( 1 === preg_match( '/^https?:\/\//i', $this->unsubscribe ) ) {
+				$lines[] = 'List-Unsubscribe-Post: List-Unsubscribe=One-Click';
+			}
 		}
 
 		foreach ( $this->headers as $name => $value ) {

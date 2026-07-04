@@ -71,6 +71,15 @@ final class WpdbCartCaptureStore implements CartCaptureStore {
 		);
 	}
 
+	public function delete( string $email ): void {
+		global $wpdb;
+		$wpdb->delete(
+			Schema::cart_captures_table(),
+			array( 'customer_email' => $this->normalize( $email ) ),
+			array( '%s' )
+		);
+	}
+
 	private function set_status( string $email, string $status ): void {
 		global $wpdb;
 		$table = Schema::cart_captures_table();

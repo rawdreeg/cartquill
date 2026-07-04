@@ -123,6 +123,25 @@ final class InMemoryMessageRepository implements MessageRepository {
 		return $stats;
 	}
 
+	public function for_recipient( string $email ): array {
+		$email = strtolower( trim( $email ) );
+		return array_values(
+			array_filter( $this->records, static fn( $r ) => strtolower( $r->recipient ) === $email )
+		);
+	}
+
+	public function delete_for_recipient( string $email ): int {
+		$email = strtolower( trim( $email ) );
+		$count = 0;
+		foreach ( $this->records as $id => $record ) {
+			if ( strtolower( $record->recipient ) === $email ) {
+				unset( $this->records[ $id ] );
+				++$count;
+			}
+		}
+		return $count;
+	}
+
 	public function all(): array {
 		return array_values( $this->records );
 	}

@@ -12,6 +12,10 @@ namespace FlowForge;
 use FlowForge\Admin\ReportingPage;
 use FlowForge\Admin\SettingsPage;
 use FlowForge\Attribution\Attributor;
+use FlowForge\Compliance\PersonalData;
+use FlowForge\Compliance\PrivacyHooks;
+use FlowForge\Compliance\UnsubscribeEndpoint;
+use FlowForge\Compliance\UnsubscribeLink;
 use FlowForge\Compliance\WpdbSuppressionList;
 use FlowForge\Engine\ConditionEvaluator;
 use FlowForge\Engine\Enroller;
@@ -73,6 +77,8 @@ final class Plugin {
 		$flows       = new WpdbFlowRepository();
 		$enrollments = new WpdbEnrollmentRepository();
 		$messages    = new WpdbMessageRepository();
+		$captures    = new WpdbCartCaptureStore();
+		$suppression = new WpdbSuppressionList();
 		$activity    = new WooCustomerActivity();
 
 		// Self-hosted open/click tracking.
@@ -80,13 +86,18 @@ final class Plugin {
 		$tracking_urls = new TrackingUrls( \home_url( '/' ), $signer );
 		( new TrackingEndpoint( $messages, $signer, $tracking_urls ) )->register();
 
+		// Compliance: one-click unsubscribe + global suppression + GDPR tools.
+		$unsubscribe_link = new UnsubscribeLink( \home_url( '/' ), $signer );
+		( new UnsubscribeEndpoint( $signer, $unsubscribe_link, $suppression, $enrollments ) )->register();
+		( new PrivacyHooks( new PersonalData( $enrollments, $messages, $captures, $suppression ) ) )->register();
+
 		$runner = new StepRunner(
 			$flows,
 			$enrollments,
 			$messages,
-			new MessageComposer( new Renderer(), $settings, new SelfHostedLinkTracker( $tracking_urls ) ),
+			new MessageComposer( new Renderer(), $settings, new SelfHostedLinkTracker( $tracking_urls ), $unsubscribe_link ),
 			new WpMailSender(),
-			new WpdbSuppressionList(),
+			$suppression,
 			new ConditionEvaluator( $activity ),
 			$scheduler,
 			$clock,
@@ -115,7 +126,6 @@ final class Plugin {
 		( new ReportingPage( $flows, $messages, $attributions ) )->register();
 
 		// Abandoned-cart tracking: capture emails, scan on a recurring tick.
-		$captures = new WpdbCartCaptureStore();
 		( new AbandonedCartTracker( $captures, $clock ) )->register();
 
 		$cart_scanner = new AbandonedCartScanner( $captures, $flows, $enroller, $clock );

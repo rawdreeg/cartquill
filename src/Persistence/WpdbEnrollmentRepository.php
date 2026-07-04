@@ -79,6 +79,41 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 		return (int) $count > 0;
 	}
 
+	public function for_customer( string $customer_email ): array {
+		global $wpdb;
+		$table = Schema::enrollments_table();
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE customer_email = %s ORDER BY id ASC", strtolower( trim( $customer_email ) ) ), // phpcs:ignore WordPress.DB.PreparedSQL
+			ARRAY_A
+		);
+
+		return array_map( array( $this, 'hydrate' ), $rows ?: array() );
+	}
+
+	public function unsubscribe_customer( string $customer_email ): int {
+		global $wpdb;
+		$table = Schema::enrollments_table();
+
+		return (int) $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET status = %s WHERE customer_email = %s AND status = %s", // phpcs:ignore WordPress.DB.PreparedSQL
+				EnrollmentRecord::STATUS_UNSUBSCRIBED,
+				strtolower( trim( $customer_email ) ),
+				EnrollmentRecord::STATUS_ACTIVE
+			)
+		);
+	}
+
+	public function delete_for_customer( string $customer_email ): int {
+		global $wpdb;
+		return (int) $wpdb->delete(
+			Schema::enrollments_table(),
+			array( 'customer_email' => strtolower( trim( $customer_email ) ) ),
+			array( '%s' )
+		);
+	}
+
 	public function all(): array {
 		global $wpdb;
 		$table = Schema::enrollments_table();
