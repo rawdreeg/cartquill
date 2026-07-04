@@ -48,8 +48,6 @@ final class FlowLibraryPage {
 		);
 	}
 
-	// --- Actions ----------------------------------------------------------
-
 	public function handle_install(): void {
 		$this->authorize( 'flowforge_install_flow' );
 		$type = isset( $_POST['type'] ) ? \sanitize_text_field( \wp_unslash( $_POST['type'] ) ) : '';
@@ -70,8 +68,6 @@ final class FlowLibraryPage {
 		}
 		$this->redirect_back();
 	}
-
-	// --- Rendering --------------------------------------------------------
 
 	public function render(): void {
 		if ( ! \current_user_can( 'manage_options' ) ) {

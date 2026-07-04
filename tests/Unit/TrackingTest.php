@@ -40,16 +40,12 @@ final class TrackingTest extends TestCase {
 		return (int) $record->id;
 	}
 
-	// --- Signer -----------------------------------------------------------
-
 	public function test_signer_verifies_only_untampered_payloads(): void {
 		$sig = $this->signer->sign( 'open:5' );
 		$this->assertTrue( $this->signer->verify( 'open:5', $sig ) );
 		$this->assertFalse( $this->signer->verify( 'open:6', $sig ) );
 		$this->assertFalse( $this->signer->verify( 'open:5', 'deadbeef' ) );
 	}
-
-	// --- Link wrapping ----------------------------------------------------
 
 	public function test_wrap_links_rewrites_http_links_only(): void {
 		$tracker = new SelfHostedLinkTracker( $this->urls );
@@ -73,8 +69,6 @@ final class TrackingTest extends TestCase {
 		$this->assertStringContainsString( 'mid=9', $pixel );
 		$this->assertStringContainsString( 'width="1"', $pixel );
 	}
-
-	// --- Endpoint ---------------------------------------------------------
 
 	public function test_open_marks_message_opened(): void {
 		$id    = $this->sent_message();
