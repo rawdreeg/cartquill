@@ -17,7 +17,10 @@ use FlowForge\Admin\OnboardingPage;
 use FlowForge\Admin\ReportingPage;
 use FlowForge\Admin\SettingsPage;
 use FlowForge\Ai\AiAddon;
+use FlowForge\Deliverability\DeliverabilityAddon;
+use FlowForge\Deliverability\EspSettings;
 use FlowForge\Licensing\OptionLicense;
+use FlowForge\Security\SodiumCrypto;
 use FlowForge\Sender\SenderRegistry;
 use FlowForge\Attribution\Attributor;
 use FlowForge\Compliance\PersonalData;
@@ -106,6 +109,11 @@ final class Plugin {
 		// here, gated by the license. Core ships wp_mail as the default sender.
 		$license = new OptionLicense();
 		( new LicensePage( $license ) )->register();
+
+		// Deliverability add-on: registers the Resend sender + domain-auth
+		// wizard when licensed. The ESP API key is encrypted at rest.
+		$esp = new EspSettings( new SodiumCrypto( (string) \wp_salt( 'auth' ) ) );
+		( new DeliverabilityAddon( $esp, $license ) )->register();
 
 		$senders = new SenderRegistry( 'wp_mail' );
 		$senders->register( new WpMailSender() );
