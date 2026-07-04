@@ -1,0 +1,67 @@
+<?php
+/**
+ * A row in the `messages` table: one email plus its lifecycle status.
+ *
+ * @package FlowForge
+ */
+
+declare(strict_types=1);
+
+namespace FlowForge\Persistence;
+
+/**
+ * Mirrors the `messages` table. Status progresses queued -> sent on the
+ * wp_mail path (later: opened/clicked via self-hosted tracking, and
+ * delivered/bounced/complained once the Deliverability add-on is active).
+ */
+final class MessageRecord {
+
+	public const STATUS_QUEUED    = 'queued';
+	public const STATUS_SENT      = 'sent';
+	public const STATUS_FAILED    = 'failed';
+	public const STATUS_OPENED    = 'opened';
+	public const STATUS_CLICKED   = 'clicked';
+	public const STATUS_DELIVERED = 'delivered';
+	public const STATUS_BOUNCED   = 'bounced';
+	public const STATUS_COMPLAINED = 'complained';
+
+	/**
+	 * @param int|null    $id           Row id (null until persisted).
+	 * @param int|null    $enrollment_id Owning enrollment.
+	 * @param int         $flow_id      Owning flow.
+	 * @param int         $step_index   Step within the flow.
+	 * @param string      $recipient    Recipient email address.
+	 * @param string      $sender       Sender key that produced this send.
+	 * @param string      $status       One of the STATUS_* constants.
+	 * @param string|null $external_id  Transport message id, if any.
+	 * @param string|null $sent_at      MySQL datetime the send was recorded.
+	 */
+	public function __construct(
+		public readonly ?int $id,
+		public readonly ?int $enrollment_id,
+		public readonly int $flow_id,
+		public readonly int $step_index,
+		public readonly string $recipient,
+		public readonly string $sender,
+		public readonly string $status,
+		public readonly ?string $external_id = null,
+		public readonly ?string $sent_at = null,
+	) {}
+
+	/**
+	 * Return a copy with the persisted id set.
+	 */
+	public function with_id( int $id ): self {
+		return new self(
+			$id,
+			$this->enrollment_id,
+			$this->flow_id,
+			$this->step_index,
+			$this->recipient,
+			$this->sender,
+			$this->status,
+			$this->external_id,
+			$this->sent_at,
+		);
+	}
+}
