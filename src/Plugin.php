@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace FlowForge;
 
+use FlowForge\Admin\FlowEditorPage;
+use FlowForge\Admin\FlowLibraryPage;
 use FlowForge\Admin\ReportingPage;
 use FlowForge\Admin\SettingsPage;
 use FlowForge\Attribution\Attributor;
@@ -23,6 +25,9 @@ use FlowForge\Engine\FlowTypeEnroller;
 use FlowForge\Engine\MessageComposer;
 use FlowForge\Engine\StepRunner;
 use FlowForge\Engine\WooCustomerActivity;
+use FlowForge\Flow\FlowEditor;
+use FlowForge\Flow\FlowInstaller;
+use FlowForge\Flow\FlowLibrary;
 use FlowForge\Flow\Renderer;
 use FlowForge\Engine\WooLapsedCustomerFinder;
 use FlowForge\Integration\AbandonedCartScanner;
@@ -119,6 +124,11 @@ final class Plugin {
 		( new PostPurchaseTrigger( $type_enroller ) )->register();
 		( new WelcomeTrigger( $type_enroller, $activity ) )->register();
 		( new SettingsPage( $settings ) )->register();
+
+		// Flow library + editor.
+		$library = new FlowLibrary();
+		( new FlowLibraryPage( $library, new FlowInstaller( $library, $flows ), $flows ) )->register();
+		( new FlowEditorPage( $flows, new FlowEditor() ) )->register();
 
 		// Revenue attribution + reporting dashboard.
 		$attributions = new WpdbAttributionRepository();
