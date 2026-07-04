@@ -31,4 +31,9 @@ final class FakeCustomerActivity implements CustomerActivity {
 		}
 		return false;
 	}
+
+	public function order_count( string $email ): int {
+		return count( $this->orders[ strtolower( $email ) ] ?? array() );
+	}
 }
+

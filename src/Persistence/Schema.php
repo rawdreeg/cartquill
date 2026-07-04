@@ -20,7 +20,7 @@ namespace FlowForge\Persistence;
 final class Schema {
 
 	/** Bumped whenever the DDL changes so activation can re-run dbDelta. */
-	public const VERSION = '4';
+	public const VERSION = '5';
 
 	public const OPTION_DB_VERSION = 'flowforge_db_version';
 
@@ -97,6 +97,7 @@ final class Schema {
 			current_step INT UNSIGNED NOT NULL DEFAULT 0,
 			next_run_at DATETIME NULL,
 			created_at DATETIME NULL,
+			source VARCHAR(30) NOT NULL DEFAULT '',
 			PRIMARY KEY  (id),
 			KEY flow_id (flow_id),
 			KEY customer_email (customer_email),

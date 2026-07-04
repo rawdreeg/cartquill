@@ -31,4 +31,21 @@ final class WooCustomerActivity implements CustomerActivity {
 
 		return ! empty( $orders );
 	}
+
+	public function order_count( string $email ): int {
+		if ( ! function_exists( 'wc_get_orders' ) ) {
+			return 0;
+		}
+
+		$orders = \wc_get_orders(
+			array(
+				'billing_email' => $email,
+				'limit'         => -1,
+				'return'        => 'ids',
+				'status'        => array( 'wc-processing', 'wc-completed', 'wc-on-hold', 'wc-pending' ),
+			)
+		);
+
+		return is_array( $orders ) ? count( $orders ) : 0;
+	}
 }

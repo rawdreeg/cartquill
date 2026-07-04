@@ -21,6 +21,8 @@ use FlowForge\Persistence\FlowRecord;
 final class DefaultFlows {
 
 	public const TYPE_ABANDONED_CART = 'abandoned_cart';
+	public const TYPE_WELCOME        = 'welcome';
+	public const TYPE_POST_PURCHASE  = 'post_purchase';
 
 	/**
 	 * The default abandoned-cart flow: a nudge at t+1h and a follow-up at t+24h,
@@ -49,6 +51,60 @@ final class DefaultFlows {
 					subject: 'Still thinking it over?',
 					body: '<p>Your cart at {{ store_name }} is still waiting. Here to help if you have questions.</p>',
 					conditions: $exit,
+				),
+			),
+		);
+	}
+
+	/**
+	 * The default welcome flow: an immediate hello and a t+3d follow-up.
+	 *
+	 * @param string $status Initial status (defaults to draft).
+	 */
+	public static function welcome( string $status = FlowRecord::STATUS_DRAFT ): FlowRecord {
+		return new FlowRecord(
+			id: null,
+			name: 'Welcome',
+			type: self::TYPE_WELCOME,
+			status: $status,
+			source: FlowRecord::SOURCE_TEMPLATE,
+			steps: array(
+				new FlowStep(
+					delay: 0, // immediate
+					subject: 'Welcome to {{ store_name }}',
+					body: '<p>Thanks for joining {{ store_name }}! We are glad you are here.</p>',
+				),
+				new FlowStep(
+					delay: 259200, // t+3d
+					subject: 'Getting the most out of {{ store_name }}',
+					body: '<p>A few favourites and tips to help you get started.</p>',
+				),
+			),
+		);
+	}
+
+	/**
+	 * The default post-purchase flow: an immediate thank-you and a t+14d cross-sell.
+	 *
+	 * @param string $status Initial status (defaults to draft).
+	 */
+	public static function post_purchase( string $status = FlowRecord::STATUS_DRAFT ): FlowRecord {
+		return new FlowRecord(
+			id: null,
+			name: 'Post-purchase',
+			type: self::TYPE_POST_PURCHASE,
+			status: $status,
+			source: FlowRecord::SOURCE_TEMPLATE,
+			steps: array(
+				new FlowStep(
+					delay: 0, // t+0
+					subject: 'Thanks for your order',
+					body: '<p>Thanks for shopping with {{ store_name }}. Your order is on its way.</p>',
+				),
+				new FlowStep(
+					delay: 1209600, // t+14d
+					subject: 'You might also like…',
+					body: '<p>Based on your order, here are a few things other customers love.</p>',
 				),
 			),
 		);
