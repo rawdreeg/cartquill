@@ -1,0 +1,66 @@
+<?php
+/**
+ * Encrypted storage for the customer's Resend credentials + sending domain.
+ *
+ * @package FlowForge
+ */
+
+declare(strict_types=1);
+
+namespace FlowForge\Deliverability;
+
+use FlowForge\Security\Crypto;
+
+/**
+ * Persists the ESP config in a wp_option, with the API key encrypted at rest via
+ * {@see Crypto} (locked rule: credentials never touch the database in the clear).
+ * The sending domain is not secret and is stored plainly. Reading a key that
+ * fails to decrypt (rotated site salt, tampering) yields an empty string, so the
+ * add-on degrades to "not configured" rather than sending with a broken key.
+ */
+final class EspSettings {
+
+	public const OPTION = 'flowforge_esp';
+
+	public function __construct( private readonly Crypto $crypto ) {}
+
+	public function api_key(): string {
+		$data = $this->data();
+		if ( empty( $data['api_key'] ) ) {
+			return '';
+		}
+		return (string) ( $this->crypto->decrypt( (string) $data['api_key'] ) ?? '' );
+	}
+
+	public function set_api_key( string $key ): void {
+		$data = $this->data();
+		if ( '' === $key ) {
+			unset( $data['api_key'] );
+		} else {
+			$data['api_key'] = $this->crypto->encrypt( $key );
+		}
+		\update_option( self::OPTION, $data );
+	}
+
+	public function domain(): string {
+		return (string) ( $this->data()['domain'] ?? '' );
+	}
+
+	public function set_domain( string $domain ): void {
+		$data           = $this->data();
+		$data['domain'] = $domain;
+		\update_option( self::OPTION, $data );
+	}
+
+	public function has_key(): bool {
+		return '' !== $this->api_key();
+	}
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function data(): array {
+		$data = \get_option( self::OPTION, array() );
+		return is_array( $data ) ? $data : array();
+	}
+}
