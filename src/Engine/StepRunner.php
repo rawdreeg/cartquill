@@ -74,6 +74,12 @@ final class StepRunner {
 			return;
 		}
 
+		// Suppression is the first thing every send checks (locked order).
+		if ( $this->suppression->is_suppressed( $enrollment->customer_email ) ) {
+			$this->enrollments->save( $enrollment->with_status( EnrollmentRecord::STATUS_UNSUBSCRIBED ) );
+			return;
+		}
+
 		$decision = $this->conditions->decide( $step, $enrollment );
 		if ( ConditionEvaluator::EXIT === $decision ) {
 			$this->enrollments->save( $enrollment->with_status( EnrollmentRecord::STATUS_EXITED ) );
@@ -85,9 +91,20 @@ final class StepRunner {
 			return;
 		}
 
-		// Suppression is the first thing a real send checks.
-		if ( $this->suppression->is_suppressed( $enrollment->customer_email ) ) {
-			$this->enrollments->save( $enrollment->with_status( EnrollmentRecord::STATUS_UNSUBSCRIBED ) );
+		// Reserve the (enrollment, step) slot atomically before sending. If a
+		// concurrent worker already claimed it, abort — no double-send.
+		$claimed = $this->messages->claim(
+			new MessageRecord(
+				id: null,
+				enrollment_id: $enrollment_id,
+				flow_id: $definition->id,
+				step_index: $step_index,
+				recipient: $enrollment->customer_email,
+				sender: $this->sender->key(),
+				status: MessageRecord::STATUS_QUEUED,
+			)
+		);
+		if ( null === $claimed ) {
 			return;
 		}
 
@@ -102,16 +119,10 @@ final class StepRunner {
 		$result = $this->sender->send( $message );
 
 		$this->messages->save(
-			new MessageRecord(
-				id: null,
-				enrollment_id: $enrollment_id,
-				flow_id: $definition->id,
-				step_index: $step_index,
-				recipient: $enrollment->customer_email,
-				sender: $this->sender->key(),
-				status: $result->is_accepted() ? MessageRecord::STATUS_SENT : MessageRecord::STATUS_FAILED,
-				external_id: $result->external_id,
-				sent_at: $this->clock->now_mysql(),
+			$claimed->with_result(
+				$result->is_accepted() ? MessageRecord::STATUS_SENT : MessageRecord::STATUS_FAILED,
+				$result->external_id,
+				$this->clock->now_mysql(),
 			)
 		);
 

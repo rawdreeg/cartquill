@@ -21,6 +21,16 @@ interface MessageRepository {
 	public function save( MessageRecord $record ): MessageRecord;
 
 	/**
+	 * Atomically reserve the (enrollment, step) slot before sending.
+	 *
+	 * Inserts the record relying on the unique (enrollment_id, step_index)
+	 * index. Returns the stored record (id populated) on success, or null if
+	 * the slot is already taken — the pre-send lock that makes double-sends
+	 * impossible even under concurrent workers or retries.
+	 */
+	public function claim( MessageRecord $record ): ?MessageRecord;
+
+	/**
 	 * Fetch a record by id, or null if it does not exist.
 	 */
 	public function find( int $id ): ?MessageRecord;

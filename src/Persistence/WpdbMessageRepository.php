@@ -42,6 +42,35 @@ final class WpdbMessageRepository implements MessageRepository {
 		return $record->with_id( (int) $wpdb->insert_id );
 	}
 
+	public function claim( MessageRecord $record ): ?MessageRecord {
+		global $wpdb;
+		$table = Schema::messages_table();
+
+		$data = array(
+			'enrollment_id' => $record->enrollment_id,
+			'flow_id'       => $record->flow_id,
+			'step_index'    => $record->step_index,
+			'recipient'     => $record->recipient,
+			'sender'        => $record->sender,
+			'external_id'   => $record->external_id,
+			'status'        => $record->status,
+			'sent_at'       => $record->sent_at,
+		);
+		$formats = array( '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s' );
+
+		// Rely on the unique (enrollment_id, step_index) index as a lock: a
+		// concurrent worker's insert fails here, so only one send ever happens.
+		$suppress = $wpdb->suppress_errors( true );
+		$inserted = $wpdb->insert( $table, $data, $formats );
+		$wpdb->suppress_errors( $suppress );
+
+		if ( false === $inserted ) {
+			return null; // Duplicate key (or error) — slot already claimed.
+		}
+
+		return $record->with_id( (int) $wpdb->insert_id );
+	}
+
 	public function find( int $id ): ?MessageRecord {
 		global $wpdb;
 		$table = Schema::messages_table();

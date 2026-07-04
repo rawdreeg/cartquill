@@ -186,4 +186,36 @@ final class EngineTest extends TestCase {
 			$this->messages->all()[0]->status
 		);
 	}
+
+	public function test_a_pre_claimed_slot_blocks_the_send(): void {
+		// Simulate a concurrent worker that already reserved (enrollment, step 0).
+		$flow       = $this->active_flow( array( new FlowStep( 0, 'Hi', 'body' ) ) );
+		$enrollment = $this->enroller->enroll( $flow, 'buyer@example.com' );
+		$id         = (int) $enrollment->id;
+
+		$this->messages->claim(
+			new MessageRecord( null, $id, (int) $flow->id, 0, 'buyer@example.com', 'other-worker', MessageRecord::STATUS_QUEUED )
+		);
+
+		$this->runner->run_step( $id, 0 );
+
+		$this->assertSame( 0, $this->sender->count(), 'claim lost to the other worker; no send' );
+	}
+
+	public function test_suppression_wins_over_conversion_ordering(): void {
+		// A customer who both unsubscribed and converted terminates as
+		// UNSUBSCRIBED, because suppression is checked first (locked order).
+		$this->suppression->suppress( 'buyer@example.com' );
+		$this->activity->record_order( 'buyer@example.com', self::T0 + 10 );
+
+		$flow = $this->active_flow(
+			array( new FlowStep( 0, 'Hi', 'body', array( array( 'type' => 'exit_if_ordered' ) ) ) )
+		);
+		$this->enroller->enroll( $flow, 'buyer@example.com' );
+
+		$this->tick();
+
+		$this->assertSame( 0, $this->sender->count() );
+		$this->assertSame( EnrollmentRecord::STATUS_UNSUBSCRIBED, $this->enrollments->all()[0]->status );
+	}
 }

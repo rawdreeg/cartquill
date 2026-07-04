@@ -45,6 +45,14 @@ final class InMemoryMessageRepository implements MessageRepository {
 		return $stored;
 	}
 
+	public function claim( MessageRecord $record ): ?MessageRecord {
+		$key = $this->unique_key( $record->enrollment_id, $record->step_index );
+		if ( null !== $key && isset( $this->unique[ $key ] ) ) {
+			return null; // Slot already taken.
+		}
+		return $this->save( $record );
+	}
+
 	public function find( int $id ): ?MessageRecord {
 		return $this->records[ $id ] ?? null;
 	}

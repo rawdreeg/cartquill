@@ -55,16 +55,18 @@ final class MessageComposer {
 		return '' !== $from ? 'mailto:' . $from . '?subject=unsubscribe' : '';
 	}
 
+	/**
+	 * Append an unsubscribe footer to every email. When an unsubscribe target
+	 * exists it is a link; otherwise a plain-text notice still guarantees the
+	 * message visibly carries an unsubscribe, honoring the locked compliance
+	 * rule even if the from-address is unconfigured.
+	 */
 	private function with_unsubscribe_footer( string $body, string $unsubscribe ): string {
-		if ( '' === $unsubscribe ) {
-			return $body;
-		}
+		$notice = '' !== $unsubscribe
+			? sprintf( '<a href="%s">Unsubscribe</a> from these emails.', $unsubscribe )
+			: 'To unsubscribe, reply to this email with &ldquo;unsubscribe&rdquo;.';
 
-		$footer = sprintf(
-			'<p style="font-size:12px;color:#888;margin-top:24px">'
-				. '<a href="%s">Unsubscribe</a> from these emails.</p>',
-			$unsubscribe
-		);
+		$footer = '<p style="font-size:12px;color:#888;margin-top:24px">' . $notice . '</p>';
 
 		return $body . "\n" . $footer;
 	}
