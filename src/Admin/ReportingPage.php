@@ -129,8 +129,8 @@ final class ReportingPage {
 			<?php if ( $deliverability ) : ?>
 				<div class="notice notice-success inline" style="margin-top:16px">
 					<p>
-						<strong><?php echo \esc_html__( 'Delivery confirmed.', 'flowforge' ); ?></strong>
-						<?php echo \esc_html__( 'Delivered, bounce, and complaint data comes from your ESP’s webhooks. Bounced and complained addresses are automatically suppressed.', 'flowforge' ); ?>
+						<strong><?php echo \esc_html__( 'Delivery tracking active.', 'flowforge' ); ?></strong>
+						<?php echo \esc_html__( 'Delivered, bounce, and complaint data populates here as your ESP sends webhook events. Bounced and complained addresses are automatically suppressed.', 'flowforge' ); ?>
 					</p>
 				</div>
 			<?php else : ?>

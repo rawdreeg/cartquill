@@ -15,6 +15,7 @@ use FlowForge\Licensing\License;
 use FlowForge\Licensing\Plans;
 use FlowForge\Persistence\MessageRepository;
 use FlowForge\Sender\SenderRegistry;
+use FlowForge\Support\SystemClock;
 
 /**
  * Wires itself in only when the Deliverability plan is active. Registers
@@ -55,10 +56,11 @@ final class DeliverabilityAddon {
 		}
 		( new DeliverabilityPage( $this->esp ) )->register();
 
-		// Ingest Resend delivery webhooks once a signing secret is configured.
+		// Ingest Resend delivery webhooks once a signing secret is configured. A
+		// real clock enables Svix replay-window enforcement at runtime.
 		if ( $this->esp->has_webhook_secret() ) {
 			( new WebhookEndpoint(
-				new ResendWebhookVerifier( $this->esp->webhook_secret() ),
+				new ResendWebhookVerifier( $this->esp->webhook_secret(), new SystemClock() ),
 				new WebhookProcessor( $this->messages, $this->suppression ),
 			) )->register();
 		}

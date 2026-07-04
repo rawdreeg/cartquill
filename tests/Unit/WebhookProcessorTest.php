@@ -100,6 +100,18 @@ final class WebhookProcessorTest extends TestCase {
 		$this->assertTrue( $this->suppression->is_suppressed( 'ghost@example.com' ), 'suppress even without a matching message row' );
 	}
 
+	public function test_a_late_positive_event_never_resurrects_a_bounced_message(): void {
+		$message = $this->sent_message( 'resend-7', 'dead@example.com' );
+		$this->processor->process( $this->event( 'email.bounced', array( 'email_id' => 'resend-7', 'to' => array( 'dead@example.com' ) ) ) );
+
+		// A delivered/opened event arriving after the bounce must not overwrite it.
+		$this->processor->process( $this->event( 'email.delivered', array( 'email_id' => 'resend-7' ) ) );
+		$this->processor->process( $this->event( 'email.opened', array( 'email_id' => 'resend-7' ) ) );
+
+		$this->assertSame( MessageRecord::STATUS_BOUNCED, $this->messages->find( (int) $message->id )->status );
+		$this->assertTrue( $this->suppression->is_suppressed( 'dead@example.com' ) );
+	}
+
 	public function test_unknown_event_type_is_ignored(): void {
 		$message = $this->sent_message( 'resend-6' );
 

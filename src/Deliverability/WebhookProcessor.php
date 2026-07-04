@@ -79,8 +79,13 @@ final class WebhookProcessor {
 			return true;
 		}
 
-		// Positive lifecycle event: advance the status but never regress it.
-		if ( null !== $message && null !== $message->id && $this->advances( $message->status, $status ) ) {
+		// Positive lifecycle event: advance the status but never regress it, and
+		// never resurrect a message that already bounced or complained (those are
+		// terminal — a late delivered/opened event must not overwrite them).
+		if ( null !== $message && null !== $message->id
+			&& ! in_array( $message->status, self::SUPPRESSING, true )
+			&& $this->advances( $message->status, $status )
+		) {
 			$this->messages->update_status( $message->id, $status );
 		}
 		return true;

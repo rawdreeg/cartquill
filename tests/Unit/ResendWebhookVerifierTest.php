@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace FlowForge\Tests\Unit;
 
 use FlowForge\Deliverability\ResendWebhookVerifier;
+use FlowForge\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class ResendWebhookVerifierTest extends TestCase {
@@ -64,6 +65,21 @@ final class ResendWebhookVerifierTest extends TestCase {
 
 		$this->assertFalse( $verifier->verify( $payload, array() ), 'unsigned payloads are rejected' );
 		$this->assertFalse( $verifier->verify( $payload, array( 'svix-id' => 'msg_2b' ) ), 'partial headers are rejected' );
+	}
+
+	public function test_accepts_a_fresh_timestamp_within_tolerance(): void {
+		$payload  = '{"type":"email.delivered"}';
+		$verifier = new ResendWebhookVerifier( self::SECRET, new FixedClock( 1_700_000_030 ), 300 );
+
+		$this->assertTrue( $verifier->verify( $payload, $this->signed_headers( $payload ) ) );
+	}
+
+	public function test_rejects_a_replayed_stale_timestamp(): void {
+		$payload  = '{"type":"email.delivered"}';
+		// The signed timestamp is 1700000000; now is well beyond the 300s window.
+		$verifier = new ResendWebhookVerifier( self::SECRET, new FixedClock( 1_700_100_000 ), 300 );
+
+		$this->assertFalse( $verifier->verify( $payload, $this->signed_headers( $payload ) ), 'a validly-signed but stale replay is rejected' );
 	}
 
 	public function test_accepts_when_header_lists_multiple_versions(): void {

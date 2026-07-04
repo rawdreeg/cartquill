@@ -61,12 +61,16 @@ final class InMemoryMessageRepository implements MessageRepository {
 		if ( '' === $external_id ) {
 			return null;
 		}
+		// Newest match wins, matching the wpdb impl's ORDER BY id DESC.
+		$found = null;
 		foreach ( $this->records as $record ) {
-			if ( $external_id === $record->external_id ) {
-				return $record;
+			if ( $external_id === $record->external_id
+				&& ( null === $found || (int) $record->id > (int) $found->id )
+			) {
+				$found = $record;
 			}
 		}
-		return null;
+		return $found;
 	}
 
 	public function update_status( int $id, string $status ): void {
