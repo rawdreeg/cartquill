@@ -109,13 +109,21 @@ final class Plugin {
 		$senders = new SenderRegistry( 'wp_mail' );
 		$senders->register( new WpMailSender() );
 		/**
-		 * Add-ons register senders and other capabilities here (license-gated).
+		 * Sender add-ons register their transports here (license-gated).
 		 *
 		 * @param SenderRegistry $senders The sender registry.
 		 * @param License        $license The licensing gate.
 		 */
 		\do_action( 'flowforge_register_senders', $senders, $license );
 		$senders->set_active( (string) \apply_filters( 'flowforge_active_sender', 'wp_mail' ) );
+
+		/**
+		 * General add-on registration point (e.g. the AI Flow Generation add-on,
+		 * which is not a sender). Add-ons check $license before wiring in.
+		 *
+		 * @param License $license The licensing gate.
+		 */
+		\do_action( 'flowforge_register_addons', $license );
 
 		$runner = new StepRunner(
 			$flows,

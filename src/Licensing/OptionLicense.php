@@ -17,6 +17,11 @@ namespace FlowForge\Licensing;
  * validates keys against the store). The `flowforge_plan_active` filter is the
  * seam where the Freemius SDK overrides this — until then, entering a key marks
  * the plan active locally so the add-ons can be developed and demoed.
+ *
+ * Note: these are *entitlement* keys (they identify a purchase), not ESP send
+ * credentials. They are short-lived scaffold state that Freemius replaces, so
+ * they are stored plainly here; the send-credential encryption the data model
+ * mandates applies to the Deliverability add-on's ESP key, not to this.
  */
 final class OptionLicense implements License {
 
