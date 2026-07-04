@@ -1,0 +1,118 @@
+<?php
+/**
+ * The flow editor transform, and that an edit is honored at send time.
+ *
+ * @package FlowForge
+ */
+
+declare(strict_types=1);
+
+namespace FlowForge\Tests\Unit;
+
+use FlowForge\Compliance\ArraySuppressionList;
+use FlowForge\Engine\ConditionEvaluator;
+use FlowForge\Engine\Enroller;
+use FlowForge\Engine\MessageComposer;
+use FlowForge\Engine\StepRunner;
+use FlowForge\Flow\FlowEditor;
+use FlowForge\Flow\FlowInstaller;
+use FlowForge\Flow\FlowLibrary;
+use FlowForge\Flow\DefaultFlows;
+use FlowForge\Flow\Renderer;
+use FlowForge\Persistence\FlowRecord;
+use FlowForge\Persistence\InMemoryEnrollmentRepository;
+use FlowForge\Persistence\InMemoryFlowRepository;
+use FlowForge\Persistence\InMemoryMessageRepository;
+use FlowForge\Scheduling\ArrayScheduler;
+use FlowForge\Sender\FakeSender;
+use FlowForge\Settings\ArraySettings;
+use FlowForge\Support\FixedClock;
+use FlowForge\Tests\Fake\FakeCustomerActivity;
+use PHPUnit\Framework\TestCase;
+
+final class FlowEditorTest extends TestCase {
+
+	public function test_apply_updates_name_status_and_steps(): void {
+		$flow    = DefaultFlows::welcome()->with_id( 1 );
+		$updated = ( new FlowEditor() )->apply(
+			$flow,
+			array(
+				'name'   => 'My welcome',
+				'status' => 'active',
+				'steps'  => array(
+					array( 'delay' => 0, 'subject' => 'Hi there', 'body' => '<p>Edited</p>', 'exit_if_ordered' => '1' ),
+				),
+			)
+		);
+
+		$this->assertSame( 'My welcome', $updated->name );
+		$this->assertTrue( $updated->is_active() );
+		$this->assertCount( 1, $updated->steps );
+		$this->assertSame( 'Hi there', $updated->steps[0]->subject );
+		$this->assertSame( array( array( 'type' => 'exit_if_ordered' ) ), $updated->steps[0]->conditions );
+		$this->assertSame( 1, $updated->id, 'id/type/source preserved' );
+		$this->assertSame( DefaultFlows::TYPE_WELCOME, $updated->type );
+	}
+
+	public function test_apply_keeps_existing_steps_when_none_submitted(): void {
+		$flow    = DefaultFlows::welcome()->with_id( 1 );
+		$updated = ( new FlowEditor() )->apply( $flow, array( 'name' => 'Renamed' ) );
+
+		$this->assertCount( 2, $updated->steps );
+		$this->assertSame( 'Renamed', $updated->name );
+	}
+
+	public function test_apply_ignores_an_invalid_status(): void {
+		$flow    = DefaultFlows::welcome( FlowRecord::STATUS_DRAFT )->with_id( 1 );
+		$updated = ( new FlowEditor() )->apply( $flow, array( 'status' => 'bogus' ) );
+		$this->assertSame( FlowRecord::STATUS_DRAFT, $updated->status );
+	}
+
+	public function test_install_activate_edit_is_honored_at_send_time(): void {
+		$flows       = new InMemoryFlowRepository();
+		$enrollments = new InMemoryEnrollmentRepository();
+		$messages    = new InMemoryMessageRepository();
+		$sender      = new FakeSender();
+		$scheduler   = new ArrayScheduler();
+		$clock       = new FixedClock( 1_700_000_000 );
+
+		$installer = new FlowInstaller( new FlowLibrary(), $flows );
+		$editor    = new FlowEditor();
+		$enroller  = new Enroller( $enrollments, $scheduler, $clock );
+		$runner    = new StepRunner(
+			$flows,
+			$enrollments,
+			$messages,
+			new MessageComposer( new Renderer(), new ArraySettings( 'Acme', 'hello@acme.test' ) ),
+			$sender,
+			new ArraySuppressionList(),
+			new ConditionEvaluator( new FakeCustomerActivity() ),
+			$scheduler,
+			$clock,
+		);
+
+		// Install (draft): enrollment is a no-op until it is activated.
+		$flow = $installer->install( DefaultFlows::TYPE_WELCOME );
+		$this->assertNull( $enroller->enroll( $flow, 'buyer@example.com' ), 'draft flow does not enroll' );
+
+		// Edit the first step's copy and activate.
+		$edited = $editor->apply(
+			$flow,
+			array(
+				'status' => 'active',
+				'steps'  => array(
+					array( 'delay' => 0, 'subject' => 'Custom subject', 'body' => '<p>Custom body</p>' ),
+				),
+			)
+		);
+		$flows->save( $edited );
+
+		// Now enrollment works and the edited copy is what gets sent.
+		$enroller->enroll( $flows->find( (int) $flow->id ), 'buyer@example.com' );
+		$scheduler->run_due( $clock->now(), fn( int $e, int $s ) => $runner->run_step( $e, $s ) );
+
+		$this->assertSame( 1, $sender->count() );
+		$this->assertSame( 'Custom subject', $sender->last()->subject );
+		$this->assertStringContainsString( 'Custom body', $sender->last()->body );
+	}
+}

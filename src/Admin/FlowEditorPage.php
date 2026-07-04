@@ -1,0 +1,156 @@
+<?php
+/**
+ * Flow editor admin screen: edit steps, delays, subjects, body, conditions.
+ *
+ * @package FlowForge
+ */
+
+declare(strict_types=1);
+
+namespace FlowForge\Admin;
+
+use FlowForge\Flow\FlowEditor;
+use FlowForge\Persistence\FlowRecord;
+use FlowForge\Persistence\FlowRepository;
+
+/**
+ * A hidden submenu page reached from the flow list. Renders a form for the
+ * flow's name, status and per-step fields; on save it hands the posted data to
+ * FlowEditor (the tested transformation) and persists. The engine reads the
+ * flow fresh on each step, so edits take effect on the next send.
+ */
+final class FlowEditorPage {
+
+	private const PARENT = 'flowforge';
+	public const SLUG    = 'flowforge-flow-edit';
+
+	public function __construct(
+		private readonly FlowRepository $flows,
+		private readonly FlowEditor $editor,
+	) {}
+
+	public function register(): void {
+		\add_action( 'admin_menu', array( $this, 'add_menu' ) );
+		\add_action( 'admin_post_flowforge_save_flow', array( $this, 'handle_save' ) );
+	}
+
+	public function add_menu(): void {
+		\add_submenu_page(
+			'',
+			\__( 'Edit flow', 'flowforge' ),
+			\__( 'Edit flow', 'flowforge' ),
+			'manage_options',
+			self::SLUG,
+			array( $this, 'render' )
+		);
+	}
+
+	public function handle_save(): void {
+		if ( ! \current_user_can( 'manage_options' ) || ! \check_admin_referer( 'flowforge_save_flow' ) ) {
+			\wp_die( \esc_html__( 'Not allowed.', 'flowforge' ) );
+		}
+
+		$id   = isset( $_POST['flow'] ) ? (int) $_POST['flow'] : 0;
+		$flow = $this->flows->find( $id );
+		if ( null !== $flow ) {
+			// wp_unslash the posted step content; FlowEditor sanitizes shape.
+			$input = array(
+				'name'   => isset( $_POST['name'] ) ? \sanitize_text_field( \wp_unslash( $_POST['name'] ) ) : $flow->name,
+				'status' => isset( $_POST['status'] ) ? \sanitize_text_field( \wp_unslash( $_POST['status'] ) ) : $flow->status,
+				'steps'  => $this->posted_steps(),
+			);
+			$this->flows->save( $this->editor->apply( $flow, $input ) );
+		}
+
+		\wp_safe_redirect( \admin_url( 'admin.php?page=' . self::SLUG . '&flow=' . $id . '&updated=1' ) );
+		exit;
+	}
+
+	/**
+	 * @return list<array<string, mixed>>
+	 */
+	private function posted_steps(): array {
+		$steps = array();
+		$raw   = isset( $_POST['steps'] ) && is_array( $_POST['steps'] ) ? \wp_unslash( $_POST['steps'] ) : array(); // phpcs:ignore
+		foreach ( $raw as $step ) {
+			$step    = (array) $step;
+			$steps[] = array(
+				'delay'           => (int) ( $step['delay'] ?? 0 ),
+				'subject'         => \sanitize_text_field( (string) ( $step['subject'] ?? '' ) ),
+				'body'            => \wp_kses_post( (string) ( $step['body'] ?? '' ) ),
+				'exit_if_ordered' => ! empty( $step['exit_if_ordered'] ),
+			);
+		}
+		return $steps;
+	}
+
+	public function render(): void {
+		if ( ! \current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$id   = isset( $_GET['flow'] ) ? (int) $_GET['flow'] : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$flow = $this->flows->find( $id );
+		if ( null === $flow ) {
+			echo '<div class="wrap"><p>' . \esc_html__( 'Flow not found.', 'flowforge' ) . '</p></div>';
+			return;
+		}
+		?>
+		<div class="wrap">
+			<h1><?php echo \esc_html__( 'Edit flow', 'flowforge' ); ?></h1>
+			<?php if ( isset( $_GET['updated'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+				<div class="notice notice-success"><p><?php echo \esc_html__( 'Flow saved.', 'flowforge' ); ?></p></div>
+			<?php endif; ?>
+
+			<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
+				<?php \wp_nonce_field( 'flowforge_save_flow' ); ?>
+				<input type="hidden" name="action" value="flowforge_save_flow" />
+				<input type="hidden" name="flow" value="<?php echo (int) $flow->id; ?>" />
+
+				<table class="form-table">
+					<tr>
+						<th><label for="ff-name"><?php echo \esc_html__( 'Name', 'flowforge' ); ?></label></th>
+						<td><input id="ff-name" type="text" name="name" class="regular-text" value="<?php echo \esc_attr( $flow->name ); ?>" /></td>
+					</tr>
+					<tr>
+						<th><?php echo \esc_html__( 'Status', 'flowforge' ); ?></th>
+						<td>
+							<select name="status">
+								<?php foreach ( array( FlowRecord::STATUS_DRAFT, FlowRecord::STATUS_ACTIVE, FlowRecord::STATUS_PAUSED ) as $status ) : ?>
+									<option value="<?php echo \esc_attr( $status ); ?>" <?php \selected( $flow->status, $status ); ?>><?php echo \esc_html( $status ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php echo \esc_html__( 'Steps', 'flowforge' ); ?></h2>
+				<?php foreach ( $flow->steps as $i => $step ) : ?>
+					<fieldset style="border:1px solid #ccd0d4;padding:12px;margin-bottom:12px">
+						<legend><?php printf( \esc_html__( 'Step %d', 'flowforge' ), (int) $i + 1 ); ?></legend>
+						<p>
+							<label><?php echo \esc_html__( 'Delay (seconds)', 'flowforge' ); ?><br />
+							<input type="number" min="0" name="steps[<?php echo (int) $i; ?>][delay]" value="<?php echo (int) $step->delay; ?>" /></label>
+						</p>
+						<p>
+							<label style="display:block"><?php echo \esc_html__( 'Subject', 'flowforge' ); ?><br />
+							<input type="text" class="large-text" name="steps[<?php echo (int) $i; ?>][subject]" value="<?php echo \esc_attr( $step->subject ); ?>" /></label>
+						</p>
+						<p>
+							<label style="display:block"><?php echo \esc_html__( 'Body', 'flowforge' ); ?><br />
+							<textarea class="large-text" rows="4" name="steps[<?php echo (int) $i; ?>][body]"><?php echo \esc_textarea( $step->body ); ?></textarea></label>
+						</p>
+						<p>
+							<label>
+								<input type="checkbox" name="steps[<?php echo (int) $i; ?>][exit_if_ordered]" value="1" <?php \checked( ! empty( $step->conditions ) ); ?> />
+								<?php echo \esc_html__( 'Exit this flow if the customer places an order', 'flowforge' ); ?>
+							</label>
+						</p>
+					</fieldset>
+				<?php endforeach; ?>
+
+				<?php \submit_button( \__( 'Save flow', 'flowforge' ) ); ?>
+			</form>
+		</div>
+		<?php
+	}
+}
