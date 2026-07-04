@@ -117,6 +117,12 @@ final class FlowEditorPage {
 			<?php if ( isset( $_GET['updated'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
 				<div class="notice notice-success"><p><?php echo \esc_html__( 'Flow saved.', 'flowforge' ); ?></p></div>
 			<?php endif; ?>
+			<?php if ( isset( $_GET['flowforge_ai_rewritten'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+				<div class="notice notice-success"><p><?php echo \esc_html__( 'Step rewritten. Review the draft below before activating.', 'flowforge' ); ?></p></div>
+			<?php endif; ?>
+			<?php if ( isset( $_GET['flowforge_ai_error'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+				<div class="notice notice-error"><p><?php echo \esc_html__( 'Could not rewrite the step (AI unavailable or usage limit reached). Your copy is unchanged.', 'flowforge' ); ?></p></div>
+			<?php endif; ?>
 
 			<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
 				<?php \wp_nonce_field( 'flowforge_save_flow' ); ?>
@@ -177,6 +183,17 @@ final class FlowEditorPage {
 
 				<?php \submit_button( \__( 'Save flow', 'flowforge' ) ); ?>
 			</form>
+
+			<?php
+			/**
+			 * After the editor form: add-ons attach per-step tools here (e.g. the
+			 * AI add-on's "rewrite this step" controls). Rendered outside the main
+			 * form so add-on actions post independently.
+			 *
+			 * @param FlowRecord $flow The flow being edited.
+			 */
+			\do_action( 'flowforge_flow_editor_after_form', $flow );
+			?>
 		</div>
 		<?php
 	}

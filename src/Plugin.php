@@ -16,6 +16,7 @@ use FlowForge\Admin\Onboarding;
 use FlowForge\Admin\OnboardingPage;
 use FlowForge\Admin\ReportingPage;
 use FlowForge\Admin\SettingsPage;
+use FlowForge\Ai\AiAddon;
 use FlowForge\Licensing\OptionLicense;
 use FlowForge\Sender\SenderRegistry;
 use FlowForge\Attribution\Attributor;
@@ -123,6 +124,13 @@ final class Plugin {
 		 *
 		 * @param License $license The licensing gate.
 		 */
+		// Flow library + editor (the library is shared with the AI add-on).
+		$library = new FlowLibrary();
+
+		// AI Flow Generation add-on: listens on the registration hook and only
+		// boots its admin surface + proxy client when the AI plan is active.
+		( new AiAddon( $flows, $library, $license ) )->register();
+
 		\do_action( 'flowforge_register_addons', $license );
 
 		$runner = new StepRunner(
@@ -155,8 +163,7 @@ final class Plugin {
 		( new SettingsPage( $settings ) )->register();
 		( new OnboardingPage( new Onboarding(), $settings ) )->register();
 
-		// Flow library + editor.
-		$library = new FlowLibrary();
+		// Flow library screens ($library built above, shared with the AI add-on).
 		( new FlowLibraryPage( $library, new FlowInstaller( $library, $flows ), $flows ) )->register();
 		( new FlowEditorPage( $flows, new FlowEditor() ) )->register();
 
