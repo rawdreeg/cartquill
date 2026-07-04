@@ -97,22 +97,29 @@ final class Plugin {
 		\add_action(
 			AbandonedCartScanner::HOOK,
 			static function () use ( $scanner ): void {
-				$scanner->scan( AbandonedCartScanner::DEFAULT_THRESHOLD );
+				/** Idle time before a cart counts as abandoned, in seconds. */
+				$threshold = (int) \apply_filters( 'flowforge_abandoned_cart_threshold', AbandonedCartScanner::DEFAULT_THRESHOLD );
+				$scanner->scan( $threshold );
 			}
 		);
-		\add_action( 'init', array( $this, 'schedule_abandoned_cart_scan' ) );
+		\add_action(
+			'init',
+			static function () use ( $clock ): void {
+				self::schedule_abandoned_cart_scan( $clock );
+			}
+		);
 	}
 
 	/**
 	 * Ensure the recurring abandoned-cart scan is scheduled (once).
 	 */
-	public function schedule_abandoned_cart_scan(): void {
+	private static function schedule_abandoned_cart_scan( \FlowForge\Support\Clock $clock ): void {
 		if ( ! function_exists( 'as_has_scheduled_action' ) || ! function_exists( 'as_schedule_recurring_action' ) ) {
 			return;
 		}
 		if ( ! \as_has_scheduled_action( AbandonedCartScanner::HOOK ) ) {
 			\as_schedule_recurring_action(
-				time(),
+				$clock->now(),
 				AbandonedCartScanner::SCAN_INTERVAL,
 				AbandonedCartScanner::HOOK,
 				array(),

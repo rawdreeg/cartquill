@@ -11,7 +11,7 @@ declare(strict_types=1);
 namespace FlowForge\Tests\Unit;
 
 use FlowForge\Engine\Enroller;
-use FlowForge\Flow\FlowStep;
+use FlowForge\Flow\DefaultFlows;
 use FlowForge\Integration\AbandonedCartScanner;
 use FlowForge\Persistence\CartCaptureRecord;
 use FlowForge\Persistence\FlowRecord;
@@ -44,19 +44,8 @@ final class AbandonedCartScannerTest extends TestCase {
 	}
 
 	private function active_cart_flow( string $status = FlowRecord::STATUS_ACTIVE ): void {
-		$this->flows->save(
-			new FlowRecord(
-				id: null,
-				name: 'Abandoned cart',
-				type: AbandonedCartScanner::FLOW_TYPE,
-				status: $status,
-				source: FlowRecord::SOURCE_TEMPLATE,
-				steps: array(
-					new FlowStep( 3600, 't+1h', 'come back', array( array( 'type' => 'exit_if_ordered' ) ) ),
-					new FlowStep( 86400, 't+24h', 'still?', array( array( 'type' => 'exit_if_ordered' ) ) ),
-				),
-			)
-		);
+		// Use the production default definition so step timing is real code.
+		$this->flows->save( DefaultFlows::abandoned_cart( $status ) );
 	}
 
 	/** Capture at T0, then let $seconds pass. */
