@@ -57,6 +57,16 @@ final class InMemoryMessageRepository implements MessageRepository {
 		return $this->records[ $id ] ?? null;
 	}
 
+	public function update_status( int $id, string $status ): void {
+		if ( isset( $this->records[ $id ] ) ) {
+			$this->records[ $id ] = $this->records[ $id ]->with_result(
+				$status,
+				$this->records[ $id ]->external_id,
+				$this->records[ $id ]->sent_at,
+			);
+		}
+	}
+
 	public function exists_for_step( int $enrollment_id, int $step_index ): bool {
 		return isset( $this->unique[ $enrollment_id . ':' . $step_index ] );
 	}
