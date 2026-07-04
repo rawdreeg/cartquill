@@ -84,8 +84,6 @@ final class OnboardingPage {
 
 		$skip = isset( $_POST['skip'] );
 
-		// Persist the from-identity if provided (unless the user is skipping),
-		// then mark onboarding complete either way so it never re-appears.
 		if ( ! $skip && isset( $_POST['from_name'], $_POST['from_email'] ) ) {
 			$this->settings->update(
 				\sanitize_text_field( \wp_unslash( $_POST['from_name'] ) ),

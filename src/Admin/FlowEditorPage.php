@@ -55,7 +55,6 @@ final class FlowEditorPage {
 		if ( null !== $flow ) {
 			$steps = $this->posted_steps();
 
-			// "Add step" appends a blank step for the user to fill in.
 			if ( isset( $_POST['add_step'] ) ) {
 				$steps[] = array( 'delay' => 0, 'subject' => '', 'body' => '', 'exit_if_ordered' => false );
 			}
