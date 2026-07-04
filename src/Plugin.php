@@ -18,10 +18,12 @@ use FlowForge\Engine\MessageComposer;
 use FlowForge\Engine\StepRunner;
 use FlowForge\Engine\WooCustomerActivity;
 use FlowForge\Flow\Renderer;
+use FlowForge\Engine\WooLapsedCustomerFinder;
 use FlowForge\Integration\AbandonedCartScanner;
 use FlowForge\Integration\AbandonedCartTracker;
 use FlowForge\Integration\PostPurchaseTrigger;
 use FlowForge\Integration\WelcomeTrigger;
+use FlowForge\Integration\WinBackScanner;
 use FlowForge\Persistence\WpdbCartCaptureStore;
 use FlowForge\Persistence\WpdbEnrollmentRepository;
 use FlowForge\Persistence\WpdbFlowRepository;
@@ -98,38 +100,45 @@ final class Plugin {
 		$captures = new WpdbCartCaptureStore();
 		( new AbandonedCartTracker( $captures, $clock ) )->register();
 
-		$scanner = new AbandonedCartScanner( $captures, $flows, $enroller, $clock );
+		$cart_scanner = new AbandonedCartScanner( $captures, $flows, $enroller, $clock );
 		\add_action(
 			AbandonedCartScanner::HOOK,
-			static function () use ( $scanner ): void {
+			static function () use ( $cart_scanner ): void {
 				/** Idle time before a cart counts as abandoned, in seconds. */
 				$threshold = (int) \apply_filters( 'flowforge_abandoned_cart_threshold', AbandonedCartScanner::DEFAULT_THRESHOLD );
-				$scanner->scan( $threshold );
+				$cart_scanner->scan( $threshold );
 			}
 		);
+
+		// Win-back: enroll lapsed customers on a daily scan.
+		$win_back = new WinBackScanner( new WooLapsedCustomerFinder(), $flows, $enrollments, $enroller, $clock );
+		\add_action(
+			WinBackScanner::HOOK,
+			static function () use ( $win_back ): void {
+				/** How long since the last order before a customer is lapsed, in seconds. */
+				$threshold = (int) \apply_filters( 'flowforge_win_back_threshold', WinBackScanner::DEFAULT_THRESHOLD );
+				$win_back->scan( $threshold );
+			}
+		);
+
 		\add_action(
 			'init',
 			static function () use ( $clock ): void {
-				self::schedule_abandoned_cart_scan( $clock );
+				self::schedule_recurring( AbandonedCartScanner::HOOK, AbandonedCartScanner::SCAN_INTERVAL, $clock );
+				self::schedule_recurring( WinBackScanner::HOOK, WinBackScanner::SCAN_INTERVAL, $clock );
 			}
 		);
 	}
 
 	/**
-	 * Ensure the recurring abandoned-cart scan is scheduled (once).
+	 * Ensure a recurring Action Scheduler action is scheduled (once).
 	 */
-	private static function schedule_abandoned_cart_scan( \FlowForge\Support\Clock $clock ): void {
+	private static function schedule_recurring( string $hook, int $interval, \FlowForge\Support\Clock $clock ): void {
 		if ( ! function_exists( 'as_has_scheduled_action' ) || ! function_exists( 'as_schedule_recurring_action' ) ) {
 			return;
 		}
-		if ( ! \as_has_scheduled_action( AbandonedCartScanner::HOOK ) ) {
-			\as_schedule_recurring_action(
-				$clock->now(),
-				AbandonedCartScanner::SCAN_INTERVAL,
-				AbandonedCartScanner::HOOK,
-				array(),
-				'flowforge'
-			);
+		if ( ! \as_has_scheduled_action( $hook ) ) {
+			\as_schedule_recurring_action( $clock->now(), $interval, $hook, array(), 'flowforge' );
 		}
 	}
 
