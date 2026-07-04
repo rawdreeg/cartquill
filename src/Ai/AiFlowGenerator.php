@@ -65,6 +65,37 @@ final class AiFlowGenerator {
 	}
 
 	/**
+	 * Rewrite/vary the body copy of one step in place, returning a new draft
+	 * record with that step's body replaced. Returns null (leaving the flow
+	 * untouched) when the step is out of range or rewriting is unavailable
+	 * (unlicensed / rate-limited / proxy error). The flow's status is preserved,
+	 * so a varied step still lands in the editor for review — never auto-sent.
+	 */
+	public function rewrite_step( FlowRecord $flow, int $index, string $instruction ): ?FlowRecord {
+		if ( ! isset( $flow->steps[ $index ] ) ) {
+			return null;
+		}
+		$new_body = $this->rewrite( $flow->steps[ $index ]->body, $instruction );
+		if ( null === $new_body ) {
+			return null;
+		}
+
+		$steps           = $flow->steps;
+		$old             = $steps[ $index ];
+		$steps[ $index ] = new FlowStep( $old->delay, $old->subject, $new_body, $old->conditions );
+
+		return new FlowRecord(
+			$flow->id,
+			$flow->name,
+			$flow->type,
+			$flow->status,
+			$flow->source,
+			array_values( $steps ),
+			$flow->created_at,
+		);
+	}
+
+	/**
 	 * Rewrite/vary a single piece of copy. Returns null when unlicensed,
 	 * rate-limited, or the proxy fails — callers keep the original copy.
 	 */

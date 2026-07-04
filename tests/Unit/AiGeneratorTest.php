@@ -131,4 +131,43 @@ final class AiGeneratorTest extends TestCase {
 
 		$this->assertNull( $generator->rewrite( 'Buy now', 'make it friendlier' ) );
 	}
+
+	public function test_rewrite_step_varies_one_step_and_stays_a_draft(): void {
+		[ $generator, $flows ] = $this->generator( new StubProxyClient( self::STEPS ) );
+		$flow                  = $generator->generate( 'abandoned_cart', array() )->flow;
+		$this->assertNotNull( $flow );
+
+		$updated = $generator->rewrite_step( $flow, 1, 'shorter' );
+
+		$this->assertNotNull( $updated );
+		$this->assertSame( FlowRecord::STATUS_DRAFT, $updated->status, 'varied copy stays a draft' );
+		$this->assertSame( 'shorter: Here is 10% off', $updated->steps[1]->body, 'only the targeted step body is rewritten' );
+		$this->assertSame( 'Come back', $updated->steps[0]->body, 'other steps are untouched' );
+		$this->assertSame( 'Still thinking it over?', $updated->steps[1]->subject, 'subject and delay are preserved' );
+		$this->assertSame( 86400, $updated->steps[1]->delay );
+		$this->assertSame( (int) $flow->id, (int) $updated->id, 'edits the same flow record' );
+	}
+
+	public function test_rewrite_step_out_of_range_returns_null(): void {
+		[ $generator ] = $this->generator( new StubProxyClient( self::STEPS ) );
+		$flow          = $generator->generate( 'abandoned_cart', array() )->flow;
+		$this->assertNotNull( $flow );
+
+		$this->assertNull( $generator->rewrite_step( $flow, 9, 'shorter' ) );
+	}
+
+	public function test_rewrite_step_returns_null_without_license(): void {
+		$proxy               = new StubProxyClient( self::STEPS );
+		[ $generator, $flows ] = $this->generator( $proxy, array() );
+		$flow                = new FlowRecord(
+			5,
+			'Draft',
+			'abandoned_cart',
+			FlowRecord::STATUS_DRAFT,
+			FlowRecord::SOURCE_AI,
+			array( new \FlowForge\Flow\FlowStep( 0, 'Hi', 'Original body' ) ),
+		);
+
+		$this->assertNull( $generator->rewrite_step( $flow, 0, 'shorter' ) );
+	}
 }

@@ -69,7 +69,7 @@ final class AiGeneratePage {
 		\wp_safe_redirect(
 			\add_query_arg(
 				'flowforge_ai_error',
-				rawurlencode( $result->status ),
+				$result->status,
 				\admin_url( 'admin.php?page=' . self::SLUG )
 			)
 		);

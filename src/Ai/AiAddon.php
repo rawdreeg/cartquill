@@ -57,5 +57,6 @@ final class AiAddon {
 		);
 
 		( new AiGeneratePage( $generator, $this->library ) )->register();
+		( new AiRewriteController( $generator, $this->flows ) )->register();
 	}
 }
