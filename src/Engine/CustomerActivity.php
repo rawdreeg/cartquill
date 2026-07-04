@@ -22,4 +22,12 @@ interface CustomerActivity {
 	 * Drives exit-on-conversion: if they ordered since enrolling, the flow ends.
 	 */
 	public function has_ordered_since( string $email, int $since ): bool;
+
+	/**
+	 * Total number of orders this customer has placed.
+	 *
+	 * Drives first-order detection for the welcome flow (count of 1 means the
+	 * order that just triggered is their first).
+	 */
+	public function order_count( string $email ): int;
 }

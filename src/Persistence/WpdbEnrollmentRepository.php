@@ -22,8 +22,9 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 			'current_step'   => $record->current_step,
 			'next_run_at'    => $record->next_run_at,
 			'created_at'     => $record->created_at ?? \current_time( 'mysql', true ),
+			'source'         => $record->source,
 		);
-		$formats = array( '%d', '%s', '%s', '%d', '%s', '%s' );
+		$formats = array( '%d', '%s', '%s', '%d', '%s', '%s', '%s' );
 
 		if ( null !== $record->id ) {
 			$wpdb->update( $table, $data, array( 'id' => $record->id ), $formats, array( '%d' ) );
@@ -84,6 +85,7 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 			current_step: (int) $row['current_step'],
 			next_run_at: isset( $row['next_run_at'] ) && null !== $row['next_run_at'] ? (string) $row['next_run_at'] : null,
 			created_at: null !== $row['created_at'] ? (string) $row['created_at'] : null,
+			source: isset( $row['source'] ) ? (string) $row['source'] : '',
 		);
 	}
 }

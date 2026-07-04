@@ -13,13 +13,15 @@ use FlowForge\Admin\SettingsPage;
 use FlowForge\Compliance\WpdbSuppressionList;
 use FlowForge\Engine\ConditionEvaluator;
 use FlowForge\Engine\Enroller;
+use FlowForge\Engine\FlowTypeEnroller;
 use FlowForge\Engine\MessageComposer;
 use FlowForge\Engine\StepRunner;
 use FlowForge\Engine\WooCustomerActivity;
 use FlowForge\Flow\Renderer;
 use FlowForge\Integration\AbandonedCartScanner;
 use FlowForge\Integration\AbandonedCartTracker;
-use FlowForge\Integration\WooOrderTrigger;
+use FlowForge\Integration\PostPurchaseTrigger;
+use FlowForge\Integration\WelcomeTrigger;
 use FlowForge\Persistence\WpdbCartCaptureStore;
 use FlowForge\Persistence\WpdbEnrollmentRepository;
 use FlowForge\Persistence\WpdbFlowRepository;
@@ -61,6 +63,7 @@ final class Plugin {
 		$flows       = new WpdbFlowRepository();
 		$enrollments = new WpdbEnrollmentRepository();
 		$messages    = new WpdbMessageRepository();
+		$activity    = new WooCustomerActivity();
 
 		$runner = new StepRunner(
 			$flows,
@@ -69,7 +72,7 @@ final class Plugin {
 			new MessageComposer( new Renderer(), $settings ),
 			new WpMailSender(),
 			new WpdbSuppressionList(),
-			new ConditionEvaluator( new WooCustomerActivity() ),
+			new ConditionEvaluator( $activity ),
 			$scheduler,
 			$clock,
 		);
@@ -84,9 +87,11 @@ final class Plugin {
 			2
 		);
 
-		$enroller = new Enroller( $enrollments, $scheduler, $clock );
+		$enroller      = new Enroller( $enrollments, $scheduler, $clock );
+		$type_enroller = new FlowTypeEnroller( $flows, $enroller );
 
-		( new WooOrderTrigger( $enroller, $flows ) )->register();
+		( new PostPurchaseTrigger( $type_enroller ) )->register();
+		( new WelcomeTrigger( $type_enroller, $activity ) )->register();
 		( new SettingsPage( $settings ) )->register();
 
 		// Abandoned-cart tracking: capture emails, scan on a recurring tick.

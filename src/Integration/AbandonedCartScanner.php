@@ -58,7 +58,7 @@ final class AbandonedCartScanner {
 
 		foreach ( $this->captures->due( $cutoff ) as $email ) {
 			foreach ( $flows as $flow ) {
-				if ( null !== $this->enroller->enroll( $flow, $email ) ) {
+				if ( null !== $this->enroller->enroll( $flow, $email, 'abandoned_cart' ) ) {
 					++$enrolled;
 				}
 			}
