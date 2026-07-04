@@ -113,7 +113,7 @@ final class Plugin {
 		// Deliverability add-on: registers the Resend sender + domain-auth
 		// wizard when licensed. The ESP API key is encrypted at rest.
 		$esp = new EspSettings( new SodiumCrypto( (string) \wp_salt( 'auth' ) ) );
-		( new DeliverabilityAddon( $esp, $license ) )->register();
+		( new DeliverabilityAddon( $esp, $license, $messages, $suppression ) )->register();
 
 		$senders = new SenderRegistry( 'wp_mail' );
 		$senders->register( new WpMailSender() );
@@ -178,7 +178,7 @@ final class Plugin {
 		// Revenue attribution + reporting dashboard.
 		$attributions = new WpdbAttributionRepository();
 		( new AttributionTrigger( new Attributor( $messages, $attributions ) ) )->register();
-		( new ReportingPage( $flows, $messages, $attributions ) )->register();
+		( new ReportingPage( $flows, $messages, $attributions, $license ) )->register();
 
 		// Abandoned-cart tracking: capture emails, scan on a recurring tick.
 		( new AbandonedCartTracker( $captures, $clock ) )->register();

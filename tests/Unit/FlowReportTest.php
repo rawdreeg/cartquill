@@ -55,6 +55,42 @@ final class FlowReportTest extends TestCase {
 		$this->assertSame( 150.0, $report->total_revenue( $rows ) );
 	}
 
+	public function test_delivery_stats_fold_engagement_into_delivered_and_count_negatives(): void {
+		$messages = new InMemoryMessageRepository();
+		$this->record( $messages, 1, MessageRecord::STATUS_DELIVERED );
+		$this->record( $messages, 1, MessageRecord::STATUS_OPENED );  // opened implies delivered
+		$this->record( $messages, 1, MessageRecord::STATUS_CLICKED ); // clicked implies delivered
+		$this->record( $messages, 1, MessageRecord::STATUS_BOUNCED );
+		$this->record( $messages, 1, MessageRecord::STATUS_COMPLAINED );
+		$this->record( $messages, 1, MessageRecord::STATUS_SENT );    // not yet confirmed
+
+		$delivery = $messages->delivery_stats_by_flow();
+
+		$this->assertSame( 3, $delivery[1]['delivered'], 'delivered/opened/clicked all count as delivered' );
+		$this->assertSame( 1, $delivery[1]['bounced'] );
+		$this->assertSame( 1, $delivery[1]['complained'] );
+	}
+
+	public function test_build_maps_delivery_stats_onto_rows(): void {
+		$flows    = array( $this->flow( 1, 'Welcome' ) );
+		$stats    = array( 1 => array( 'sent' => 10, 'opened' => 4, 'clicked' => 2 ) );
+		$delivery = array( 1 => array( 'delivered' => 9, 'bounced' => 1, 'complained' => 1 ) );
+
+		$rows = ( new FlowReport() )->build( $flows, $stats, array(), $delivery );
+
+		$this->assertSame( 9, $rows[0]->delivered );
+		$this->assertSame( 1, $rows[0]->bounced );
+		$this->assertSame( 1, $rows[0]->complained );
+	}
+
+	public function test_build_defaults_delivery_to_zero_without_the_addon(): void {
+		$rows = ( new FlowReport() )->build( array( $this->flow( 1, 'Welcome' ) ), array(), array() );
+
+		$this->assertSame( 0, $rows[0]->delivered );
+		$this->assertSame( 0, $rows[0]->bounced );
+		$this->assertSame( 0, $rows[0]->complained );
+	}
+
 	private function record( InMemoryMessageRepository $repo, int $flow_id, string $status ): void {
 		static $enrollment = 0;
 		++$enrollment;
