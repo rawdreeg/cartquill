@@ -36,6 +36,11 @@ interface MessageRepository {
 	public function find( int $id ): ?MessageRecord;
 
 	/**
+	 * Update just the lifecycle status of a message (e.g. sent -> opened).
+	 */
+	public function update_status( int $id, string $status ): void;
+
+	/**
 	 * Whether a message has already been recorded for this (enrollment, step).
 	 *
 	 * The engine's idempotency guard: a step that already produced a message is

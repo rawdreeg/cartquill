@@ -32,6 +32,10 @@ use FlowForge\Scheduling\ActionSchedulerScheduler;
 use FlowForge\Sender\WpMailSender;
 use FlowForge\Settings\OptionsSettings;
 use FlowForge\Support\SystemClock;
+use FlowForge\Tracking\SelfHostedLinkTracker;
+use FlowForge\Tracking\Signer;
+use FlowForge\Tracking\TrackingEndpoint;
+use FlowForge\Tracking\TrackingUrls;
 
 /**
  * Composition root. Kept thin: it assembles the tested engine core with its
@@ -67,11 +71,16 @@ final class Plugin {
 		$messages    = new WpdbMessageRepository();
 		$activity    = new WooCustomerActivity();
 
+		// Self-hosted open/click tracking.
+		$signer        = new Signer( (string) \wp_salt( 'auth' ) );
+		$tracking_urls = new TrackingUrls( \home_url( '/' ), $signer );
+		( new TrackingEndpoint( $messages, $signer, $tracking_urls ) )->register();
+
 		$runner = new StepRunner(
 			$flows,
 			$enrollments,
 			$messages,
-			new MessageComposer( new Renderer(), $settings ),
+			new MessageComposer( new Renderer(), $settings, new SelfHostedLinkTracker( $tracking_urls ) ),
 			new WpMailSender(),
 			new WpdbSuppressionList(),
 			new ConditionEvaluator( $activity ),

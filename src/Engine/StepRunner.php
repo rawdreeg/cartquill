@@ -113,7 +113,8 @@ final class StepRunner {
 			$enrollment->customer_email,
 			$definition->id,
 			$step_index,
-			$enrollment_id
+			$enrollment_id,
+			(int) $claimed->id
 		);
 
 		$result = $this->sender->send( $message );
