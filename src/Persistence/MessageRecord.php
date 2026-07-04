@@ -64,4 +64,23 @@ final class MessageRecord {
 			$this->sent_at,
 		);
 	}
+
+	/**
+	 * Return a copy carrying a send outcome (status + external id + sent time).
+	 *
+	 * Used to update a claimed `queued` row once the sender has responded.
+	 */
+	public function with_result( string $status, ?string $external_id, ?string $sent_at ): self {
+		return new self(
+			$this->id,
+			$this->enrollment_id,
+			$this->flow_id,
+			$this->step_index,
+			$this->recipient,
+			$this->sender,
+			$status,
+			$external_id,
+			$sent_at,
+		);
+	}
 }

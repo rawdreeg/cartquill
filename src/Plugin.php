@@ -10,19 +10,27 @@ declare(strict_types=1);
 namespace FlowForge;
 
 use FlowForge\Admin\SettingsPage;
-use FlowForge\Engine\SpineDispatcher;
+use FlowForge\Compliance\WpdbSuppressionList;
+use FlowForge\Engine\ConditionEvaluator;
+use FlowForge\Engine\Enroller;
+use FlowForge\Engine\MessageComposer;
+use FlowForge\Engine\StepRunner;
+use FlowForge\Engine\WooCustomerActivity;
 use FlowForge\Flow\Renderer;
 use FlowForge\Integration\WooOrderTrigger;
 use FlowForge\Persistence\WpdbEnrollmentRepository;
+use FlowForge\Persistence\WpdbFlowRepository;
 use FlowForge\Persistence\WpdbMessageRepository;
+use FlowForge\Scheduling\ActionSchedulerScheduler;
+use FlowForge\Sender\WpMailSender;
 use FlowForge\Settings\OptionsSettings;
 use FlowForge\Support\SystemClock;
 
 /**
- * Composition root. Kept thin: it assembles the tested core (dispatcher,
- * repositories, senders) with their WordPress-backed implementations and hooks
- * them in. If WooCommerce is not active at runtime it shows a notice and does
- * not boot the engine.
+ * Composition root. Kept thin: it assembles the tested engine core with its
+ * WordPress-backed implementations, wires the Action Scheduler hook to the
+ * step runner, and registers triggers. If WooCommerce is not active at runtime
+ * it shows a notice and does not boot the engine.
  */
 final class Plugin {
 
@@ -44,17 +52,38 @@ final class Plugin {
 			return;
 		}
 
-		$settings = new OptionsSettings();
+		$settings    = new OptionsSettings();
+		$clock       = new SystemClock();
+		$scheduler   = new ActionSchedulerScheduler();
+		$flows       = new WpdbFlowRepository();
+		$enrollments = new WpdbEnrollmentRepository();
+		$messages    = new WpdbMessageRepository();
 
-		$dispatcher = new SpineDispatcher(
-			new \FlowForge\Sender\WpMailSender(),
-			new WpdbMessageRepository(),
-			new Renderer(),
-			$settings,
-			new SystemClock(),
+		$runner = new StepRunner(
+			$flows,
+			$enrollments,
+			$messages,
+			new MessageComposer( new Renderer(), $settings ),
+			new WpMailSender(),
+			new WpdbSuppressionList(),
+			new ConditionEvaluator( new WooCustomerActivity() ),
+			$scheduler,
+			$clock,
 		);
 
-		( new WooOrderTrigger( $dispatcher, new WpdbEnrollmentRepository() ) )->register();
+		// Action Scheduler drives every delayed step through this hook.
+		\add_action(
+			ActionSchedulerScheduler::HOOK,
+			static function ( $enrollment_id, $step_index ) use ( $runner ): void {
+				$runner->run_step( (int) $enrollment_id, (int) $step_index );
+			},
+			10,
+			2
+		);
+
+		$enroller = new Enroller( $enrollments, $scheduler, $clock );
+
+		( new WooOrderTrigger( $enroller, $flows ) )->register();
 		( new SettingsPage( $settings ) )->register();
 	}
 

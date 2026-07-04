@@ -41,4 +41,16 @@ final class FlowStep {
 			(array) ( $data['conditions'] ?? array() ),
 		);
 	}
+
+	/**
+	 * @return StepArray
+	 */
+	public function to_array(): array {
+		return array(
+			'delay'      => $this->delay,
+			'subject'    => $this->subject,
+			'body'       => $this->body,
+			'conditions' => $this->conditions,
+		);
+	}
 }
