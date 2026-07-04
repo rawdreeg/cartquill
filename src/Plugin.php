@@ -18,7 +18,7 @@ use FlowForge\Engine\MessageComposer;
 use FlowForge\Engine\StepRunner;
 use FlowForge\Engine\WooCustomerActivity;
 use FlowForge\Flow\Renderer;
-use FlowForge\Engine\WooOrderHistory;
+use FlowForge\Engine\WooLapsedCustomerFinder;
 use FlowForge\Integration\AbandonedCartScanner;
 use FlowForge\Integration\AbandonedCartTracker;
 use FlowForge\Integration\PostPurchaseTrigger;
@@ -111,7 +111,7 @@ final class Plugin {
 		);
 
 		// Win-back: enroll lapsed customers on a daily scan.
-		$win_back = new WinBackScanner( new WooOrderHistory(), $flows, $enrollments, $enroller, $clock );
+		$win_back = new WinBackScanner( new WooLapsedCustomerFinder(), $flows, $enrollments, $enroller, $clock );
 		\add_action(
 			WinBackScanner::HOOK,
 			static function () use ( $win_back ): void {

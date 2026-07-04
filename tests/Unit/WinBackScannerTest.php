@@ -18,7 +18,7 @@ use FlowForge\Persistence\InMemoryEnrollmentRepository;
 use FlowForge\Persistence\InMemoryFlowRepository;
 use FlowForge\Scheduling\ArrayScheduler;
 use FlowForge\Support\FixedClock;
-use FlowForge\Tests\Fake\FakeOrderHistory;
+use FlowForge\Tests\Fake\FakeLapsedCustomerFinder;
 use PHPUnit\Framework\TestCase;
 
 final class WinBackScannerTest extends TestCase {
@@ -27,13 +27,13 @@ final class WinBackScannerTest extends TestCase {
 	private const THRESHOLD = 7776000; // 90 days
 	private const DAY       = 86400;
 
-	private FakeOrderHistory $orders;
+	private FakeLapsedCustomerFinder $orders;
 	private InMemoryFlowRepository $flows;
 	private InMemoryEnrollmentRepository $enrollments;
 	private WinBackScanner $scanner;
 
 	protected function setUp(): void {
-		$this->orders      = new FakeOrderHistory();
+		$this->orders      = new FakeLapsedCustomerFinder();
 		$this->flows       = new InMemoryFlowRepository();
 		$this->enrollments = new InMemoryEnrollmentRepository();
 
@@ -54,6 +54,7 @@ final class WinBackScannerTest extends TestCase {
 		$this->orders->set_last_order( 'lapsed@example.com', self::NOW - self::THRESHOLD - self::DAY ); // 91 days ago
 		$this->orders->set_last_order( 'recent@example.com', self::NOW - ( 10 * self::DAY ) );          // 10 days ago
 		$this->orders->set_last_order( 'edge@example.com', self::NOW - self::THRESHOLD + 60 );          // just under threshold
+		$this->orders->set_last_order( 'exact@example.com', self::NOW - self::THRESHOLD );              // exactly at cutoff — not lapsed
 
 		$enrolled = $this->scanner->scan( self::THRESHOLD );
 

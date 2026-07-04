@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace FlowForge\Integration;
 
 use FlowForge\Engine\Enroller;
-use FlowForge\Engine\OrderHistory;
+use FlowForge\Engine\LapsedCustomerFinder;
 use FlowForge\Flow\DefaultFlows;
 use FlowForge\Persistence\EnrollmentRepository;
 use FlowForge\Persistence\FlowRepository;
@@ -36,7 +36,7 @@ final class WinBackScanner {
 	public const DEFAULT_THRESHOLD = 7776000;
 
 	public function __construct(
-		private readonly OrderHistory $orders,
+		private readonly LapsedCustomerFinder $finder,
 		private readonly FlowRepository $flows,
 		private readonly EnrollmentRepository $enrollments,
 		private readonly Enroller $enroller,
@@ -58,12 +58,7 @@ final class WinBackScanner {
 		$cutoff   = $this->clock->now() - $threshold_seconds;
 		$enrolled = 0;
 
-		foreach ( $this->orders->customer_emails() as $email ) {
-			$last = $this->orders->last_order_at( $email );
-			if ( null === $last || $last >= $cutoff ) {
-				continue; // Never ordered, or ordered recently — not lapsed.
-			}
-
+		foreach ( $this->finder->lapsed_before( $cutoff ) as $email ) {
 			foreach ( $flows as $flow ) {
 				if ( $this->enrollments->has_any( (int) $flow->id, $email ) ) {
 					continue; // Already win-backed for this flow.

@@ -28,7 +28,7 @@ use FlowForge\Sender\FakeSender;
 use FlowForge\Settings\ArraySettings;
 use FlowForge\Support\FixedClock;
 use FlowForge\Tests\Fake\FakeCustomerActivity;
-use FlowForge\Tests\Fake\FakeOrderHistory;
+use FlowForge\Tests\Fake\FakeLapsedCustomerFinder;
 use PHPUnit\Framework\TestCase;
 
 final class WinBackFlowTest extends TestCase {
@@ -54,7 +54,7 @@ final class WinBackFlowTest extends TestCase {
 
 		$flows->save( DefaultFlows::win_back( FlowRecord::STATUS_ACTIVE ) );
 
-		$orders = new FakeOrderHistory();
+		$orders = new FakeLapsedCustomerFinder();
 		$orders->set_last_order( 'lapsed@example.com', self::NOW - self::THRESHOLD - 86400 );
 
 		$enroller      = new Enroller( $this->enrollments, $this->scheduler, $this->clock );
@@ -86,6 +86,12 @@ final class WinBackFlowTest extends TestCase {
 		$this->tick();
 		$this->assertSame( 1, $this->sender->count() );
 		$this->assertSame( 'We miss you at Acme', $this->sender->last()->subject );
+
+		// The t+7d follow-up is actually scheduled (not merely absent later).
+		$pending = $this->scheduler->pending();
+		$this->assertCount( 1, $pending );
+		$this->assertSame( 1, $pending[0]['step_index'] );
+		$this->assertSame( self::NOW + 604800, $pending[0]['timestamp'] );
 
 		// The customer comes back and orders.
 		$this->activity->record_order( 'lapsed@example.com', self::NOW + 100 );
