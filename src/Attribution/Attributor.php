@@ -20,7 +20,9 @@ use FlowForge\Persistence\MessageRepository;
 /**
  * Credits an order's revenue to the single most-recent flow message sent to the
  * buyer within the attribution window. Deliberately last-touch and transparent
- * — no multi-touch claims. Idempotent per (order, flow).
+ * — no multi-touch claims. Exactly one attribution per order: once an order is
+ * attributed, a re-fire never credits a second flow (last-touch can change
+ * between hook fires when the original message later bounces).
  */
 final class Attributor {
 
@@ -41,6 +43,12 @@ final class Attributor {
 	 *                                attributed).
 	 */
 	public function attribute( string $email, int $order_id, float $revenue, int $order_ts, int $window_seconds ): ?AttributionRecord {
+		// One attribution per order: never re-credit an order whose last-touch
+		// flow changed between hook fires (e.g. the first flow's message bounced).
+		if ( null !== $this->attributions->find_by_order( $order_id ) ) {
+			return null;
+		}
+
 		$from = gmdate( 'Y-m-d H:i:s', $order_ts - $window_seconds );
 		$to   = gmdate( 'Y-m-d H:i:s', $order_ts );
 

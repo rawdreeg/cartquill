@@ -19,7 +19,7 @@ final class WpdbAttributionRepository implements AttributionRepository {
 		global $wpdb;
 		$table = Schema::attributions_table();
 
-		// Unique (order_id, flow_id) makes this a last-touch, once-per-order claim.
+		// Unique (order_id) makes this a last-touch, exactly-once-per-order claim.
 		$suppress = $wpdb->suppress_errors( true );
 		$inserted = $wpdb->insert(
 			$table,
@@ -39,6 +39,28 @@ final class WpdbAttributionRepository implements AttributionRepository {
 		}
 
 		return $record->with_id( (int) $wpdb->insert_id );
+	}
+
+	public function find_by_order( int $order_id ): ?AttributionRecord {
+		global $wpdb;
+		$table = Schema::attributions_table();
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE order_id = %d LIMIT 1", $order_id ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			ARRAY_A
+		);
+		if ( null === $row ) {
+			return null;
+		}
+
+		return new AttributionRecord(
+			id: (int) $row['id'],
+			order_id: (int) $row['order_id'],
+			flow_id: (int) $row['flow_id'],
+			message_id: null !== $row['message_id'] ? (int) $row['message_id'] : null,
+			revenue: (float) $row['revenue'],
+			attributed_at: null !== $row['attributed_at'] ? (string) $row['attributed_at'] : null,
+		);
 	}
 
 	public function revenue_by_flow(): array {
