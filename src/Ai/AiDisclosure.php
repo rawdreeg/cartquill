@@ -45,7 +45,7 @@ final class AiDisclosure {
 	 */
 	public function summary(): string {
 		return \__(
-			'Generating or rewriting copy sends the flow type, the store context you provide (store name and tone), any copy you ask to rewrite, and your AI license key to the FlowForge AI service at proxy.flowforge.app. This is a paid vendor service; drafts are returned to the editor for your review and are never sent to customers automatically.',
+			'Generating or rewriting copy sends the flow type, store context (store name, tone, currency, and a few top product names), any copy you ask to rewrite, and your AI license key to the FlowForge AI service at proxy.flowforge.app. This is a paid vendor service; drafts are returned to the editor for your review and are never sent to customers automatically.',
 			'flowforge'
 		);
 	}

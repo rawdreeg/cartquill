@@ -53,16 +53,17 @@ final class AiAddon {
 		/** Rate-limit window length, in seconds. */
 		$window = (int) \apply_filters( 'flowforge_ai_rate_window', self::DEFAULT_WINDOW );
 
+		$limiter   = new TransientRateLimiter( $limit, $window );
 		$generator = new AiFlowGenerator(
 			new HttpProxyClient( $this->license ),
 			$this->flows,
-			new TransientRateLimiter( $limit, $window ),
+			$limiter,
 			$license,
 		);
 
 		$disclosure = new AiDisclosure();
 
-		( new AiGeneratePage( $generator, $this->library, $disclosure ) )->register();
+		( new AiGeneratePage( $generator, $this->library, $disclosure, $limiter ) )->register();
 		( new AiRewriteController( $generator, $this->flows, $disclosure ) )->register();
 	}
 }
