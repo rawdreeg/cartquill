@@ -60,6 +60,14 @@ interface MessageRepository {
 	public function exists_for_step( int $enrollment_id, int $step_index ): bool;
 
 	/**
+	 * The message row already recorded for this (enrollment, step), or null.
+	 *
+	 * Lets the step runner distinguish a settled send (idempotent skip) from a
+	 * queued row awaiting a retry after a failed attempt.
+	 */
+	public function find_for_step( int $enrollment_id, int $step_index ): ?MessageRecord;
+
+	/**
 	 * The most recent successfully-sent message to $email whose sent_at falls in
 	 * [$from, $to] (MySQL datetimes). This is the last-touch lookup used for
 	 * revenue attribution; null if the customer had no message in the window.

@@ -15,11 +15,47 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class WpdbEnrollmentRepository implements EnrollmentRepository {
 
+	/** Column formats for row_data(), in key order. */
+	private const ROW_FORMATS = array( '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s' );
+
 	public function save( EnrollmentRecord $record ): EnrollmentRecord {
 		global $wpdb;
 		$table = Schema::enrollments_table();
 
-		$data = array(
+		$data = $this->row_data( $record );
+
+		if ( null !== $record->id ) {
+			$wpdb->update( $table, $data, array( 'id' => $record->id ), self::ROW_FORMATS, array( '%d' ) );
+			return $record;
+		}
+
+		$wpdb->insert( $table, $data, self::ROW_FORMATS );
+		return $record->with_id( (int) $wpdb->insert_id );
+	}
+
+	public function create( EnrollmentRecord $record ): ?EnrollmentRecord {
+		global $wpdb;
+		$table = Schema::enrollments_table();
+
+		// Rely on the unique active_key index as a lock: a concurrent insert for
+		// an already-active (flow, customer) fails here, so only one active
+		// enrollment can exist even if two triggers fire at once.
+		$suppress = $wpdb->suppress_errors( true );
+		$inserted = $wpdb->insert( $table, $this->row_data( $record ), self::ROW_FORMATS );
+		$wpdb->suppress_errors( $suppress );
+
+		if ( false === $inserted ) {
+			return null; // Already actively enrolled.
+		}
+
+		return $record->with_id( (int) $wpdb->insert_id );
+	}
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function row_data( EnrollmentRecord $record ): array {
+		return array(
 			'flow_id'        => $record->flow_id,
 			'customer_email' => $record->customer_email,
 			'status'         => $record->status,
@@ -27,16 +63,19 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 			'next_run_at'    => $record->next_run_at,
 			'created_at'     => $record->created_at ?? \current_time( 'mysql', true ),
 			'source'         => $record->source,
+			'active_key'     => $this->active_key( $record ),
 		);
-		$formats = array( '%d', '%s', '%s', '%d', '%s', '%s', '%s' );
+	}
 
-		if ( null !== $record->id ) {
-			$wpdb->update( $table, $data, array( 'id' => $record->id ), $formats, array( '%d' ) );
-			return $record;
+	/**
+	 * The unique key for an active enrollment (else null, so many non-active
+	 * rows for the same customer/flow coexist).
+	 */
+	private function active_key( EnrollmentRecord $record ): ?string {
+		if ( EnrollmentRecord::STATUS_ACTIVE !== $record->status ) {
+			return null;
 		}
-
-		$wpdb->insert( $table, $data, $formats );
-		return $record->with_id( (int) $wpdb->insert_id );
+		return md5( $record->flow_id . ':' . strtolower( trim( $record->customer_email ) ) );
 	}
 
 	public function find( int $id ): ?EnrollmentRecord {
@@ -101,7 +140,7 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 
 		return (int) $wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$table} SET status = %s WHERE customer_email = %s AND status = %s", // phpcs:ignore WordPress.DB.PreparedSQL
+				"UPDATE {$table} SET status = %s, active_key = NULL WHERE customer_email = %s AND status = %s", // phpcs:ignore WordPress.DB.PreparedSQL
 				EnrollmentRecord::STATUS_UNSUBSCRIBED,
 				strtolower( trim( $customer_email ) ),
 				EnrollmentRecord::STATUS_ACTIVE
