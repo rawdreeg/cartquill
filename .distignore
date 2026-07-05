@@ -1,0 +1,27 @@
+# Files and directories excluded from the built plugin package.
+# Used by bin/build.sh and (if you prefer) `wp dist-archive`.
+# Entries are literal paths relative to the plugin root — keep them simple so
+# bin/build.sh can remove them from the staged package.
+
+.git
+.github
+.gitignore
+.distignore
+.editorconfig
+.phpunit.cache
+tests
+bin
+composer.json
+composer.lock
+phpunit.xml.dist
+phpunit.xml
+CLAUDE.md
+build
+dist
+
+# Paid add-ons are distributed separately (Freemius); the free WordPress.org
+# build omits their code and the admin screens that only they instantiate.
+src/Ai
+src/Deliverability
+src/Admin/AiGeneratePage.php
+src/Admin/DeliverabilityPage.php
