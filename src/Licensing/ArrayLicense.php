@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Licensing;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 final class ArrayLicense implements License {
 
 	/** @var list<string> Held plans (e.g. ['pro'] or ['ai']). */

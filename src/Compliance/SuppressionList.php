@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Compliance;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Records addresses that must never be emailed (unsubscribed, bounced,
  * complained). The engine consults this as the first thing every send does.

@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Deliverability;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * The seam the webhook endpoint consults before trusting a payload (locked rule:
  * ESP webhook signatures are verified). Given the raw request body and its

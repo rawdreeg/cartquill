@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Settings;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Reads and writes the plugin settings stored as a single wp_option array.
  * Falls back to the site's admin identity when from-name/email are unset.
@@ -39,6 +43,13 @@ final class OptionsSettings implements Settings {
 			return (string) $data['from_email'];
 		}
 		return (string) \get_option( 'admin_email', '' );
+	}
+
+	/**
+	 * Whether the store opted in to deleting all FlowForge data on uninstall.
+	 */
+	public function remove_data_on_uninstall(): bool {
+		return ! empty( $this->data()['remove_data_on_uninstall'] );
 	}
 
 	/**

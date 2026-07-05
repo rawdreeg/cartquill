@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Ai;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Admin\AiGeneratePage;
 use FlowForge\Flow\FlowLibrary;
 use FlowForge\Licensing\License;

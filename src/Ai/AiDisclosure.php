@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Ai;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * WordPress.org guideline 8 requires disclosing every external service and
  * gating the first call behind explicit consent. The AI add-on posts store

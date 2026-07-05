@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Ai;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Keeps AI usage (and cost) predictable. `try_consume()` atomically checks the
  * remaining allowance and, if any remains, consumes one — returning whether the

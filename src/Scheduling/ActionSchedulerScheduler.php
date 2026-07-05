@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Scheduling;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Schedules each step as a single Action Scheduler action on the
  * `flowforge_run_step` hook, which the plugin wires to the StepRunner. Passing

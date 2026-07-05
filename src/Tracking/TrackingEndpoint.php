@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Tracking;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Persistence\MessageRecord;
 use FlowForge\Persistence\MessageRepository;
 

@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Licensing;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * FlowForge sells two add-ons à la carte plus a Pro bundle. The Pro bundle
  * grants both add-ons, so gating logic asks about a capability (ai /

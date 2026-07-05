@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Attribution;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Persistence\AttributionRecord;
 use FlowForge\Persistence\AttributionRepository;
 use FlowForge\Persistence\MessageRepository;

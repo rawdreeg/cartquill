@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Ai;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 final class ArrayRateLimiter implements RateLimiter {
 
 	private int $used = 0;

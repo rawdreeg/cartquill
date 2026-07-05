@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Ai;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Flow\FlowStep;
 use FlowForge\Licensing\License;
 use FlowForge\Licensing\Plans;

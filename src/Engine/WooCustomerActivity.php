@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Engine;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Answers activity questions from WooCommerce order data via wc_get_orders().
  */

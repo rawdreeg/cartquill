@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Deliverability;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Compliance\SuppressionList;
 use FlowForge\Persistence\MessageRecord;
 use FlowForge\Persistence\MessageRepository;

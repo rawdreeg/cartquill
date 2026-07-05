@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Engine;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Answers the questions step conditions ask about a customer, so the engine
  * never queries WooCommerce directly. Backed by WooCommerce order data at

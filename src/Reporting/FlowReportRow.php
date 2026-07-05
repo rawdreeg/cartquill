@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Reporting;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 final class FlowReportRow {
 
 	public function __construct(

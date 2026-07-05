@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Scheduling;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Abstracts the queue so the engine never calls Action Scheduler directly.
  * Runtime uses Action Scheduler (bundled with WooCommerce); tests use an array

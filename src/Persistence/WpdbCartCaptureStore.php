@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Persistence;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 final class WpdbCartCaptureStore implements CartCaptureStore {
 
 	public function capture( string $email, string $updated_at ): void {

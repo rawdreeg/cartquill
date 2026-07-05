@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Deliverability;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * The wizard's view of a domain: its overall verification state plus the
  * SPF/DKIM/DMARC records to add. `from_resend()` maps Resend's domains API

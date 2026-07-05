@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Admin;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Settings\OptionsSettings;
 
 /**
@@ -34,7 +38,7 @@ final class OnboardingPage {
 
 	public function add_menu(): void {
 		\add_submenu_page(
-			null,
+			'',
 			\__( 'Welcome to FlowForge', 'flowforge' ),
 			\__( 'Welcome', 'flowforge' ),
 			'manage_options',

@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Licensing;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Stores which plans a store holds (and their license keys) in a wp_option, and
  * answers the gate from it.

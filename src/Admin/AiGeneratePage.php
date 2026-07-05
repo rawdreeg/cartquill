@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Admin;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Ai\AiDisclosure;
 use FlowForge\Ai\AiFlowGenerator;
 use FlowForge\Ai\GenerationResult;

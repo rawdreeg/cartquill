@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Persistence;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 final class InMemoryAttributionRepository implements AttributionRepository {
 
 	/** @var array<int, AttributionRecord> */

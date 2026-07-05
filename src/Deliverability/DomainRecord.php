@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Deliverability;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * A single SPF/DKIM/DMARC record surfaced by the domain-auth wizard: what to add
  * to DNS (type/name/value) and whether Resend has seen it verified yet.

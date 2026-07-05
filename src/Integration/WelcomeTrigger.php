@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Integration;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Engine\CustomerActivity;
 use FlowForge\Engine\FlowTypeEnroller;
 use FlowForge\Flow\DefaultFlows;

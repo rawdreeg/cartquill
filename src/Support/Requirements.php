@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Support;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * The plugin hard-depends on WooCommerce 8+. The version comparison lives here
  * as a pure function so it can be tested without WordPress, then wrapped by the

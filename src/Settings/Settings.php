@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Settings;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Narrow read seam for the settings the engine needs. Backed by wp_options at
  * runtime and by a plain array in tests.

@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Admin;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Flow\FlowEditor;
 use FlowForge\Persistence\FlowRecord;
 use FlowForge\Persistence\FlowRepository;
@@ -36,7 +40,7 @@ final class FlowEditorPage {
 
 	public function add_menu(): void {
 		\add_submenu_page(
-			null,
+			'',
 			\__( 'Edit flow', 'flowforge' ),
 			\__( 'Edit flow', 'flowforge' ),
 			'manage_options',
