@@ -26,4 +26,9 @@ interface RateLimiter {
 	 * Remaining allowance in the current window.
 	 */
 	public function remaining(): int;
+
+	/**
+	 * Unix timestamp when the current window resets, or 0 if none is open.
+	 */
+	public function reset_at(): int;
 }

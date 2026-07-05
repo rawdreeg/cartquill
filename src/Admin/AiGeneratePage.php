@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 use FlowForge\Ai\AiDisclosure;
 use FlowForge\Ai\AiFlowGenerator;
 use FlowForge\Ai\GenerationResult;
+use FlowForge\Ai\RateLimiter;
+use FlowForge\Ai\StoreContext;
 use FlowForge\Flow\FlowLibrary;
 
 /**
@@ -34,6 +36,7 @@ final class AiGeneratePage {
 		private readonly AiFlowGenerator $generator,
 		private readonly FlowLibrary $library,
 		private readonly AiDisclosure $disclosure,
+		private readonly RateLimiter $limiter,
 	) {}
 
 	public function register(): void {
@@ -70,10 +73,8 @@ final class AiGeneratePage {
 		}
 
 		$type    = isset( $_POST['type'] ) ? \sanitize_text_field( \wp_unslash( $_POST['type'] ) ) : '';
-		$context = array(
-			'store_name' => \get_bloginfo( 'name' ),
-			'tone'       => isset( $_POST['tone'] ) ? \sanitize_text_field( \wp_unslash( $_POST['tone'] ) ) : '',
-		);
+		$tone    = isset( $_POST['tone'] ) ? \sanitize_text_field( \wp_unslash( $_POST['tone'] ) ) : '';
+		$context = StoreContext::gather( $tone );
 
 		$result = $this->generator->generate( $type, $context );
 
@@ -106,6 +107,18 @@ final class AiGeneratePage {
 				<div class="notice notice-error"><p><?php echo \esc_html( $this->error_message( $error ) ); ?></p></div>
 			<?php endif; ?>
 			<p><?php echo \esc_html__( 'Pick a flow type and we\'ll draft the emails for you. Nothing is sent — the draft opens in the editor for you to review and activate.', 'flowforge' ); ?></p>
+			<p class="description">
+				<?php
+				/* translators: %d: number of AI generations remaining. */
+				printf( \esc_html__( '%d AI generations remaining this period.', 'flowforge' ), (int) $this->limiter->remaining() );
+				$ff_reset = $this->limiter->reset_at();
+				if ( $ff_reset > time() ) {
+					echo ' ';
+					/* translators: %s: human-readable time until the allowance resets. */
+					printf( \esc_html__( 'Resets in %s.', 'flowforge' ), \esc_html( \human_time_diff( time(), $ff_reset ) ) );
+				}
+				?>
+			</p>
 			<div class="notice notice-info inline" style="padding:8px 12px">
 				<p><strong><?php echo \esc_html__( 'Uses an external AI service', 'flowforge' ); ?></strong></p>
 				<p><?php echo \esc_html( $this->disclosure->summary() ); ?></p>
