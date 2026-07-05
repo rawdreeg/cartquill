@@ -18,14 +18,22 @@ if ( ! defined( 'ABSPATH' ) ) {
  * implementation query for lapsed customers directly — rather than scanning
  * recent orders, which would exclude exactly the old-order customers win-back
  * targets.
+ *
+ * Reads are bounded and resumable so a store with tens of thousands of orders
+ * never hydrates them all in a single Action Scheduler tick: each call examines
+ * at most $limit candidate orders and returns a {@see LapsedBatch} the scanner
+ * pages through across ticks.
  */
 interface LapsedCustomerFinder {
 
 	/**
-	 * Emails of customers whose most recent order is strictly before $cutoff
-	 * (Unix timestamp) — i.e. they have ordered before but not since.
+	 * A bounded page of customers whose most recent order is strictly before
+	 * $cutoff (Unix timestamp) — i.e. they ordered before but not since.
 	 *
-	 * @return list<string>
+	 * @param int $cutoff Lapse boundary as a Unix timestamp.
+	 * @param int $limit  Maximum candidate orders to examine this call; 0 means
+	 *                    unbounded (small stores and the in-memory finder).
+	 * @param int $offset Opaque resume cursor from a prior batch; 0 to start.
 	 */
-	public function lapsed_before( int $cutoff ): array;
+	public function lapsed_before( int $cutoff, int $limit = 0, int $offset = 0 ): LapsedBatch;
 }

@@ -27,6 +27,7 @@ use FlowForge\Scheduling\ArrayScheduler;
 use FlowForge\Sender\FakeSender;
 use FlowForge\Settings\ArraySettings;
 use FlowForge\Support\FixedClock;
+use FlowForge\Tests\Fake\ArrayScanCursor;
 use FlowForge\Tests\Fake\FakeCustomerActivity;
 use FlowForge\Tests\Fake\FakeLapsedCustomerFinder;
 use PHPUnit\Framework\TestCase;
@@ -58,7 +59,7 @@ final class WinBackFlowTest extends TestCase {
 		$orders->set_last_order( 'lapsed@example.com', self::NOW - self::THRESHOLD - 86400 );
 
 		$enroller      = new Enroller( $this->enrollments, $this->scheduler, $this->clock );
-		$this->scanner = new WinBackScanner( $orders, $flows, $this->enrollments, $enroller, $this->clock );
+		$this->scanner = new WinBackScanner( $orders, $flows, $this->enrollments, $enroller, $this->clock, new ArrayScanCursor() );
 		$this->runner  = new StepRunner(
 			$flows,
 			$this->enrollments,

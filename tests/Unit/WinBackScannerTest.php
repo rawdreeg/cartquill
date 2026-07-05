@@ -18,6 +18,7 @@ use FlowForge\Persistence\InMemoryEnrollmentRepository;
 use FlowForge\Persistence\InMemoryFlowRepository;
 use FlowForge\Scheduling\ArrayScheduler;
 use FlowForge\Support\FixedClock;
+use FlowForge\Tests\Fake\ArrayScanCursor;
 use FlowForge\Tests\Fake\FakeLapsedCustomerFinder;
 use PHPUnit\Framework\TestCase;
 
@@ -38,7 +39,7 @@ final class WinBackScannerTest extends TestCase {
 		$this->enrollments = new InMemoryEnrollmentRepository();
 
 		$enroller      = new Enroller( $this->enrollments, new ArrayScheduler(), new FixedClock( self::NOW ) );
-		$this->scanner = new WinBackScanner( $this->orders, $this->flows, $this->enrollments, $enroller, new FixedClock( self::NOW ) );
+		$this->scanner = new WinBackScanner( $this->orders, $this->flows, $this->enrollments, $enroller, new FixedClock( self::NOW ), new ArrayScanCursor() );
 	}
 
 	private function active_win_back(): void {
