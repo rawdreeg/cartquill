@@ -33,3 +33,44 @@ jobs:
 
       - name: Run tests
         run: ./vendor/bin/phpunit
+
+  build:
+    name: Build package & Plugin Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer:v2
+
+      - name: Build production package
+        run: bash bin/build.sh
+
+      - name: Assert free/paid separation and a production autoloader
+        run: |
+          for path in src/Ai src/Deliverability src/Admin/AiGeneratePage.php src/Admin/DeliverabilityPage.php tests composer.json CLAUDE.md; do
+            if [ -e "build/flowforge/$path" ]; then
+              echo "::error::'$path' leaked into the free build"; exit 1
+            fi
+          done
+          test -f build/flowforge/vendor/autoload.php || { echo "::error::built package is missing vendor/autoload.php"; exit 1; }
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flowforge-plugin
+          path: build/flowforge.zip
+
+      # Plugin Check runs against the built free package. Informational for now:
+      # some checks need a live WP environment and the AI proxy legal URLs are
+      # still HITL placeholders, so a hard gate would block on known items.
+      - name: Run Plugin Check (informational)
+        continue-on-error: true
+        uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: ./build/flowforge
+          ignore-warnings: true

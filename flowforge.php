@@ -27,9 +27,27 @@ define( 'FLOWFORGE_VERSION', '0.1.0' );
 define( 'FLOWFORGE_PATH', plugin_dir_path( __FILE__ ) );
 
 $flowforge_autoload = __DIR__ . '/vendor/autoload.php';
-if ( is_readable( $flowforge_autoload ) ) {
-	require_once $flowforge_autoload;
+if ( ! is_readable( $flowforge_autoload ) ) {
+	// A packaged release bundles its autoloader; a raw source checkout does
+	// not. Bail with an admin notice instead of fataling in Plugin::boot().
+	add_action(
+		'admin_notices',
+		static function (): void {
+			if ( ! current_user_can( 'activate_plugins' ) ) {
+				return;
+			}
+			echo '<div class="notice notice-error"><p>';
+			echo esc_html__(
+				'FlowForge could not start because its autoloader is missing. Install the packaged release, or run "composer install" in the plugin directory.',
+				'flowforge'
+			);
+			echo '</p></div>';
+		}
+	);
+	return;
 }
+
+require_once $flowforge_autoload;
 
 register_activation_hook( __FILE__, array( \FlowForge\Activation::class, 'activate' ) );
 
