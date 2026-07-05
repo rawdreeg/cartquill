@@ -76,6 +76,29 @@ final class WelcomeTriggerTest extends TestCase {
 		$this->assertSame( self::T0, $pending[0]['timestamp'], 'welcome step 1 is immediate' );
 	}
 
+	public function test_order_enrollment_is_registered_on_checkout_order_processed(): void {
+		$this->trigger->register();
+
+		$this->assertNotFalse(
+			has_action( 'woocommerce_checkout_order_processed', array( $this->trigger, 'on_order' ) ),
+			'enrolls when the order is created, so off-site/admin/API orders are covered'
+		);
+		$this->assertFalse(
+			has_action( 'woocommerce_thankyou', array( $this->trigger, 'on_order' ) ),
+			'no longer bound to the display-time thank-you hook'
+		);
+	}
+
+	public function test_a_hook_refire_does_not_double_enroll(): void {
+		$this->activity->record_order( 'buyer@example.com', self::T0 );
+		Functions\when( 'wc_get_order' )->justReturn( $this->order( 'buyer@example.com' ) );
+
+		$this->trigger->on_order( 1 );
+		$this->trigger->on_order( 1 ); // woocommerce_checkout_order_processed can fire again
+
+		$this->assertCount( 1, $this->enrollments->all(), 'a re-fire does not create a second welcome enrollment' );
+	}
+
 	public function test_returning_customer_is_not_welcomed(): void {
 		$this->activity->record_order( 'buyer@example.com', self::T0 - 1000 );
 		$this->activity->record_order( 'buyer@example.com', self::T0 ); // 2nd order
