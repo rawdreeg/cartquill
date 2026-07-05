@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Schema {
 
 	/** Bumped whenever the DDL changes so {@see Migrator} re-applies dbDelta on update. */
-	public const VERSION = '6';
+	public const VERSION = '7';
 
 	public const OPTION_DB_VERSION = 'flowforge_db_version';
 
@@ -137,7 +137,7 @@ final class Schema {
 			revenue DECIMAL(18,4) NOT NULL DEFAULT 0,
 			attributed_at DATETIME NULL,
 			PRIMARY KEY  (id),
-			UNIQUE KEY order_flow (order_id, flow_id),
+			UNIQUE KEY order_id (order_id),
 			KEY flow_id (flow_id)
 		) {$charset_collate};";
 

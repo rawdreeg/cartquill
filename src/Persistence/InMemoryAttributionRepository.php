@@ -18,22 +18,30 @@ final class InMemoryAttributionRepository implements AttributionRepository {
 	/** @var array<int, AttributionRecord> */
 	private array $records = array();
 
-	/** @var array<string, true> seen (order:flow) keys */
+	/** @var array<int, true> seen order ids */
 	private array $unique = array();
 
 	private int $next_id = 1;
 
 	public function record( AttributionRecord $record ): ?AttributionRecord {
-		$key = $record->order_id . ':' . $record->flow_id;
-		if ( isset( $this->unique[ $key ] ) ) {
+		if ( isset( $this->unique[ $record->order_id ] ) ) {
 			return null;
 		}
-		$this->unique[ $key ] = true;
+		$this->unique[ $record->order_id ] = true;
 
 		$id                   = $this->next_id++;
 		$stored               = $record->with_id( $id );
 		$this->records[ $id ] = $stored;
 		return $stored;
+	}
+
+	public function find_by_order( int $order_id ): ?AttributionRecord {
+		foreach ( $this->records as $record ) {
+			if ( $record->order_id === $order_id ) {
+				return $record;
+			}
+		}
+		return null;
 	}
 
 	public function revenue_by_flow(): array {
