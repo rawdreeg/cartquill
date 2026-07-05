@@ -74,7 +74,7 @@ final class OptionLicense implements License {
 		}
 		$data          = $this->data();
 		$data[ $plan ] = \sanitize_text_field( $key );
-		\update_option( self::OPTION, $data );
+		\update_option( self::OPTION, $data, false );
 	}
 
 	public function key_for( string $plan ): string {

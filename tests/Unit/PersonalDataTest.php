@@ -11,7 +11,9 @@ namespace FlowForge\Tests\Unit;
 
 use FlowForge\Compliance\ArraySuppressionList;
 use FlowForge\Compliance\PersonalData;
+use FlowForge\Persistence\AttributionRecord;
 use FlowForge\Persistence\EnrollmentRecord;
+use FlowForge\Persistence\InMemoryAttributionRepository;
 use FlowForge\Persistence\InMemoryCartCaptureStore;
 use FlowForge\Persistence\InMemoryEnrollmentRepository;
 use FlowForge\Persistence\InMemoryMessageRepository;
@@ -24,23 +26,37 @@ final class PersonalDataTest extends TestCase {
 	private InMemoryMessageRepository $messages;
 	private InMemoryCartCaptureStore $captures;
 	private ArraySuppressionList $suppression;
+	private InMemoryAttributionRepository $attributions;
 	private PersonalData $data;
 
 	protected function setUp(): void {
-		$this->enrollments = new InMemoryEnrollmentRepository();
-		$this->messages    = new InMemoryMessageRepository();
-		$this->captures    = new InMemoryCartCaptureStore();
-		$this->suppression = new ArraySuppressionList();
-		$this->data        = new PersonalData( $this->enrollments, $this->messages, $this->captures, $this->suppression );
+		$this->enrollments  = new InMemoryEnrollmentRepository();
+		$this->messages     = new InMemoryMessageRepository();
+		$this->captures     = new InMemoryCartCaptureStore();
+		$this->suppression  = new ArraySuppressionList();
+		$this->attributions = new InMemoryAttributionRepository();
+		$this->data         = new PersonalData( $this->enrollments, $this->messages, $this->captures, $this->suppression, $this->attributions );
 
 		$this->enrollments->save(
 			new EnrollmentRecord( null, 1, 'buyer@example.com', EnrollmentRecord::STATUS_ACTIVE, 0, null, null, 'newsletter' )
 		);
-		$this->messages->claim(
+		$message = $this->messages->claim(
 			new MessageRecord( null, 1, 1, 0, 'buyer@example.com', 'wp_mail', MessageRecord::STATUS_SENT )
+		);
+		$this->attributions->record(
+			new AttributionRecord( null, 900, 1, (int) $message->id, 49.99, '2023-01-02 00:00:00' )
 		);
 		$this->captures->capture( 'buyer@example.com', '2023-01-01 00:00:00' );
 		$this->suppression->suppress( 'buyer@example.com', 'unsubscribe' );
+	}
+
+	public function test_erase_anonymizes_attributions_keeping_revenue_without_the_personal_link(): void {
+		$this->data->erase( 'buyer@example.com' );
+
+		$rows = $this->attributions->all();
+		$this->assertCount( 1, $rows, 'the revenue record is retained' );
+		$this->assertNull( $rows[0]->message_id, 'its personal link (message_id) is severed' );
+		$this->assertSame( 49.99, $rows[0]->revenue );
 	}
 
 	public function test_export_returns_all_data_points_including_consent_source(): void {

@@ -26,6 +26,7 @@ final class LicensePage {
 
 	private const PARENT = 'flowforge';
 	public const SLUG    = 'flowforge-license';
+	private const MASK   = '••••••••';
 
 	private const LABELS = array(
 		Plans::AI            => 'AI Flow Generation',
@@ -57,8 +58,13 @@ final class LicensePage {
 		}
 
 		foreach ( array_keys( self::LABELS ) as $plan ) {
-			if ( isset( $_POST['keys'][ $plan ] ) ) {
-				$this->license->set_key( $plan, \sanitize_text_field( \wp_unslash( $_POST['keys'][ $plan ] ) ) );
+			if ( ! isset( $_POST['keys'][ $plan ] ) ) {
+				continue;
+			}
+			$key = \sanitize_text_field( \wp_unslash( $_POST['keys'][ $plan ] ) );
+			// The mask means "unchanged"; an empty value clears the key.
+			if ( self::MASK !== $key ) {
+				$this->license->set_key( $plan, $key );
 			}
 		}
 
@@ -86,7 +92,8 @@ final class LicensePage {
 							<th scope="row"><?php echo \esc_html( $label ); ?></th>
 							<td>
 								<input type="text" class="regular-text" name="keys[<?php echo \esc_attr( $plan ); ?>]"
-									value="<?php echo \esc_attr( $this->license->key_for( $plan ) ); ?>"
+									autocomplete="off"
+									value="<?php echo '' !== $this->license->key_for( $plan ) ? \esc_attr( self::MASK ) : ''; ?>"
 									placeholder="<?php echo \esc_attr__( 'Enter license key', 'flowforge' ); ?>" />
 								<?php if ( $this->license->is_active( $plan ) ) : ?>
 									<span style="color:#008a20">&#10003; <?php echo \esc_html__( 'Active', 'flowforge' ); ?></span>

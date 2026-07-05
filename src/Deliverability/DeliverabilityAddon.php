@@ -61,6 +61,10 @@ final class DeliverabilityAddon {
 		}
 		( new DeliverabilityPage( $this->esp ) )->register();
 
+		if ( $this->esp->has_undecryptable_key() ) {
+			\add_action( 'admin_notices', array( $this, 'render_undecryptable_key_notice' ) );
+		}
+
 		// Ingest Resend delivery webhooks once a signing secret is configured. A
 		// real clock enables Svix replay-window enforcement at runtime.
 		if ( $this->esp->has_webhook_secret() ) {
@@ -69,6 +73,18 @@ final class DeliverabilityAddon {
 				new WebhookProcessor( $this->messages, $this->suppression ),
 			) )->register();
 		}
+	}
+
+	public function render_undecryptable_key_notice(): void {
+		if ( ! \current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		echo '<div class="notice notice-error"><p>';
+		echo \esc_html__(
+			'FlowForge could not decrypt your saved Resend API key (the site security keys may have changed). Sending has fallen back to wp_mail — re-enter your key on the Deliverability screen to resume.',
+			'flowforge'
+		);
+		echo '</p></div>';
 	}
 
 	/**

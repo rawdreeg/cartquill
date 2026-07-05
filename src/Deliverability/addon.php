@@ -17,6 +17,7 @@ use FlowForge\Deliverability\DeliverabilityAddon;
 use FlowForge\Deliverability\EspSettings;
 use FlowForge\Licensing\OptionLicense;
 use FlowForge\Persistence\WpdbMessageRepository;
+use FlowForge\Security\InstallKey;
 use FlowForge\Security\SodiumCrypto;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -24,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 ( new DeliverabilityAddon(
-	new EspSettings( new SodiumCrypto( (string) \wp_salt( 'auth' ) ) ),
+	new EspSettings( new SodiumCrypto( InstallKey::get() ) ),
 	new OptionLicense(),
 	new WpdbMessageRepository(),
 	new WpdbSuppressionList()
