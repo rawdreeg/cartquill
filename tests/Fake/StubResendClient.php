@@ -51,18 +51,35 @@ final class StubResendClient implements ResendClient {
 	/** @var list<string> Domains passed to create_domain(). */
 	public array $created = array();
 
+	/** @var list<string> Domain ids passed to verify_domain(). */
+	public array $verified_ids = array();
+
 	public function create_domain( string $domain ): DomainStatus {
 		if ( $this->throw ) {
 			throw new ResendException( 'stub resend failure' );
 		}
 		$this->created[] = $domain;
-		return $this->domain_status ?? new DomainStatus( $domain, false, 'pending', array() );
+		return $this->domain_status ?? new DomainStatus( $domain, false, 'pending', array(), 'dom_stub' );
 	}
 
-	public function domain_status( string $domain ): DomainStatus {
+	public function verify_domain( string $domain_id ): void {
 		if ( $this->throw ) {
 			throw new ResendException( 'stub resend failure' );
 		}
-		return $this->domain_status ?? new DomainStatus( $domain, false, 'pending', array() );
+		$this->verified_ids[] = $domain_id;
+	}
+
+	public function domain_status( string $domain_id ): DomainStatus {
+		if ( $this->throw ) {
+			throw new ResendException( 'stub resend failure' );
+		}
+		return $this->domain_status ?? new DomainStatus( '', false, 'pending', array(), $domain_id );
+	}
+
+	public function find_domain_id( string $domain ): ?string {
+		if ( $this->throw ) {
+			throw new ResendException( 'stub resend failure' );
+		}
+		return null !== $this->domain_status && '' !== $this->domain_status->id ? $this->domain_status->id : null;
 	}
 }

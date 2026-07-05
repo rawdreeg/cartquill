@@ -58,5 +58,19 @@ final class DomainStatusTest extends TestCase {
 		$this->assertFalse( $status->verified );
 		$this->assertSame( 'not_started', $status->state );
 		$this->assertSame( array(), $status->records );
+		$this->assertSame( '', $status->id );
+	}
+
+	public function test_captures_the_resend_domain_uuid(): void {
+		$status = DomainStatus::from_resend(
+			array(
+				'id'     => 'd91cd9bd-1176-453e-8fc1-35364d380206',
+				'name'   => 'mail.acme.test',
+				'status' => 'pending',
+			)
+		);
+
+		$this->assertSame( 'd91cd9bd-1176-453e-8fc1-35364d380206', $status->id );
+		$this->assertSame( 'mail.acme.test', $status->domain );
 	}
 }

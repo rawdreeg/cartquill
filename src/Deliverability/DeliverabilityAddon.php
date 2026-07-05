@@ -25,8 +25,9 @@ use FlowForge\Support\SystemClock;
  * Wires itself in only when the Deliverability plan is active. Registers
  * {@see ResendSender} through the locked `register_sender()` seam (so the engine
  * is untouched), exposes the domain-auth wizard, and — once the store has saved
- * a key — makes Resend the active sender via the `flowforge_active_sender`
- * filter. Clearing the key falls straight back to wp_mail with no flow changes.
+ * a key and verified its sending domain — makes Resend the active sender via the
+ * `flowforge_active_sender` filter. Clearing the key, or an unverified domain,
+ * falls straight back to wp_mail with no flow changes.
  */
 final class DeliverabilityAddon {
 
@@ -48,7 +49,7 @@ final class DeliverabilityAddon {
 	 * @param License        $license The licensing gate.
 	 */
 	public function register_sender( SenderRegistry $senders, License $license ): void {
-		if ( ! $license->is_active( Plans::DELIVERABILITY ) || ! $this->esp->has_key() ) {
+		if ( ! $license->is_active( Plans::DELIVERABILITY ) || ! $this->esp->has_key() || ! $this->esp->is_domain_verified() ) {
 			return;
 		}
 		$senders->register( new ResendSender( new HttpResendClient( $this->esp->api_key() ) ) );
@@ -74,7 +75,7 @@ final class DeliverabilityAddon {
 	 * @param string $current The sender key selected so far.
 	 */
 	public function pick_active_sender( string $current ): string {
-		if ( $this->license->is_active( Plans::DELIVERABILITY ) && $this->esp->has_key() ) {
+		if ( $this->license->is_active( Plans::DELIVERABILITY ) && $this->esp->has_key() && $this->esp->is_domain_verified() ) {
 			return 'resend';
 		}
 		return $current;

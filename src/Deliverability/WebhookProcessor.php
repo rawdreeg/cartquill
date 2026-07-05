@@ -77,7 +77,12 @@ final class WebhookProcessor {
 				$reason = MessageRecord::STATUS_BOUNCED === $status ? 'bounce' : 'complaint';
 				$this->suppression->suppress( $recipient, $reason );
 			}
-			if ( null !== $message && null !== $message->id ) {
+			// Suppression always applies, but a message already in a terminal
+			// suppressing status is never downgraded by a later one (a late bounce
+			// must not overwrite an earlier complaint).
+			if ( null !== $message && null !== $message->id
+				&& ! in_array( $message->status, self::SUPPRESSING, true )
+			) {
 				$this->messages->update_status( $message->id, $status );
 			}
 			return true;

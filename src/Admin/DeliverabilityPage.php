@@ -84,6 +84,10 @@ final class DeliverabilityPage {
 
 		try {
 			$status = ( new HttpResendClient( $this->esp->api_key() ) )->create_domain( $domain );
+			if ( '' !== $status->id ) {
+				$this->esp->set_domain_id( $status->id );
+			}
+			$this->esp->set_domain_verified( $status->verified );
 			\set_transient( self::STATUS_TRANSIENT, $this->snapshot( $status ), MINUTE_IN_SECONDS );
 			$this->redirect_back( 'provisioned' );
 		} catch ( ResendException $e ) {
@@ -100,7 +104,20 @@ final class DeliverabilityPage {
 		}
 
 		try {
-			$status = ( new HttpResendClient( $this->esp->api_key() ) )->domain_status( $domain );
+			$client    = new HttpResendClient( $this->esp->api_key() );
+			$domain_id = $this->esp->domain_id();
+			if ( '' === $domain_id ) {
+				// The domain may have been created in Resend outside the wizard.
+				$domain_id = (string) ( $client->find_domain_id( $domain ) ?? '' );
+				if ( '' === $domain_id ) {
+					$this->redirect_back( 'verify_error' );
+				}
+				$this->esp->set_domain_id( $domain_id );
+			}
+
+			$client->verify_domain( $domain_id );
+			$status = $client->domain_status( $domain_id );
+			$this->esp->set_domain_verified( $status->verified );
 			\set_transient( self::STATUS_TRANSIENT, $this->snapshot( $status ), MINUTE_IN_SECONDS );
 			$this->redirect_back( 'verified' );
 		} catch ( ResendException $e ) {
@@ -166,6 +183,9 @@ final class DeliverabilityPage {
 						<button type="submit" class="button button-primary"><?php echo \esc_html__( 'Check verification status', 'flowforge' ); ?></button>
 					</form>
 				</p>
+				<?php if ( ! $this->esp->is_domain_verified() ) : ?>
+					<p class="description"><?php echo \esc_html__( 'Until this domain is verified, FlowForge keeps sending through wp_mail.', 'flowforge' ); ?></p>
+				<?php endif; ?>
 				<?php $this->render_status(); ?>
 				<?php $this->render_dmarc_guidance(); ?>
 			<?php endif; ?>
@@ -288,7 +308,7 @@ final class DeliverabilityPage {
 		}
 	}
 
-	private function redirect_back( string $notice ): void {
+	private function redirect_back( string $notice ): never {
 		\wp_safe_redirect( \add_query_arg(
 			array( 'page' => self::SLUG, 'flowforge_notice' => $notice ),
 			\admin_url( 'admin.php' )
