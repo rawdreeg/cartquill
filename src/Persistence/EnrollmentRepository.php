@@ -21,6 +21,16 @@ interface EnrollmentRepository {
 	 */
 	public function save( EnrollmentRecord $record ): EnrollmentRecord;
 
+	/**
+	 * Atomically create an active enrollment, or return null if the customer is
+	 * already actively enrolled in the flow.
+	 *
+	 * Backed by a unique index on the active (flow, customer) pair, so it is the
+	 * concurrency-safe backstop behind the find_active check — mirroring how
+	 * MessageRepository::claim() reserves a send slot.
+	 */
+	public function create( EnrollmentRecord $record ): ?EnrollmentRecord;
+
 	public function find( int $id ): ?EnrollmentRecord;
 
 	/**

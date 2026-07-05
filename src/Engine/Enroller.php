@@ -48,7 +48,9 @@ final class Enroller {
 			return null;
 		}
 
-		$enrollment = $this->enrollments->save(
+		// Atomic create is the concurrency-safe backstop behind find_active:
+		// two triggers firing at once cannot both create an active enrollment.
+		$enrollment = $this->enrollments->create(
 			new EnrollmentRecord(
 				id: null,
 				flow_id: $flow->id,
@@ -60,6 +62,9 @@ final class Enroller {
 				source: $source,
 			)
 		);
+		if ( null === $enrollment ) {
+			return null;
+		}
 
 		$run_at = $this->clock->now() + $flow->steps[0]->delay;
 
