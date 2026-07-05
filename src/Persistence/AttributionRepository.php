@@ -16,12 +16,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 interface AttributionRepository {
 
 	/**
-	 * Persist an attribution, idempotently on (order_id, flow_id).
+	 * Persist an attribution, idempotently on order_id (one row per order).
 	 *
-	 * Returns the stored record, or null if this (order, flow) was already
-	 * attributed — so an order is never double-counted.
+	 * Returns the stored record, or null if this order was already attributed —
+	 * so an order's revenue is never counted for more than one flow.
 	 */
 	public function record( AttributionRecord $record ): ?AttributionRecord;
+
+	/**
+	 * The existing attribution for an order, or null if none.
+	 */
+	public function find_by_order( int $order_id ): ?AttributionRecord;
 
 	/**
 	 * Total attributed revenue per flow id.

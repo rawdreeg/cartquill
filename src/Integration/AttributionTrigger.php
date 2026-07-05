@@ -21,7 +21,8 @@ use FlowForge\Attribution\Attributor;
  *
  * Hooks `woocommerce_checkout_order_processed` (fires when the order is created,
  * regardless of whether the buyer returns to the thank-you page) so off-site
- * gateways are covered. The unique (order, flow) key makes re-fires harmless.
+ * gateways are covered. The Attributor enforces one attribution per order, so a
+ * re-fire never credits a second flow even if last-touch changed in between.
  */
 final class AttributionTrigger {
 

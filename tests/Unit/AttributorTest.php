@@ -30,11 +30,11 @@ final class AttributorTest extends TestCase {
 		$this->attributor   = new Attributor( $this->messages, $this->attributions );
 	}
 
-	private function sent_message( int $flow_id, string $email, int $sent_ts, string $status = MessageRecord::STATUS_SENT ): void {
+	private function sent_message( int $flow_id, string $email, int $sent_ts, string $status = MessageRecord::STATUS_SENT ): MessageRecord {
 		$rec = $this->messages->claim(
 			new MessageRecord( null, $flow_id * 10, $flow_id, $flow_id, $email, 'wp_mail', MessageRecord::STATUS_QUEUED )
 		);
-		$this->messages->save(
+		return $this->messages->save(
 			$rec->with_result( $status, 'x', gmdate( 'Y-m-d H:i:s', $sent_ts ) )
 		);
 	}
@@ -75,6 +75,26 @@ final class AttributorTest extends TestCase {
 		$this->assertNotNull( $first );
 		$this->assertNull( $second, 'same (order, flow) is not double-counted' );
 		$this->assertSame( 30.0, $this->attributions->revenue_by_flow()[1] );
+	}
+
+	public function test_a_bounce_driven_reattribution_never_credits_a_second_flow(): void {
+		// Two eligible messages; flow 2 is newest, so it wins last-touch first.
+		$this->sent_message( 1, 'buyer@example.com', self::ORDER_TS - ( 3 * 86400 ) );
+		$flow2 = $this->sent_message( 2, 'buyer@example.com', self::ORDER_TS - 3600 );
+
+		$first = $this->attributor->attribute( 'buyer@example.com', 900, 50.0, self::ORDER_TS, self::WINDOW );
+		$this->assertSame( 2, $first->flow_id );
+
+		// A Deliverability webhook flips flow 2's message to bounced, so it drops
+		// out of last-touch and flow 1 becomes newest — then the checkout hook
+		// re-fires. The order is already attributed, so nothing is re-credited.
+		$this->messages->update_status( (int) $flow2->id, MessageRecord::STATUS_BOUNCED );
+
+		$second = $this->attributor->attribute( 'buyer@example.com', 900, 50.0, self::ORDER_TS, self::WINDOW );
+
+		$this->assertNull( $second, 'the order is already attributed — no second flow row' );
+		$this->assertCount( 1, $this->attributions->all() );
+		$this->assertSame( array( 2 => 50.0 ), $this->attributions->revenue_by_flow(), 'per-flow revenue unchanged; flow 1 gets no credit' );
 	}
 
 	public function test_only_sent_messages_qualify(): void {
