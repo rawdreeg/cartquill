@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
+use FlowForge\Persistence\AttributionRepository;
 use FlowForge\Persistence\CartCaptureStore;
 use FlowForge\Persistence\EnrollmentRepository;
 use FlowForge\Persistence\MessageRepository;
@@ -29,6 +30,7 @@ final class PersonalData {
 		private readonly MessageRepository $messages,
 		private readonly CartCaptureStore $captures,
 		private readonly SuppressionList $suppression,
+		private readonly AttributionRepository $attributions,
 	) {}
 
 	/**
@@ -77,6 +79,15 @@ final class PersonalData {
 			);
 		}
 
+		$attributed = $this->attributions_for( $email );
+		if ( array() !== $attributed ) {
+			$items[] = array(
+				'group' => 'flowforge_attributions',
+				'label' => 'Revenue attribution',
+				'value' => sprintf( '%d order(s) attributed to FlowForge flows.', count( $attributed ) ),
+			);
+		}
+
 		return $items;
 	}
 
@@ -92,11 +103,27 @@ final class PersonalData {
 	 * @return int Number of records removed (enrollments + messages).
 	 */
 	public function erase( string $email ): int {
-		$email   = strtolower( trim( $email ) );
-		$removed = $this->enrollments->delete_for_customer( $email );
+		$email = strtolower( trim( $email ) );
+
+		// Drop the personal link from any attribution before its message is
+		// deleted, so a revenue row never survives with a dangling message_id.
+		$message_ids = array_map( static fn ( $m ) => (int) $m->id, $this->messages->for_recipient( $email ) );
+		if ( array() !== $message_ids ) {
+			$this->attributions->anonymize_messages( $message_ids );
+		}
+
+		$removed  = $this->enrollments->delete_for_customer( $email );
 		$removed += $this->messages->delete_for_recipient( $email );
 		$this->captures->delete( $email );
 		return $removed;
+	}
+
+	/**
+	 * @return list<\FlowForge\Persistence\AttributionRecord>
+	 */
+	private function attributions_for( string $email ): array {
+		$message_ids = array_map( static fn ( $m ) => (int) $m->id, $this->messages->for_recipient( $email ) );
+		return array() !== $message_ids ? $this->attributions->for_messages( $message_ids ) : array();
 	}
 
 	/**

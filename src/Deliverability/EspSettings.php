@@ -43,7 +43,7 @@ final class EspSettings {
 		} else {
 			$data['api_key'] = $this->crypto->encrypt( $key );
 		}
-		\update_option( self::OPTION, $data );
+		\update_option( self::OPTION, $data, false );
 	}
 
 	public function webhook_secret(): string {
@@ -61,7 +61,7 @@ final class EspSettings {
 		} else {
 			$data['webhook_secret'] = $this->crypto->encrypt( $secret );
 		}
-		\update_option( self::OPTION, $data );
+		\update_option( self::OPTION, $data, false );
 	}
 
 	public function has_webhook_secret(): bool {
@@ -79,7 +79,7 @@ final class EspSettings {
 			unset( $data['domain_id'], $data['domain_verified'] );
 		}
 		$data['domain'] = $domain;
-		\update_option( self::OPTION, $data );
+		\update_option( self::OPTION, $data, false );
 	}
 
 	public function domain_id(): string {
@@ -89,7 +89,7 @@ final class EspSettings {
 	public function set_domain_id( string $id ): void {
 		$data              = $this->data();
 		$data['domain_id'] = $id;
-		\update_option( self::OPTION, $data );
+		\update_option( self::OPTION, $data, false );
 	}
 
 	public function is_domain_verified(): bool {
@@ -99,11 +99,20 @@ final class EspSettings {
 	public function set_domain_verified( bool $verified ): void {
 		$data                    = $this->data();
 		$data['domain_verified'] = $verified;
-		\update_option( self::OPTION, $data );
+		\update_option( self::OPTION, $data, false );
 	}
 
 	public function has_key(): bool {
 		return '' !== $this->api_key();
+	}
+
+	/**
+	 * Whether a key is stored but no longer decrypts (e.g. the install key was
+	 * lost), so sending has silently fallen back to wp_mail.
+	 */
+	public function has_undecryptable_key(): bool {
+		$data = $this->data();
+		return ! empty( $data['api_key'] ) && null === $this->crypto->decrypt( (string) $data['api_key'] );
 	}
 
 	/**

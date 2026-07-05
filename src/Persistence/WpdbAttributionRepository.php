@@ -63,6 +63,47 @@ final class WpdbAttributionRepository implements AttributionRepository {
 		);
 	}
 
+	public function for_messages( array $message_ids ): array {
+		$ids = array_values( array_filter( array_map( 'intval', $message_ids ) ) );
+		if ( array() === $ids ) {
+			return array();
+		}
+		global $wpdb;
+		$table        = Schema::attributions_table();
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE message_id IN ({$placeholders})", $ids ), // phpcs:ignore WordPress.DB.PreparedSQL
+			ARRAY_A
+		);
+
+		return array_map(
+			static fn ( array $row ) => new AttributionRecord(
+				id: (int) $row['id'],
+				order_id: (int) $row['order_id'],
+				flow_id: (int) $row['flow_id'],
+				message_id: null !== $row['message_id'] ? (int) $row['message_id'] : null,
+				revenue: (float) $row['revenue'],
+				attributed_at: null !== $row['attributed_at'] ? (string) $row['attributed_at'] : null,
+			),
+			$rows ?: array()
+		);
+	}
+
+	public function anonymize_messages( array $message_ids ): int {
+		$ids = array_values( array_filter( array_map( 'intval', $message_ids ) ) );
+		if ( array() === $ids ) {
+			return 0;
+		}
+		global $wpdb;
+		$table        = Schema::attributions_table();
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		return (int) $wpdb->query(
+			$wpdb->prepare( "UPDATE {$table} SET message_id = NULL WHERE message_id IN ({$placeholders})", $ids ) // phpcs:ignore WordPress.DB.PreparedSQL
+		);
+	}
+
 	public function revenue_by_flow(): array {
 		global $wpdb;
 		$table = Schema::attributions_table();

@@ -21,6 +21,7 @@ use FlowForge\Admin\OnboardingPage;
 use FlowForge\Admin\ReportingPage;
 use FlowForge\Admin\SettingsPage;
 use FlowForge\Licensing\OptionLicense;
+use FlowForge\Security\InstallKey;
 use FlowForge\Sender\SenderRegistry;
 use FlowForge\Attribution\Attributor;
 use FlowForge\Compliance\PersonalData;
@@ -80,28 +81,33 @@ final class Plugin {
 	}
 
 	private function register(): void {
+		$enrollments  = new WpdbEnrollmentRepository();
+		$messages     = new WpdbMessageRepository();
+		$captures     = new WpdbCartCaptureStore();
+		$suppression  = new WpdbSuppressionList();
+		$attributions = new WpdbAttributionRepository();
+		$signer       = new Signer( InstallKey::get() );
+
+		// Compliance must work even without WooCommerce: a customer must always
+		// be able to opt out and privacy export/erase must still run, so these
+		// register before the WooCommerce gate below.
+		$unsubscribe_link = new UnsubscribeLink( \home_url( '/' ), $signer );
+		( new UnsubscribeEndpoint( $signer, $unsubscribe_link, $suppression, $enrollments ) )->register();
+		( new PrivacyHooks( new PersonalData( $enrollments, $messages, $captures, $suppression, $attributions ) ) )->register();
+
 		if ( ! Activation::woocommerce_ready() ) {
 			\add_action( 'admin_notices', array( $this, 'render_missing_woo_notice' ) );
 			return;
 		}
 
-		$settings    = new OptionsSettings();
-		$clock       = new SystemClock();
-		$scheduler   = new ActionSchedulerScheduler();
-		$flows       = new WpdbFlowRepository();
-		$enrollments = new WpdbEnrollmentRepository();
-		$messages    = new WpdbMessageRepository();
-		$captures    = new WpdbCartCaptureStore();
-		$suppression = new WpdbSuppressionList();
-		$activity    = new WooCustomerActivity();
+		$settings  = new OptionsSettings();
+		$clock     = new SystemClock();
+		$scheduler = new ActionSchedulerScheduler();
+		$flows     = new WpdbFlowRepository();
+		$activity  = new WooCustomerActivity();
 
-		$signer        = new Signer( (string) \wp_salt( 'auth' ) );
 		$tracking_urls = new TrackingUrls( \home_url( '/' ), $signer );
 		( new TrackingEndpoint( $messages, $signer, $tracking_urls ) )->register();
-
-		$unsubscribe_link = new UnsubscribeLink( \home_url( '/' ), $signer );
-		( new UnsubscribeEndpoint( $signer, $unsubscribe_link, $suppression, $enrollments ) )->register();
-		( new PrivacyHooks( new PersonalData( $enrollments, $messages, $captures, $suppression ) ) )->register();
 
 		// Licensing + sender registry. Core ships wp_mail as the default sender.
 		$license = new OptionLicense();
@@ -166,7 +172,6 @@ final class Plugin {
 		( new FlowLibraryPage( $library, new FlowInstaller( $library, $flows ), $flows ) )->register();
 		( new FlowEditorPage( $flows, new FlowEditor() ) )->register();
 
-		$attributions = new WpdbAttributionRepository();
 		( new AttributionTrigger( new Attributor( $messages, $attributions ) ) )->register();
 		( new ReportingPage( $flows, $messages, $attributions, $license ) )->register();
 

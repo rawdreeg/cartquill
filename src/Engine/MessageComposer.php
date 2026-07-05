@@ -61,7 +61,7 @@ final class MessageComposer {
 
 		return new Message(
 			to: $recipient,
-			subject: $this->renderer->render( $step->subject, $context ),
+			subject: $this->renderer->render_text( $step->subject, $context ),
 			body: $body,
 			from_name: $this->settings->from_name(),
 			from_email: $this->settings->from_email(),

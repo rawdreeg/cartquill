@@ -57,7 +57,7 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 	private function row_data( EnrollmentRecord $record ): array {
 		return array(
 			'flow_id'        => $record->flow_id,
-			'customer_email' => $record->customer_email,
+			'customer_email' => strtolower( trim( $record->customer_email ) ),
 			'status'         => $record->status,
 			'current_step'   => $record->current_step,
 			'next_run_at'    => $record->next_run_at,
