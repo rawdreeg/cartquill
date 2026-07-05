@@ -50,13 +50,16 @@ final class UnsubscribeEndpoint {
 	}
 
 	public function maybe_handle_request(): void {
+		// The signed params live in the query string of the List-Unsubscribe URL
+		// (a one-click client POSTs to that same URL), so read $_GET explicitly
+		// rather than $_REQUEST, whose contents depend on the PHP request_order.
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
-		if ( ! isset( $_REQUEST[ UnsubscribeLink::PARAM ] ) ) {
+		if ( ! isset( $_GET[ UnsubscribeLink::PARAM ] ) ) {
 			return;
 		}
 
-		$email  = isset( $_REQUEST['email'] ) ? \sanitize_email( \wp_unslash( $_REQUEST['email'] ) ) : '';
-		$token  = isset( $_REQUEST['t'] ) ? \sanitize_text_field( \wp_unslash( $_REQUEST['t'] ) ) : '';
+		$email  = isset( $_GET['email'] ) ? \sanitize_email( \wp_unslash( $_GET['email'] ) ) : '';
+		$token  = isset( $_GET['t'] ) ? \sanitize_text_field( \wp_unslash( $_GET['t'] ) ) : '';
 		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( (string) \wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : 'GET';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
