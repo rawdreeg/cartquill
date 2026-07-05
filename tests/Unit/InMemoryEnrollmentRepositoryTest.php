@@ -2,15 +2,15 @@
 /**
  * The in-memory enrollment repository behaves like an auto-increment table.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Persistence\EnrollmentRecord;
-use FlowForge\Persistence\InMemoryEnrollmentRepository;
+use CartQuill\Persistence\EnrollmentRecord;
+use CartQuill\Persistence\InMemoryEnrollmentRepository;
 use PHPUnit\Framework\TestCase;
 
 final class InMemoryEnrollmentRepositoryTest extends TestCase {

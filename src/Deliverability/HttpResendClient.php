@@ -2,18 +2,18 @@
 /**
  * HTTP-backed ResendClient (runtime): the Resend REST API.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Deliverability;
+namespace CartQuill\Deliverability;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Model\Message;
+use CartQuill\Model\Message;
 
 /**
  * Talks to https://api.resend.com with the customer's own API key. Marshals a

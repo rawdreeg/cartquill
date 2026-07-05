@@ -3,14 +3,14 @@
  * Credential encryption at rest: round-trip, opacity, and tamper/wrong-key
  * rejection.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Security\SodiumCrypto;
+use CartQuill\Security\SodiumCrypto;
 use PHPUnit\Framework\TestCase;
 
 final class SodiumCryptoTest extends TestCase {

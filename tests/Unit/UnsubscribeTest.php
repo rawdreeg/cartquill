@@ -3,33 +3,33 @@
  * Unsubscribe: a valid link suppresses the address and unsubscribes its
  * enrollments, and the engine then never sends to it again.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Compliance\ArraySuppressionList;
-use FlowForge\Compliance\UnsubscribeEndpoint;
-use FlowForge\Compliance\UnsubscribeLink;
-use FlowForge\Engine\ConditionEvaluator;
-use FlowForge\Engine\Enroller;
-use FlowForge\Engine\MessageComposer;
-use FlowForge\Engine\StepRunner;
-use FlowForge\Flow\DefaultFlows;
-use FlowForge\Flow\Renderer;
-use FlowForge\Persistence\EnrollmentRecord;
-use FlowForge\Persistence\FlowRecord;
-use FlowForge\Persistence\InMemoryEnrollmentRepository;
-use FlowForge\Persistence\InMemoryFlowRepository;
-use FlowForge\Persistence\InMemoryMessageRepository;
-use FlowForge\Scheduling\ArrayScheduler;
-use FlowForge\Sender\FakeSender;
-use FlowForge\Settings\ArraySettings;
-use FlowForge\Support\FixedClock;
-use FlowForge\Tests\Fake\FakeCustomerActivity;
-use FlowForge\Tracking\Signer;
+use CartQuill\Compliance\ArraySuppressionList;
+use CartQuill\Compliance\UnsubscribeEndpoint;
+use CartQuill\Compliance\UnsubscribeLink;
+use CartQuill\Engine\ConditionEvaluator;
+use CartQuill\Engine\Enroller;
+use CartQuill\Engine\MessageComposer;
+use CartQuill\Engine\StepRunner;
+use CartQuill\Flow\DefaultFlows;
+use CartQuill\Flow\Renderer;
+use CartQuill\Persistence\EnrollmentRecord;
+use CartQuill\Persistence\FlowRecord;
+use CartQuill\Persistence\InMemoryEnrollmentRepository;
+use CartQuill\Persistence\InMemoryFlowRepository;
+use CartQuill\Persistence\InMemoryMessageRepository;
+use CartQuill\Scheduling\ArrayScheduler;
+use CartQuill\Sender\FakeSender;
+use CartQuill\Settings\ArraySettings;
+use CartQuill\Support\FixedClock;
+use CartQuill\Tests\Fake\FakeCustomerActivity;
+use CartQuill\Tracking\Signer;
 use PHPUnit\Framework\TestCase;
 
 final class UnsubscribeTest extends TestCase {
@@ -104,7 +104,7 @@ final class UnsubscribeTest extends TestCase {
 	public function test_composed_email_carries_the_http_unsubscribe_link_and_one_click_header(): void {
 		$composer = new MessageComposer( new Renderer(), new ArraySettings( 'Acme', 'hello@acme.test' ), null, $this->link );
 		$message  = $composer->compose(
-			new \FlowForge\Flow\FlowStep( 0, 'Hi', '<p>Body</p>' ),
+			new \CartQuill\Flow\FlowStep( 0, 'Hi', '<p>Body</p>' ),
 			'buyer@example.com',
 			1,
 			0,
@@ -119,13 +119,13 @@ final class UnsubscribeTest extends TestCase {
 
 	public function test_unsubscribe_link_is_not_click_wrapped_when_tracking_is_on(): void {
 		$signer   = new Signer( 'secret' );
-		$urls     = new \FlowForge\Tracking\TrackingUrls( 'https://shop.test/', $signer );
-		$tracker  = new \FlowForge\Tracking\SelfHostedLinkTracker( $urls );
+		$urls     = new \CartQuill\Tracking\TrackingUrls( 'https://shop.test/', $signer );
+		$tracker  = new \CartQuill\Tracking\SelfHostedLinkTracker( $urls );
 		$link     = new UnsubscribeLink( 'https://shop.test/', $signer );
 		$composer = new MessageComposer( new Renderer(), new ArraySettings( 'Acme', 'hello@acme.test' ), $tracker, $link );
 
 		$message = $composer->compose(
-			new \FlowForge\Flow\FlowStep( 0, 'Hi', '<p>Body</p>' ),
+			new \CartQuill\Flow\FlowStep( 0, 'Hi', '<p>Body</p>' ),
 			'buyer@example.com',
 			1,
 			0,
@@ -136,8 +136,8 @@ final class UnsubscribeTest extends TestCase {
 		// the click tracker (which would double-count and break one-click POST).
 		$this->assertSame(
 			1,
-			preg_match( '/href="([^"]*flowforge_unsubscribe[^"]*)"/', $message->body, $m )
+			preg_match( '/href="([^"]*cartquill_unsubscribe[^"]*)"/', $message->body, $m )
 		);
-		$this->assertStringNotContainsString( 'flowforge_track', $m[1] );
+		$this->assertStringNotContainsString( 'cartquill_track', $m[1] );
 	}
 }

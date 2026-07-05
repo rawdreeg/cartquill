@@ -2,19 +2,19 @@
 /**
  * HTTP-backed ProxyClient (runtime): talks to the vendor's license-gated proxy.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Ai;
+namespace CartQuill\Ai;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Licensing\OptionLicense;
-use FlowForge\Licensing\Plans;
+use CartQuill\Licensing\OptionLicense;
+use CartQuill\Licensing\Plans;
 
 /**
  * Posts store context + flow type to the hosted proxy over HTTPS, authenticated
@@ -23,11 +23,11 @@ use FlowForge\Licensing\Plans;
  * normalises errors into {@see ProxyException}.
  *
  * The production endpoint is a human decision — it defaults to a vendor URL that
- * the `flowforge_ai_proxy_url` filter overrides for staging/self-hosting.
+ * the `cartquill_ai_proxy_url` filter overrides for staging/self-hosting.
  */
 final class HttpProxyClient implements ProxyClient {
 
-	private const DEFAULT_ENDPOINT = 'https://proxy.flowforge.app/v1';
+	private const DEFAULT_ENDPOINT = 'https://api.cartquill.com/v1';
 
 	public function __construct(
 		private readonly OptionLicense $license,
@@ -117,6 +117,6 @@ final class HttpProxyClient implements ProxyClient {
 		 *
 		 * @param string $endpoint Default vendor proxy base URL.
 		 */
-		return rtrim( (string) \apply_filters( 'flowforge_ai_proxy_url', self::DEFAULT_ENDPOINT ), '/' );
+		return rtrim( (string) \apply_filters( 'cartquill_ai_proxy_url', self::DEFAULT_ENDPOINT ), '/' );
 	}
 }

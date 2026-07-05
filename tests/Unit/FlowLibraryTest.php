@@ -2,18 +2,18 @@
 /**
  * The flow library and one-click install.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Flow\DefaultFlows;
-use FlowForge\Flow\FlowInstaller;
-use FlowForge\Flow\FlowLibrary;
-use FlowForge\Persistence\FlowRecord;
-use FlowForge\Persistence\InMemoryFlowRepository;
+use CartQuill\Flow\DefaultFlows;
+use CartQuill\Flow\FlowInstaller;
+use CartQuill\Flow\FlowLibrary;
+use CartQuill\Persistence\FlowRecord;
+use CartQuill\Persistence\InMemoryFlowRepository;
 use PHPUnit\Framework\TestCase;
 
 final class FlowLibraryTest extends TestCase {

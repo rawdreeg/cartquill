@@ -2,19 +2,19 @@
 /**
  * Decides whether a step should send, skip, or exit the flow.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Engine;
+namespace CartQuill\Engine;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Flow\FlowStep;
-use FlowForge\Persistence\EnrollmentRecord;
+use CartQuill\Flow\FlowStep;
+use CartQuill\Persistence\EnrollmentRecord;
 
 /**
  * Evaluates a step's conditions against live customer activity.

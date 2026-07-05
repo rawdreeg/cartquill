@@ -2,12 +2,12 @@
 /**
  * Outcome of a SenderInterface::send() call.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Model;
+namespace CartQuill\Model;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

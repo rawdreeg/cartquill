@@ -2,12 +2,12 @@
 /**
  * Dependency checks (pure logic, unit-tested).
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Support;
+namespace CartQuill\Support;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

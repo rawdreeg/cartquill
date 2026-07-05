@@ -2,18 +2,18 @@
 /**
  * Built-in flow definitions shipped with the free core.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Flow;
+namespace CartQuill\Flow;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\FlowRecord;
+use CartQuill\Persistence\FlowRecord;
 
 /**
  * Production definitions for the core flows. The flow-library slice adds the

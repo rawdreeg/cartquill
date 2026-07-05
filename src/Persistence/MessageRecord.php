@@ -2,12 +2,12 @@
 /**
  * A row in the `messages` table: one email plus its lifecycle status.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Persistence;
+namespace CartQuill\Persistence;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

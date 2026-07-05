@@ -2,12 +2,12 @@
 /**
  * Self-hosted open/click tracking: pixel + wrapped links.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tracking;
+namespace CartQuill\Tracking;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
@@ -46,7 +46,7 @@ final class SelfHostedLinkTracker implements LinkTracker {
 
 				// Never wrap our own endpoints (already-tracked links, or the
 				// one-click unsubscribe link, which must reach the user intact).
-				if ( str_contains( $target, 'flowforge_track' ) || str_contains( $target, 'flowforge_unsubscribe' ) ) {
+				if ( str_contains( $target, 'cartquill_track' ) || str_contains( $target, 'cartquill_unsubscribe' ) ) {
 					return $m[0];
 				}
 

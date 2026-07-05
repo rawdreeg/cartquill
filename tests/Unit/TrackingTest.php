@@ -3,19 +3,19 @@
  * Self-hosted open/click tracking: signing, link wrapping, and the endpoint's
  * forward-only status transitions with open-redirect protection.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Persistence\InMemoryMessageRepository;
-use FlowForge\Persistence\MessageRecord;
-use FlowForge\Tracking\SelfHostedLinkTracker;
-use FlowForge\Tracking\Signer;
-use FlowForge\Tracking\TrackingEndpoint;
-use FlowForge\Tracking\TrackingUrls;
+use CartQuill\Persistence\InMemoryMessageRepository;
+use CartQuill\Persistence\MessageRecord;
+use CartQuill\Tracking\SelfHostedLinkTracker;
+use CartQuill\Tracking\Signer;
+use CartQuill\Tracking\TrackingEndpoint;
+use CartQuill\Tracking\TrackingUrls;
 use PHPUnit\Framework\TestCase;
 
 final class TrackingTest extends TestCase {
@@ -55,7 +55,7 @@ final class TrackingTest extends TestCase {
 
 		$wrapped = $tracker->wrap_links( $body, 7 );
 
-		$this->assertStringContainsString( 'flowforge_track=click', $wrapped );
+		$this->assertStringContainsString( 'cartquill_track=click', $wrapped );
 		$this->assertStringContainsString( 'mid=7', $wrapped );
 		$this->assertStringContainsString( 'mailto:hi@shop.test', $wrapped ); // untouched
 		$this->assertStringContainsString( 'href="#top"', $wrapped );          // untouched
@@ -65,7 +65,7 @@ final class TrackingTest extends TestCase {
 		$tracker = new SelfHostedLinkTracker( $this->urls );
 		$pixel   = $tracker->pixel_html( 9 );
 
-		$this->assertStringContainsString( 'flowforge_track=open', $pixel );
+		$this->assertStringContainsString( 'cartquill_track=open', $pixel );
 		$this->assertStringContainsString( 'mid=9', $pixel );
 		$this->assertStringContainsString( 'width="1"', $pixel );
 	}

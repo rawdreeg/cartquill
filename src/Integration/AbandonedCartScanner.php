@@ -2,21 +2,21 @@
 /**
  * Scans for abandoned carts and enrolls them into the abandoned-cart flow.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Integration;
+namespace CartQuill\Integration;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Engine\Enroller;
-use FlowForge\Persistence\CartCaptureStore;
-use FlowForge\Persistence\FlowRepository;
-use FlowForge\Support\Clock;
+use CartQuill\Engine\Enroller;
+use CartQuill\Persistence\CartCaptureStore;
+use CartQuill\Persistence\FlowRepository;
+use CartQuill\Support\Clock;
 
 /**
  * Runs on a recurring Action Scheduler tick. A capture is "abandoned" once it
@@ -30,7 +30,7 @@ final class AbandonedCartScanner {
 	public const FLOW_TYPE = 'abandoned_cart';
 
 	/** Recurring Action Scheduler hook that runs the scan. */
-	public const HOOK = 'flowforge_scan_abandoned_carts';
+	public const HOOK = 'cartquill_scan_abandoned_carts';
 
 	/** How often the scan runs (seconds). */
 	public const SCAN_INTERVAL = 900;

@@ -2,19 +2,19 @@
 /**
  * Post-purchase trigger: enrolls the buyer when an order completes.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Integration;
+namespace CartQuill\Integration;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Engine\FlowTypeEnroller;
-use FlowForge\Flow\DefaultFlows;
+use CartQuill\Engine\FlowTypeEnroller;
+use CartQuill\Flow\DefaultFlows;
 
 /**
  * On order completion, enrolls the buyer into every active post-purchase flow

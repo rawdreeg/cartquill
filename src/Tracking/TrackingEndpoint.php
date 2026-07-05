@@ -2,19 +2,19 @@
 /**
  * Handles open-pixel and click-redirect requests.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tracking;
+namespace CartQuill\Tracking;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\MessageRecord;
-use FlowForge\Persistence\MessageRepository;
+use CartQuill\Persistence\MessageRecord;
+use CartQuill\Persistence\MessageRepository;
 
 /**
  * Records engagement from the signed tracking URLs.

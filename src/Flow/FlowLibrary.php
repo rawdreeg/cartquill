@@ -2,18 +2,18 @@
 /**
  * The curated library of installable flow templates.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Flow;
+namespace CartQuill\Flow;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\FlowRecord;
+use CartQuill\Persistence\FlowRecord;
 
 /**
  * The set of flows a store can install in one click. Backed by DefaultFlows so

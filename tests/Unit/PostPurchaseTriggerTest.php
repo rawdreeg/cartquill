@@ -2,24 +2,24 @@
 /**
  * Post-purchase trigger: order completion enrolls the buyer, idempotently.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
 use Brain\Monkey;
 use Brain\Monkey\Functions;
-use FlowForge\Engine\Enroller;
-use FlowForge\Engine\FlowTypeEnroller;
-use FlowForge\Flow\DefaultFlows;
-use FlowForge\Integration\PostPurchaseTrigger;
-use FlowForge\Persistence\FlowRecord;
-use FlowForge\Persistence\InMemoryEnrollmentRepository;
-use FlowForge\Persistence\InMemoryFlowRepository;
-use FlowForge\Scheduling\ArrayScheduler;
-use FlowForge\Support\FixedClock;
+use CartQuill\Engine\Enroller;
+use CartQuill\Engine\FlowTypeEnroller;
+use CartQuill\Flow\DefaultFlows;
+use CartQuill\Integration\PostPurchaseTrigger;
+use CartQuill\Persistence\FlowRecord;
+use CartQuill\Persistence\InMemoryEnrollmentRepository;
+use CartQuill\Persistence\InMemoryFlowRepository;
+use CartQuill\Scheduling\ArrayScheduler;
+use CartQuill\Support\FixedClock;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 

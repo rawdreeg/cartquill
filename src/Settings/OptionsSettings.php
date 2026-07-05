@@ -2,12 +2,12 @@
 /**
  * wp_options-backed Settings.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Settings;
+namespace CartQuill\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class OptionsSettings implements Settings {
 
-	public const OPTION = 'flowforge_settings';
+	public const OPTION = 'cartquill_settings';
 
 	/**
 	 * @return array<string, mixed>
@@ -57,7 +57,7 @@ final class OptionsSettings implements Settings {
 	}
 
 	/**
-	 * Whether the store opted in to deleting all FlowForge data on uninstall.
+	 * Whether the store opted in to deleting all CartQuill data on uninstall.
 	 */
 	public function remove_data_on_uninstall(): bool {
 		return ! empty( $this->data()['remove_data_on_uninstall'] );

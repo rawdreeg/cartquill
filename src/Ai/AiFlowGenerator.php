@@ -2,22 +2,22 @@
 /**
  * Generates draft flows from the license-gated AI proxy.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Ai;
+namespace CartQuill\Ai;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Flow\FlowStep;
-use FlowForge\Licensing\License;
-use FlowForge\Licensing\Plans;
-use FlowForge\Persistence\FlowRecord;
-use FlowForge\Persistence\FlowRepository;
+use CartQuill\Flow\FlowStep;
+use CartQuill\Licensing\License;
+use CartQuill\Licensing\Plans;
+use CartQuill\Persistence\FlowRecord;
+use CartQuill\Persistence\FlowRepository;
 
 /**
  * Orchestrates one AI generation: gate on the AI license, spend the rate-limit

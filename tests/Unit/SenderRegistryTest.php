@@ -2,16 +2,16 @@
 /**
  * The sender registry: registration, active selection, and safe fallback.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Sender\FakeSender;
-use FlowForge\Sender\SenderRegistry;
-use FlowForge\Sender\WpMailSender;
+use CartQuill\Sender\FakeSender;
+use CartQuill\Sender\SenderRegistry;
+use CartQuill\Sender\WpMailSender;
 use PHPUnit\Framework\TestCase;
 
 final class SenderRegistryTest extends TestCase {

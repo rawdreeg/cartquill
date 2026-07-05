@@ -2,12 +2,12 @@
 /**
  * WooCommerce-backed LapsedCustomerFinder.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Engine;
+namespace CartQuill\Engine;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
@@ -41,7 +41,7 @@ final class WooLapsedCustomerFinder implements LapsedCustomerFinder {
 			return new LapsedBatch( array(), 0, true );
 		}
 
-		$lookback = (int) \apply_filters( 'flowforge_win_back_lookback', self::DEFAULT_LOOKBACK );
+		$lookback = (int) \apply_filters( 'cartquill_win_back_lookback', self::DEFAULT_LOOKBACK );
 		$since    = $cutoff - $lookback;
 		$page     = $limit > 0 ? $limit : -1;
 

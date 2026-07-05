@@ -1,4 +1,4 @@
-=== FlowForge ===
+=== CartQuill ===
 Contributors: rawdreeg
 Tags: woocommerce, email, automation, marketing, abandoned cart
 Requires at least: 6.4
@@ -12,7 +12,7 @@ Install proven WooCommerce email flows, draft them with AI, and see revenue per 
 
 == Description ==
 
-FlowForge is a standalone WooCommerce email-automation plugin for store owners who want proven, revenue-driving email flows without wiring up a heavyweight marketing suite.
+CartQuill is a standalone WooCommerce email-automation plugin for store owners who want proven, revenue-driving email flows without wiring up a heavyweight marketing suite.
 
 The **free core**:
 
@@ -27,18 +27,18 @@ Two **paid add-ons** extend the core (each unlocked with its own license key):
 * **AI Flow Generation** — draft a whole flow, or rewrite a single step, from a short prompt. Generated copy always opens in the editor for your review; nothing is ever sent to customers automatically.
 * **Deliverability** — connect *your own* Resend account to send at scale, run a guided sending-domain authentication wizard, and ingest delivery/bounce/complaint webhooks that feed inbox reporting and auto-suppression.
 
-FlowForge never operates or resells sending infrastructure. The Deliverability add-on connects the account you already own.
+CartQuill never operates or resells sending infrastructure. The Deliverability add-on connects the account you already own.
 
 == External services ==
 
 This plugin can connect to two external services. Neither is contacted until you configure and use the corresponding feature.
 
-= FlowForge AI service (AI Flow Generation add-on, paid vendor service) =
+= CartQuill AI service (AI Flow Generation add-on, paid vendor service) =
 
-When you use "Generate with AI" or "Rewrite with AI", the plugin sends a request to the FlowForge AI proxy at https://proxy.flowforge.app to draft or rewrite email copy. Each request includes: the flow type you selected; store context (your store name, the tone you type, your store currency, and a few of your top product names); the copy you ask to rewrite; and your AI add-on license key, sent as a Bearer token for authentication. Requests are made only when you click **Generate draft** or **Rewrite**. This is a paid vendor service operated by FlowForge; the copy is drafted server-side and returned to your editor for review. The first request is made only after you explicitly acknowledge this disclosure in the plugin.
+When you use "Generate with AI" or "Rewrite with AI", the plugin sends a request to the CartQuill AI proxy at https://api.cartquill.com to draft or rewrite email copy. Each request includes: the flow type you selected; store context (your store name, the tone you type, your store currency, and a few of your top product names); the copy you ask to rewrite; and your AI add-on license key, sent as a Bearer token for authentication. Requests are made only when you click **Generate draft** or **Rewrite**. This is a paid vendor service operated by CartQuill; the copy is drafted server-side and returned to your editor for review. The first request is made only after you explicitly acknowledge this disclosure in the plugin.
 
-* Terms of Service: https://flowforge.app/legal/ai-terms
-* Privacy Policy: https://flowforge.app/legal/ai-privacy
+* Terms of Service: https://api.cartquill.com/legal/ai-terms
+* Privacy Policy: https://api.cartquill.com/legal/ai-privacy
 
 = Resend (Deliverability add-on, your own account) =
 
@@ -49,9 +49,9 @@ If you enable the Deliverability add-on and connect your own Resend account, the
 
 == Frequently Asked Questions ==
 
-= Does FlowForge require WooCommerce? =
+= Does CartQuill require WooCommerce? =
 
-Yes. FlowForge builds on WooCommerce 8.0 or newer for its order, customer, and checkout events. It will not activate without an active, compatible WooCommerce install.
+Yes. CartQuill builds on WooCommerce 8.0 or newer for its order, customer, and checkout events. It will not activate without an active, compatible WooCommerce install.
 
 = Does it send any of my data to third parties? =
 
@@ -59,15 +59,15 @@ Not in the free core — it sends through your site's own `wp_mail()` and tracks
 
 = Does the AI feature email my customers automatically? =
 
-No. AI-generated and AI-rewritten copy always lands in the editor as a draft for you to review and activate. FlowForge never auto-sends generated copy.
+No. AI-generated and AI-rewritten copy always lands in the editor as a draft for you to review and activate. CartQuill never auto-sends generated copy.
 
 = Do you resell email sending? =
 
-No. The Deliverability add-on connects the Resend account you own; FlowForge never operates or resells sending infrastructure.
+No. The Deliverability add-on connects the Resend account you own; CartQuill never operates or resells sending infrastructure.
 
 = How is revenue attributed to a flow? =
 
-Attribution is last-touch: when an order is placed, FlowForge matches the buyer to the most recent flow email sent to them within the attribution window (7 days by default, configurable). No multi-touch claims are made.
+Attribution is last-touch: when an order is placed, CartQuill matches the buyer to the most recent flow email sent to them within the attribution window (7 days by default, configurable). No multi-touch claims are made.
 
 == Changelog ==
 

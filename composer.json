@@ -1,5 +1,5 @@
 {
-    "name": "flowforge/flowforge",
+    "name": "cartquill/cartquill",
     "description": "Standalone WooCommerce email-automation plugin: proven flows, AI generation, revenue-per-flow reporting.",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
@@ -13,12 +13,12 @@
     },
     "autoload": {
         "psr-4": {
-            "FlowForge\\": "src/"
+            "CartQuill\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "FlowForge\\Tests\\": "tests/"
+            "CartQuill\\Tests\\": "tests/"
         }
     },
     "config": {

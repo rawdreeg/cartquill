@@ -3,25 +3,25 @@
  * AI Flow Generation: license/rate gating, draft-only output, and the guarantee
  * that generated flows never auto-send.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Ai\AiFlowGenerator;
-use FlowForge\Ai\ArrayRateLimiter;
-use FlowForge\Ai\GenerationResult;
-use FlowForge\Engine\Enroller;
-use FlowForge\Licensing\ArrayLicense;
-use FlowForge\Licensing\Plans;
-use FlowForge\Persistence\FlowRecord;
-use FlowForge\Persistence\InMemoryEnrollmentRepository;
-use FlowForge\Persistence\InMemoryFlowRepository;
-use FlowForge\Scheduling\ArrayScheduler;
-use FlowForge\Support\FixedClock;
-use FlowForge\Tests\Fake\StubProxyClient;
+use CartQuill\Ai\AiFlowGenerator;
+use CartQuill\Ai\ArrayRateLimiter;
+use CartQuill\Ai\GenerationResult;
+use CartQuill\Engine\Enroller;
+use CartQuill\Licensing\ArrayLicense;
+use CartQuill\Licensing\Plans;
+use CartQuill\Persistence\FlowRecord;
+use CartQuill\Persistence\InMemoryEnrollmentRepository;
+use CartQuill\Persistence\InMemoryFlowRepository;
+use CartQuill\Scheduling\ArrayScheduler;
+use CartQuill\Support\FixedClock;
+use CartQuill\Tests\Fake\StubProxyClient;
 use PHPUnit\Framework\TestCase;
 
 final class AiGeneratorTest extends TestCase {
@@ -165,7 +165,7 @@ final class AiGeneratorTest extends TestCase {
 			'abandoned_cart',
 			FlowRecord::STATUS_DRAFT,
 			FlowRecord::SOURCE_AI,
-			array( new \FlowForge\Flow\FlowStep( 0, 'Hi', 'Original body' ) ),
+			array( new \CartQuill\Flow\FlowStep( 0, 'Hi', 'Original body' ) ),
 		);
 
 		$this->assertNull( $generator->rewrite_step( $flow, 0, 'shorter' ) );

@@ -2,15 +2,15 @@
 /**
  * The built-in flow definitions have the documented types and step timing.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Flow\DefaultFlows;
-use FlowForge\Persistence\FlowRecord;
+use CartQuill\Flow\DefaultFlows;
+use CartQuill\Persistence\FlowRecord;
 use PHPUnit\Framework\TestCase;
 
 final class DefaultFlowsTest extends TestCase {

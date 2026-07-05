@@ -2,12 +2,12 @@
 /**
  * One step of a flow: a delay plus the email to send at that point.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Flow;
+namespace CartQuill\Flow;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

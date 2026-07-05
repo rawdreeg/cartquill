@@ -3,17 +3,17 @@
  * Webhook ingestion: representative Resend payloads → message status
  * transitions and suppression-list changes (payload-in / state-out).
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Compliance\ArraySuppressionList;
-use FlowForge\Deliverability\WebhookProcessor;
-use FlowForge\Persistence\InMemoryMessageRepository;
-use FlowForge\Persistence\MessageRecord;
+use CartQuill\Compliance\ArraySuppressionList;
+use CartQuill\Deliverability\WebhookProcessor;
+use CartQuill\Persistence\InMemoryMessageRepository;
+use CartQuill\Persistence\MessageRecord;
 use PHPUnit\Framework\TestCase;
 
 final class WebhookProcessorTest extends TestCase {

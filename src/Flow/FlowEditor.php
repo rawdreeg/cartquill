@@ -2,18 +2,18 @@
 /**
  * Applies editor form data to a flow.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Flow;
+namespace CartQuill\Flow;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\FlowRecord;
+use CartQuill\Persistence\FlowRecord;
 
 /**
  * Turns submitted form data into an updated FlowRecord: name, status, and each

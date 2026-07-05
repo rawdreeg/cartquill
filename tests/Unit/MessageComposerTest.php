@@ -2,17 +2,17 @@
 /**
  * MessageComposer guarantees an unsubscribe on every email and renders context.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Engine\MessageComposer;
-use FlowForge\Flow\FlowStep;
-use FlowForge\Flow\Renderer;
-use FlowForge\Settings\ArraySettings;
+use CartQuill\Engine\MessageComposer;
+use CartQuill\Flow\FlowStep;
+use CartQuill\Flow\Renderer;
+use CartQuill\Settings\ArraySettings;
 use PHPUnit\Framework\TestCase;
 
 final class MessageComposerTest extends TestCase {

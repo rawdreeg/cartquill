@@ -2,15 +2,15 @@
 /**
  * Scripted ProxyClient for tests — no network.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Fake;
+namespace CartQuill\Tests\Fake;
 
-use FlowForge\Ai\ProxyClient;
-use FlowForge\Ai\ProxyException;
+use CartQuill\Ai\ProxyClient;
+use CartQuill\Ai\ProxyException;
 
 /**
  * Returns canned steps / rewrites and records the calls, standing in for the

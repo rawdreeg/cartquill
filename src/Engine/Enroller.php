@@ -2,22 +2,22 @@
 /**
  * Enrolls a customer into a flow and schedules its first step.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Engine;
+namespace CartQuill\Engine;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\EnrollmentRecord;
-use FlowForge\Persistence\EnrollmentRepository;
-use FlowForge\Persistence\FlowRecord;
-use FlowForge\Scheduling\Scheduler;
-use FlowForge\Support\Clock;
+use CartQuill\Persistence\EnrollmentRecord;
+use CartQuill\Persistence\EnrollmentRepository;
+use CartQuill\Persistence\FlowRecord;
+use CartQuill\Scheduling\Scheduler;
+use CartQuill\Support\Clock;
 
 /**
  * The entry point every trigger calls. Creates an active enrollment at step 0

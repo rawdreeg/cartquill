@@ -2,64 +2,64 @@
 /**
  * Runtime bootstrap: wires the object graph and registers WordPress hooks.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge;
+namespace CartQuill;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Admin\FlowEditorPage;
-use FlowForge\Admin\FlowLibraryPage;
-use FlowForge\Admin\LicensePage;
-use FlowForge\Admin\Onboarding;
-use FlowForge\Admin\OnboardingPage;
-use FlowForge\Admin\ReportingPage;
-use FlowForge\Admin\SettingsPage;
-use FlowForge\Licensing\OptionLicense;
-use FlowForge\Security\InstallKey;
-use FlowForge\Sender\SenderRegistry;
-use FlowForge\Attribution\Attributor;
-use FlowForge\Compliance\PersonalData;
-use FlowForge\Compliance\PrivacyHooks;
-use FlowForge\Compliance\UnsubscribeEndpoint;
-use FlowForge\Compliance\UnsubscribeLink;
-use FlowForge\Compliance\WpdbSuppressionList;
-use FlowForge\Engine\ConditionEvaluator;
-use FlowForge\Engine\Enroller;
-use FlowForge\Engine\FlowTypeEnroller;
-use FlowForge\Engine\MessageComposer;
-use FlowForge\Engine\StepRunner;
-use FlowForge\Engine\WooCustomerActivity;
-use FlowForge\Flow\FlowEditor;
-use FlowForge\Flow\FlowInstaller;
-use FlowForge\Flow\FlowLibrary;
-use FlowForge\Flow\Renderer;
-use FlowForge\Engine\WooLapsedCustomerFinder;
-use FlowForge\Integration\AbandonedCartScanner;
-use FlowForge\Integration\AbandonedCartTracker;
-use FlowForge\Integration\AttributionTrigger;
-use FlowForge\Integration\PostPurchaseTrigger;
-use FlowForge\Integration\WelcomeTrigger;
-use FlowForge\Integration\WinBackScanner;
-use FlowForge\Persistence\WpdbAttributionRepository;
-use FlowForge\Persistence\WpdbCartCaptureStore;
-use FlowForge\Persistence\WpdbEnrollmentRepository;
-use FlowForge\Persistence\WpdbFlowRepository;
-use FlowForge\Persistence\WpdbMessageRepository;
-use FlowForge\Scheduling\ActionSchedulerScheduler;
-use FlowForge\Sender\WpMailSender;
-use FlowForge\Settings\OptionsSettings;
-use FlowForge\Support\OptionScanCursor;
-use FlowForge\Support\SystemClock;
-use FlowForge\Tracking\SelfHostedLinkTracker;
-use FlowForge\Tracking\Signer;
-use FlowForge\Tracking\TrackingEndpoint;
-use FlowForge\Tracking\TrackingUrls;
+use CartQuill\Admin\FlowEditorPage;
+use CartQuill\Admin\FlowLibraryPage;
+use CartQuill\Admin\LicensePage;
+use CartQuill\Admin\Onboarding;
+use CartQuill\Admin\OnboardingPage;
+use CartQuill\Admin\ReportingPage;
+use CartQuill\Admin\SettingsPage;
+use CartQuill\Licensing\OptionLicense;
+use CartQuill\Security\InstallKey;
+use CartQuill\Sender\SenderRegistry;
+use CartQuill\Attribution\Attributor;
+use CartQuill\Compliance\PersonalData;
+use CartQuill\Compliance\PrivacyHooks;
+use CartQuill\Compliance\UnsubscribeEndpoint;
+use CartQuill\Compliance\UnsubscribeLink;
+use CartQuill\Compliance\WpdbSuppressionList;
+use CartQuill\Engine\ConditionEvaluator;
+use CartQuill\Engine\Enroller;
+use CartQuill\Engine\FlowTypeEnroller;
+use CartQuill\Engine\MessageComposer;
+use CartQuill\Engine\StepRunner;
+use CartQuill\Engine\WooCustomerActivity;
+use CartQuill\Flow\FlowEditor;
+use CartQuill\Flow\FlowInstaller;
+use CartQuill\Flow\FlowLibrary;
+use CartQuill\Flow\Renderer;
+use CartQuill\Engine\WooLapsedCustomerFinder;
+use CartQuill\Integration\AbandonedCartScanner;
+use CartQuill\Integration\AbandonedCartTracker;
+use CartQuill\Integration\AttributionTrigger;
+use CartQuill\Integration\PostPurchaseTrigger;
+use CartQuill\Integration\WelcomeTrigger;
+use CartQuill\Integration\WinBackScanner;
+use CartQuill\Persistence\WpdbAttributionRepository;
+use CartQuill\Persistence\WpdbCartCaptureStore;
+use CartQuill\Persistence\WpdbEnrollmentRepository;
+use CartQuill\Persistence\WpdbFlowRepository;
+use CartQuill\Persistence\WpdbMessageRepository;
+use CartQuill\Scheduling\ActionSchedulerScheduler;
+use CartQuill\Sender\WpMailSender;
+use CartQuill\Settings\OptionsSettings;
+use CartQuill\Support\OptionScanCursor;
+use CartQuill\Support\SystemClock;
+use CartQuill\Tracking\SelfHostedLinkTracker;
+use CartQuill\Tracking\Signer;
+use CartQuill\Tracking\TrackingEndpoint;
+use CartQuill\Tracking\TrackingUrls;
 
 /**
  * Composition root. Kept thin: it assembles the tested engine core with its
@@ -127,8 +127,8 @@ final class Plugin {
 		 * @param SenderRegistry $senders The sender registry.
 		 * @param License        $license The licensing gate.
 		 */
-		\do_action( 'flowforge_register_senders', $senders, $license );
-		$senders->set_active( (string) \apply_filters( 'flowforge_active_sender', 'wp_mail' ) );
+		\do_action( 'cartquill_register_senders', $senders, $license );
+		$senders->set_active( (string) \apply_filters( 'cartquill_active_sender', 'wp_mail' ) );
 
 		$library = new FlowLibrary();
 
@@ -138,7 +138,7 @@ final class Plugin {
 		 *
 		 * @param License $license The licensing gate.
 		 */
-		\do_action( 'flowforge_register_addons', $license );
+		\do_action( 'cartquill_register_addons', $license );
 
 		$runner = new StepRunner(
 			$flows,
@@ -183,7 +183,7 @@ final class Plugin {
 			AbandonedCartScanner::HOOK,
 			static function () use ( $cart_scanner ): void {
 				/** Idle time before a cart counts as abandoned, in seconds. */
-				$threshold = (int) \apply_filters( 'flowforge_abandoned_cart_threshold', AbandonedCartScanner::DEFAULT_THRESHOLD );
+				$threshold = (int) \apply_filters( 'cartquill_abandoned_cart_threshold', AbandonedCartScanner::DEFAULT_THRESHOLD );
 				$cart_scanner->scan( $threshold );
 			}
 		);
@@ -200,7 +200,7 @@ final class Plugin {
 			WinBackScanner::HOOK,
 			static function () use ( $win_back ): void {
 				/** How long since the last order before a customer is lapsed, in seconds. */
-				$threshold = (int) \apply_filters( 'flowforge_win_back_threshold', WinBackScanner::DEFAULT_THRESHOLD );
+				$threshold = (int) \apply_filters( 'cartquill_win_back_threshold', WinBackScanner::DEFAULT_THRESHOLD );
 				$win_back->scan( $threshold );
 			}
 		);
@@ -216,13 +216,13 @@ final class Plugin {
 
 	/**
 	 * Include any installed add-on bootstrap files so they can self-register on
-	 * the `flowforge_register_*` hooks before those hooks fire. Each paid add-on
+	 * the `cartquill_register_*` hooks before those hooks fire. Each paid add-on
 	 * owns a `src/<Addon>/addon.php`; the free WP.org build omits those
 	 * directories, so this loads whichever add-ons are actually present.
 	 */
 	private function load_addons(): void {
 		foreach ( array( 'Ai', 'Deliverability' ) as $addon ) {
-			$bootstrap = FLOWFORGE_PATH . 'src/' . $addon . '/addon.php';
+			$bootstrap = CARTQUILL_PATH . 'src/' . $addon . '/addon.php';
 			if ( is_readable( $bootstrap ) ) {
 				require_once $bootstrap;
 			}
@@ -232,12 +232,12 @@ final class Plugin {
 	/**
 	 * Ensure a recurring Action Scheduler action is scheduled (once).
 	 */
-	private static function schedule_recurring( string $hook, int $interval, \FlowForge\Support\Clock $clock ): void {
+	private static function schedule_recurring( string $hook, int $interval, \CartQuill\Support\Clock $clock ): void {
 		if ( ! function_exists( 'as_has_scheduled_action' ) || ! function_exists( 'as_schedule_recurring_action' ) ) {
 			return;
 		}
 		if ( ! \as_has_scheduled_action( $hook ) ) {
-			\as_schedule_recurring_action( $clock->now(), $interval, $hook, array(), 'flowforge' );
+			\as_schedule_recurring_action( $clock->now(), $interval, $hook, array(), 'cartquill' );
 		}
 	}
 
@@ -247,8 +247,8 @@ final class Plugin {
 		}
 		echo '<div class="notice notice-error"><p>';
 		echo \esc_html__(
-			'FlowForge is inactive because WooCommerce 8.0+ is not active. Activate WooCommerce to resume your flows.',
-			'flowforge'
+			'CartQuill is inactive because WooCommerce 8.0+ is not active. Activate WooCommerce to resume your flows.',
+			'cartquill'
 		);
 		echo '</p></div>';
 	}

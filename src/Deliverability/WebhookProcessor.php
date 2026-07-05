@@ -2,20 +2,20 @@
 /**
  * Applies a verified ESP webhook event to the messages + suppression state.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Deliverability;
+namespace CartQuill\Deliverability;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Compliance\SuppressionList;
-use FlowForge\Persistence\MessageRecord;
-use FlowForge\Persistence\MessageRepository;
+use CartQuill\Compliance\SuppressionList;
+use CartQuill\Persistence\MessageRecord;
+use CartQuill\Persistence\MessageRepository;
 
 /**
  * The tested core of webhook ingestion (no WordPress): given a decoded Resend

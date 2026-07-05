@@ -2,12 +2,12 @@
 /**
  * In-memory SuppressionList for tests.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Compliance;
+namespace CartQuill\Compliance;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

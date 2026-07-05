@@ -2,15 +2,15 @@
 /**
  * Svix signature verification for Resend webhooks.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Deliverability\ResendWebhookVerifier;
-use FlowForge\Support\FixedClock;
+use CartQuill\Deliverability\ResendWebhookVerifier;
+use CartQuill\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class ResendWebhookVerifierTest extends TestCase {

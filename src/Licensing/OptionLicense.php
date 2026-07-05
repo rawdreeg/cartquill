@@ -2,12 +2,12 @@
 /**
  * Option-backed License (scaffold).
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Licensing;
+namespace CartQuill\Licensing;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * answers the gate from it.
  *
  * SCAFFOLD: in production the plan-active decision is owned by Freemius (which
- * validates keys against the store). The `flowforge_plan_active` filter is the
+ * validates keys against the store). The `cartquill_plan_active` filter is the
  * seam where the Freemius SDK overrides this — until then, entering a key marks
  * the plan active locally so the add-ons can be developed and demoed.
  *
@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class OptionLicense implements License {
 
-	public const OPTION = 'flowforge_license';
+	public const OPTION = 'cartquill_license';
 
 	public function is_active( string $capability ): bool {
 		$active = false;
@@ -46,7 +46,7 @@ final class OptionLicense implements License {
 		 * @param bool   $active     Whether the capability is active locally.
 		 * @param string $capability The Plans::* capability being checked.
 		 */
-		return (bool) \apply_filters( 'flowforge_plan_active', $active, $capability );
+		return (bool) \apply_filters( 'cartquill_plan_active', $active, $capability );
 	}
 
 	/**

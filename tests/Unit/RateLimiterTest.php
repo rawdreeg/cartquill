@@ -2,17 +2,17 @@
 /**
  * The transient-backed AI rate limiter: fixed window, enforced limit.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
 use Brain\Monkey;
 use Brain\Monkey\Functions;
-use FlowForge\Ai\TransientRateLimiter;
-use FlowForge\Support\FixedClock;
+use CartQuill\Ai\TransientRateLimiter;
+use CartQuill\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class RateLimiterTest extends TestCase {

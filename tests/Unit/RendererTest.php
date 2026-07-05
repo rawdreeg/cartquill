@@ -2,14 +2,14 @@
 /**
  * Template placeholder substitution escapes merge values.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Flow\Renderer;
+use CartQuill\Flow\Renderer;
 use PHPUnit\Framework\TestCase;
 
 final class RendererTest extends TestCase {

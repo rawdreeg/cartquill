@@ -2,19 +2,19 @@
 /**
  * The paid plans and what each unlocks.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Licensing;
+namespace CartQuill\Licensing;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
 /**
- * FlowForge sells two add-ons à la carte plus a Pro bundle. The Pro bundle
+ * CartQuill sells two add-ons à la carte plus a Pro bundle. The Pro bundle
  * grants both add-ons, so gating logic asks about a capability (ai /
  * deliverability) and the license expands the bundle for it.
  */

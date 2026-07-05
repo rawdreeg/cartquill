@@ -2,18 +2,18 @@
 /**
  * Contract with the customer's Resend account.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Deliverability;
+namespace CartQuill\Deliverability;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Model\Message;
+use CartQuill\Model\Message;
 
 /**
  * The seam between the add-on and Resend's HTTP API, authenticated with the

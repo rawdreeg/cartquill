@@ -2,12 +2,12 @@
 /**
  * A row in the `cart_captures` table: a customer with an active cart.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Persistence;
+namespace CartQuill\Persistence;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

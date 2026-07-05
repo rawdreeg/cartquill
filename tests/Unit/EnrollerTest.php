@@ -3,19 +3,19 @@
  * Enrollment creation and idempotency (a customer is never enrolled twice in
  * the same flow run).
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Engine\Enroller;
-use FlowForge\Flow\FlowStep;
-use FlowForge\Persistence\FlowRecord;
-use FlowForge\Persistence\InMemoryEnrollmentRepository;
-use FlowForge\Scheduling\ArrayScheduler;
-use FlowForge\Support\FixedClock;
+use CartQuill\Engine\Enroller;
+use CartQuill\Flow\FlowStep;
+use CartQuill\Persistence\FlowRecord;
+use CartQuill\Persistence\InMemoryEnrollmentRepository;
+use CartQuill\Scheduling\ArrayScheduler;
+use CartQuill\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class EnrollerTest extends TestCase {

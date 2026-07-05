@@ -2,16 +2,16 @@
 /**
  * wp_options-backed settings accessors.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
 use Brain\Monkey;
 use Brain\Monkey\Functions;
-use FlowForge\Settings\OptionsSettings;
+use CartQuill\Settings\OptionsSettings;
 use PHPUnit\Framework\TestCase;
 
 final class OptionsSettingsTest extends TestCase {

@@ -2,18 +2,18 @@
 /**
  * Encrypted storage for the customer's Resend credentials + sending domain.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Deliverability;
+namespace CartQuill\Deliverability;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Security\Crypto;
+use CartQuill\Security\Crypto;
 
 /**
  * Persists the ESP config in a wp_option, with the API key encrypted at rest via
@@ -24,7 +24,7 @@ use FlowForge\Security\Crypto;
  */
 final class EspSettings {
 
-	public const OPTION = 'flowforge_esp';
+	public const OPTION = 'cartquill_esp';
 
 	public function __construct( private readonly Crypto $crypto ) {}
 

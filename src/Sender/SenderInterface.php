@@ -2,22 +2,22 @@
 /**
  * The single sending seam for the whole plugin.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Sender;
+namespace CartQuill\Sender;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Model\Message;
-use FlowForge\Model\SendResult;
+use CartQuill\Model\Message;
+use CartQuill\Model\SendResult;
 
 /**
- * Every way FlowForge sends email implements this interface.
+ * Every way CartQuill sends email implements this interface.
  *
  * Core ships WpMailSender. Paid add-ons register additional senders
  * (ResendSender, SesSender, ...) through the register_sender() hook. The flow

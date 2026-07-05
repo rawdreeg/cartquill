@@ -3,25 +3,25 @@
  * Win-back scanning is bounded per tick and resumes across ticks: a full page
  * parks a cursor to continue from; a final page clears it.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Engine\Enroller;
-use FlowForge\Engine\LapsedBatch;
-use FlowForge\Engine\LapsedCustomerFinder;
-use FlowForge\Flow\DefaultFlows;
-use FlowForge\Integration\WinBackScanner;
-use FlowForge\Persistence\FlowRecord;
-use FlowForge\Persistence\InMemoryEnrollmentRepository;
-use FlowForge\Persistence\InMemoryFlowRepository;
-use FlowForge\Scheduling\ArrayScheduler;
-use FlowForge\Support\FixedClock;
-use FlowForge\Tests\Fake\ArrayScanCursor;
-use FlowForge\Tests\Fake\RecordingLapsedFinder;
+use CartQuill\Engine\Enroller;
+use CartQuill\Engine\LapsedBatch;
+use CartQuill\Engine\LapsedCustomerFinder;
+use CartQuill\Flow\DefaultFlows;
+use CartQuill\Integration\WinBackScanner;
+use CartQuill\Persistence\FlowRecord;
+use CartQuill\Persistence\InMemoryEnrollmentRepository;
+use CartQuill\Persistence\InMemoryFlowRepository;
+use CartQuill\Scheduling\ArrayScheduler;
+use CartQuill\Support\FixedClock;
+use CartQuill\Tests\Fake\ArrayScanCursor;
+use CartQuill\Tests\Fake\RecordingLapsedFinder;
 use PHPUnit\Framework\TestCase;
 
 final class WinBackScannerBatchingTest extends TestCase {
