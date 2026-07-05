@@ -9,17 +9,36 @@ declare(strict_types=1);
 
 namespace FlowForge;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Admin\Onboarding;
+use FlowForge\Integration\AbandonedCartScanner;
+use FlowForge\Integration\WinBackScanner;
 use FlowForge\Persistence\Schema;
 use FlowForge\Support\Requirements;
 
 final class Activation {
 
 	/**
-	 * Runs on plugin activation. Aborts with a clear message if WooCommerce 8+
-	 * is not active, so the store owner is never left with a broken setup.
+	 * Runs on plugin activation. On a network-wide multisite activation every
+	 * existing site is provisioned; otherwise it aborts with a clear message if
+	 * WooCommerce 8+ is not active, so the store owner is never left with a
+	 * broken setup.
+	 *
+	 * @param bool $network_wide Passed by WordPress when network-activated.
 	 */
-	public static function activate(): void {
+	public static function activate( bool $network_wide = false ): void {
+		if ( \is_multisite() && $network_wide ) {
+			foreach ( \get_sites( array( 'fields' => 'ids', 'number' => 0 ) ) as $site_id ) {
+				\switch_to_blog( (int) $site_id );
+				Schema::install();
+				\restore_current_blog();
+			}
+			return;
+		}
+
 		if ( ! self::woocommerce_ready() ) {
 			\deactivate_plugins( \plugin_basename( FLOWFORGE_FILE ) );
 			\wp_die(
@@ -35,6 +54,38 @@ final class Activation {
 		Schema::install();
 
 		( new Onboarding() )->flag_for_redirect();
+	}
+
+	/**
+	 * Provision a newly-created site while FlowForge is network-active, so a
+	 * multisite network never leaves a later site without its tables.
+	 *
+	 * @param \WP_Site $site The new site.
+	 */
+	public static function on_new_site( \WP_Site $site ): void {
+		if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+		if ( ! \is_plugin_active_for_network( \plugin_basename( FLOWFORGE_FILE ) ) ) {
+			return;
+		}
+
+		\switch_to_blog( (int) $site->blog_id );
+		Schema::install();
+		\restore_current_blog();
+	}
+
+	/**
+	 * Stop the recurring background scans on deactivation so they don't keep
+	 * firing as no-ops while the plugin is inactive.
+	 */
+	public static function deactivate(): void {
+		if ( ! function_exists( 'as_unschedule_all_actions' ) ) {
+			return;
+		}
+		foreach ( array( AbandonedCartScanner::HOOK, WinBackScanner::HOOK ) as $hook ) {
+			\as_unschedule_all_actions( $hook, array(), 'flowforge' );
+		}
 	}
 
 	/**

@@ -50,6 +50,20 @@ if ( ! is_readable( $flowforge_autoload ) ) {
 require_once $flowforge_autoload;
 
 register_activation_hook( __FILE__, array( \FlowForge\Activation::class, 'activate' ) );
+register_deactivation_hook( __FILE__, array( \FlowForge\Activation::class, 'deactivate' ) );
+
+// Provision tables for sites created later on a network-active install.
+add_action( 'wp_initialize_site', array( \FlowForge\Activation::class, 'on_new_site' ), 20 );
+
+// Declare High-Performance Order Storage compatibility (WooCommerce 8+).
+add_action(
+	'before_woocommerce_init',
+	static function (): void {
+		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', FLOWFORGE_FILE, true );
+		}
+	}
+);
 
 add_action(
 	'plugins_loaded',

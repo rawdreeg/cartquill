@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Admin;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Licensing\OptionLicense;
 use FlowForge\Licensing\Plans;
 

@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Security;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * The single seam for encrypting secrets (the customer's ESP API key) before
  * they touch the database. `decrypt()` returns null on any failure — wrong key,

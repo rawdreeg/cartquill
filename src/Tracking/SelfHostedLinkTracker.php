@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Tracking;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Injects a 1x1 tracking pixel and rewrites http(s) content links so clicks
  * route through the signed redirect. Only absolute http/https links are

@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Persistence;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Keeps the engine free of $wpdb so it can be tested against an in-memory
  * implementation. The wpdb-backed implementation is used at runtime.

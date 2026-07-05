@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Licensing;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Answers "is this capability licensed?" — the single seam add-ons (AI,
  * Deliverability) consult before wiring themselves in. The concrete

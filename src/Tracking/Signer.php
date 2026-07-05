@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Tracking;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Signs and verifies tracking payloads so the open pixel and click redirect
  * cannot be forged. In particular the click redirect only ever sends the user

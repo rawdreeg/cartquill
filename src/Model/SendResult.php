@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Model;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * The minimum contract every sender must return: an external id (when the
  * transport provides one) plus an accepted/failed status.

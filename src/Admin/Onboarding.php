@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Admin;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Tracks whether a site has completed onboarding (a per-site wp_option, so each
  * client store an agency manages onboards independently) and gates the one-time

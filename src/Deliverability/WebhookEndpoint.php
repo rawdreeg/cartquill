@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Deliverability;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Exposes a single URL (`?flowforge_webhook=resend`) that Resend POSTs delivery
  * events to. It reads the raw body + Svix headers, rejects anything the

@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Persistence;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * WordPress does not fire the activation hook on in-place updates (WP.org
  * auto-update, zip re-upload, git pull), so {@see Schema::install()} would only

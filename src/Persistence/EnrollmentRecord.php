@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Persistence;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Mirrors the `flow_enrollments` table. An enrollment advances through a flow's
  * steps: `current_step` is the index of the next step to run and `next_run_at`

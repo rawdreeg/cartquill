@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Admin;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Integration\AttributionTrigger;
 use FlowForge\Licensing\License;
 use FlowForge\Licensing\Plans;

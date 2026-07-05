@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Engine;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Finds lapsed customers by targeting the right cohort directly: those who
  * ordered within a bounded lookback window ending at the cutoff, minus anyone

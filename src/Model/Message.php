@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Model;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Immutable description of a single email the engine wants sent.
  *

@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Settings;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 final class ArraySettings implements Settings {
 
 	public function __construct(

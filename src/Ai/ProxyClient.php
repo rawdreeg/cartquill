@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Ai;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * The seam between the add-on and the hosted proxy. The proxy holds the LLM keys
  * server-side and is seeded with the curated, high-converting WooCommerce flow

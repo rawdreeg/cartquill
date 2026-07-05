@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Persistence;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 final class WpdbAttributionRepository implements AttributionRepository {
 
 	public function record( AttributionRecord $record ): ?AttributionRecord {

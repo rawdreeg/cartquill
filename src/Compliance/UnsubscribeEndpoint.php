@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Compliance;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Persistence\EnrollmentRepository;
 use FlowForge\Tracking\Signer;
 
