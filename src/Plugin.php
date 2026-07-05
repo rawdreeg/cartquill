@@ -16,11 +16,7 @@ use FlowForge\Admin\Onboarding;
 use FlowForge\Admin\OnboardingPage;
 use FlowForge\Admin\ReportingPage;
 use FlowForge\Admin\SettingsPage;
-use FlowForge\Ai\AiAddon;
-use FlowForge\Deliverability\DeliverabilityAddon;
-use FlowForge\Deliverability\EspSettings;
 use FlowForge\Licensing\OptionLicense;
-use FlowForge\Security\SodiumCrypto;
 use FlowForge\Sender\SenderRegistry;
 use FlowForge\Attribution\Attributor;
 use FlowForge\Compliance\PersonalData;
@@ -103,15 +99,14 @@ final class Plugin {
 		( new UnsubscribeEndpoint( $signer, $unsubscribe_link, $suppression, $enrollments ) )->register();
 		( new PrivacyHooks( new PersonalData( $enrollments, $messages, $captures, $suppression ) ) )->register();
 
-		// Licensing + sender registry: paid add-ons register their capabilities
-		// here, gated by the license. Core ships wp_mail as the default sender.
+		// Licensing + sender registry. Core ships wp_mail as the default sender.
 		$license = new OptionLicense();
 		( new LicensePage( $license ) )->register();
 
-		// Deliverability add-on: registers the Resend sender + domain-auth
-		// wizard when licensed. The ESP API key is encrypted at rest.
-		$esp = new EspSettings( new SodiumCrypto( (string) \wp_salt( 'auth' ) ) );
-		( new DeliverabilityAddon( $esp, $license, $messages, $suppression ) )->register();
+		// Paid add-ons ship separately (Freemius) and self-register on the
+		// hooks fired below. This is a no-op in the free build, where their
+		// directories are absent.
+		$this->load_addons();
 
 		$senders = new SenderRegistry( 'wp_mail' );
 		$senders->register( new WpMailSender() );
@@ -124,19 +119,14 @@ final class Plugin {
 		\do_action( 'flowforge_register_senders', $senders, $license );
 		$senders->set_active( (string) \apply_filters( 'flowforge_active_sender', 'wp_mail' ) );
 
+		$library = new FlowLibrary();
+
 		/**
 		 * General add-on registration point (e.g. the AI Flow Generation add-on,
 		 * which is not a sender). Add-ons check $license before wiring in.
 		 *
 		 * @param License $license The licensing gate.
 		 */
-		// Flow library + editor (the library is shared with the AI add-on).
-		$library = new FlowLibrary();
-
-		// AI Flow Generation add-on: listens on the registration hook and only
-		// boots its admin surface + proxy client when the AI plan is active.
-		( new AiAddon( $flows, $library, $license ) )->register();
-
 		\do_action( 'flowforge_register_addons', $license );
 
 		$runner = new StepRunner(
@@ -205,6 +195,21 @@ final class Plugin {
 				self::schedule_recurring( WinBackScanner::HOOK, WinBackScanner::SCAN_INTERVAL, $clock );
 			}
 		);
+	}
+
+	/**
+	 * Include any installed add-on bootstrap files so they can self-register on
+	 * the `flowforge_register_*` hooks before those hooks fire. Each paid add-on
+	 * owns a `src/<Addon>/addon.php`; the free WP.org build omits those
+	 * directories, so this loads whichever add-ons are actually present.
+	 */
+	private function load_addons(): void {
+		foreach ( array( 'Ai', 'Deliverability' ) as $addon ) {
+			$bootstrap = FLOWFORGE_PATH . 'src/' . $addon . '/addon.php';
+			if ( is_readable( $bootstrap ) ) {
+				require_once $bootstrap;
+			}
+		}
 	}
 
 	/**
