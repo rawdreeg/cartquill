@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Flow;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * A single step. Subject/body are templates rendered per recipient. Conditions
  * are opaque here in the spine; the engine slice (#2) gives them meaning.

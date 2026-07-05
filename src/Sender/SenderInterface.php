@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Sender;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Model\Message;
 use FlowForge\Model\SendResult;
 

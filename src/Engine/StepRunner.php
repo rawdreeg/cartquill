@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Engine;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Compliance\SuppressionList;
 use FlowForge\Flow\FlowDefinition;
 use FlowForge\Persistence\EnrollmentRecord;

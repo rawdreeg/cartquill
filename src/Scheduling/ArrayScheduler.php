@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Scheduling;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Records scheduled steps and replays the due ones on demand — the stand-in
  * for Action Scheduler in tests. `run_due()` keeps draining until nothing more

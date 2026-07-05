@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Admin;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Settings\OptionsSettings;
 
 /**
@@ -59,8 +63,9 @@ final class SettingsPage {
 	public function sanitize( $input ): array {
 		$input = is_array( $input ) ? $input : array();
 		return array(
-			'from_name'  => \sanitize_text_field( $input['from_name'] ?? '' ),
-			'from_email' => \sanitize_email( $input['from_email'] ?? '' ),
+			'from_name'                => \sanitize_text_field( $input['from_name'] ?? '' ),
+			'from_email'               => \sanitize_email( $input['from_email'] ?? '' ),
+			'remove_data_on_uninstall' => empty( $input['remove_data_on_uninstall'] ) ? '' : '1',
 		);
 	}
 
@@ -95,6 +100,18 @@ final class SettingsPage {
 								name="<?php echo \esc_attr( $option ); ?>[from_email]"
 								value="<?php echo \esc_attr( $this->settings->from_email() ); ?>"
 								class="regular-text" />
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php echo \esc_html__( 'Data on uninstall', 'flowforge' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox"
+									name="<?php echo \esc_attr( $option ); ?>[remove_data_on_uninstall]"
+									value="1" <?php \checked( $this->settings->remove_data_on_uninstall() ); ?> />
+								<?php echo \esc_html__( 'Delete all FlowForge data (flows, enrollments, reports, settings) when the plugin is deleted.', 'flowforge' ); ?>
+							</label>
+							<p class="description"><?php echo \esc_html__( 'Off by default — your data is kept if you delete and later reinstall.', 'flowforge' ); ?></p>
 						</td>
 					</tr>
 				</table>

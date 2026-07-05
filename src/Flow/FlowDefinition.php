@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Flow;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Definition-time view of a flow. The persisted `flows` table (built in the
  * engine slice) stores steps as JSON; this is the in-memory shape the engine

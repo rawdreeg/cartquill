@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Tracking;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * The compose-side seam. The self-hosted implementation injects a tracking
  * pixel and rewrites content links; the null implementation leaves the body

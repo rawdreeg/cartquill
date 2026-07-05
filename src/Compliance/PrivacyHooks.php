@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Compliance;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Registers a WordPress data exporter and eraser backed by PersonalData, so a
  * store owner can satisfy GDPR data-subject requests with the built-in tools.

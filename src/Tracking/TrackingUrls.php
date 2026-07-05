@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Tracking;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Produces the self-hosted tracking URLs embedded in emails. Everything is
  * signed with the Signer so the endpoint can reject forged requests.

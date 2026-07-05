@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Flow;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 use FlowForge\Persistence\FlowRecord;
 
 /**

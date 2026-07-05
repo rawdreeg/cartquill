@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Persistence;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Stores records in a plain array, assigning sequential ids like an
  * auto-increment column would. Mirrors the DB's unique (enrollment_id,

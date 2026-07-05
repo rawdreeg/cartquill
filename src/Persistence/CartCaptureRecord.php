@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Persistence;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Tracks a captured email whose cart has not yet converted. The scanner enrolls
  * pending captures older than the abandonment threshold; an order marks them

@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Support;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 final class FixedClock implements Clock {
 
 	public function __construct( private int $timestamp ) {}

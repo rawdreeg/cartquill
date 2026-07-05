@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Persistence;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Mirrors the `attributions` table. One row per (order, flow) — last-touch, so
  * an order credits at most the single most-recent flow message within the

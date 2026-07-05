@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Security;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Encrypts with `sodium_crypto_secretbox` (XSalsa20-Poly1305): authenticated, so
  * tampered ciphertext fails to decrypt rather than yielding garbage. A fresh

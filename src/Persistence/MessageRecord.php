@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Persistence;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * Mirrors the `messages` table. Status progresses queued -> sent on the
  * wp_mail path (later: opened/clicked via self-hosted tracking, and

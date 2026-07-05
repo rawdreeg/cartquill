@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Engine;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * The win-back scan's read seam. Taking the cutoff lets the WooCommerce
  * implementation query for lapsed customers directly — rather than scanning

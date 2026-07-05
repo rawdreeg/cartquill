@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 namespace FlowForge\Sender;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // No direct access.
+}
+
 /**
  * The extension point for the locked `register_sender()` design: core registers
  * WpMailSender; paid add-ons register additional senders (ResendSender, …) —
