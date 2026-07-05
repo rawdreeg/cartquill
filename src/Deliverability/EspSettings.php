@@ -73,8 +73,32 @@ final class EspSettings {
 	}
 
 	public function set_domain( string $domain ): void {
-		$data           = $this->data();
+		$data = $this->data();
+		// A changed sending domain invalidates any prior id/verification.
+		if ( ( $data['domain'] ?? '' ) !== $domain ) {
+			unset( $data['domain_id'], $data['domain_verified'] );
+		}
 		$data['domain'] = $domain;
+		\update_option( self::OPTION, $data );
+	}
+
+	public function domain_id(): string {
+		return (string) ( $this->data()['domain_id'] ?? '' );
+	}
+
+	public function set_domain_id( string $id ): void {
+		$data              = $this->data();
+		$data['domain_id'] = $id;
+		\update_option( self::OPTION, $data );
+	}
+
+	public function is_domain_verified(): bool {
+		return ! empty( $this->data()['domain_verified'] );
+	}
+
+	public function set_domain_verified( bool $verified ): void {
+		$data                    = $this->data();
+		$data['domain_verified'] = $verified;
 		\update_option( self::OPTION, $data );
 	}
 

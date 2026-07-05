@@ -25,12 +25,14 @@ final class DomainStatus {
 	 * @param bool               $verified Whether the domain is fully verified.
 	 * @param string             $state    Raw provider state (verified/pending/failed/…).
 	 * @param list<DomainRecord> $records  DNS records to add.
+	 * @param string             $id       Resend's domain UUID (its retrieval key).
 	 */
 	public function __construct(
 		public readonly string $domain,
 		public readonly bool $verified,
 		public readonly string $state,
 		public readonly array $records,
+		public readonly string $id = '',
 	) {}
 
 	/**
@@ -58,6 +60,7 @@ final class DomainStatus {
 			'verified' === $state,
 			$state,
 			$records,
+			(string) ( $payload['id'] ?? '' ),
 		);
 	}
 }

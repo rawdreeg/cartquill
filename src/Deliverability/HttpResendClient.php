@@ -69,10 +69,28 @@ final class HttpResendClient implements ResendClient {
 		return DomainStatus::from_resend( $data + array( 'name' => $domain ) );
 	}
 
-	public function domain_status( string $domain ): DomainStatus {
-		$data = $this->request( 'GET', '/domains/' . rawurlencode( $domain ), null );
+	public function verify_domain( string $domain_id ): void {
+		$this->request( 'POST', '/domains/' . rawurlencode( $domain_id ) . '/verify', null );
+	}
 
-		return DomainStatus::from_resend( $data + array( 'name' => $domain ) );
+	public function domain_status( string $domain_id ): DomainStatus {
+		$data = $this->request( 'GET', '/domains/' . rawurlencode( $domain_id ), null );
+
+		return DomainStatus::from_resend( $data );
+	}
+
+	public function find_domain_id( string $domain ): ?string {
+		$data    = $this->request( 'GET', '/domains', null );
+		$domains = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : array();
+
+		foreach ( $domains as $entry ) {
+			$entry = (array) $entry;
+			if ( isset( $entry['id'], $entry['name'] ) && (string) $entry['name'] === $domain ) {
+				return (string) $entry['id'];
+			}
+		}
+
+		return null;
 	}
 
 	/**
