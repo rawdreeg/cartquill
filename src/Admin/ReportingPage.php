@@ -67,7 +67,7 @@ final class ReportingPage {
 			$deliverability ? $this->messages->delivery_stats_by_flow() : array()
 		);
 		$total          = $report->total_revenue( $rows );
-		$days           = (int) round( AttributionTrigger::window() / DAY_IN_SECONDS );
+		$days           = max( 1, (int) round( AttributionTrigger::window() / DAY_IN_SECONDS ) );
 		?>
 		<div class="wrap">
 			<h1><?php echo \esc_html__( 'FlowForge Reporting', 'flowforge' ); ?></h1>
@@ -75,9 +75,9 @@ final class ReportingPage {
 			<p class="description">
 				<?php
 				printf(
-					/* translators: %d: attribution window in days. */
-					\esc_html__( 'Revenue is attributed last-touch: an order credits the most recent flow email sent within %d days.', 'flowforge' ),
-					(int) $days
+					/* translators: %s: attribution window, e.g. "1 day" or "7 days". */
+					\esc_html__( 'Revenue is attributed last-touch: an order credits the most recent flow email sent within %s.', 'flowforge' ),
+					\esc_html( sprintf( \_n( '%d day', '%d days', $days, 'flowforge' ), $days ) )
 				);
 				?>
 			</p>

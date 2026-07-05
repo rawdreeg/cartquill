@@ -45,6 +45,17 @@ final class OptionsSettings implements Settings {
 		return (string) \get_option( 'admin_email', '' );
 	}
 
+	/** Default attribution window in days, used when unset. */
+	public const DEFAULT_ATTRIBUTION_DAYS = 7;
+
+	/**
+	 * The attribution window in days (last-touch lookback).
+	 */
+	public function attribution_window_days(): int {
+		$days = (int) ( $this->data()['attribution_window_days'] ?? 0 );
+		return $days > 0 ? $days : self::DEFAULT_ATTRIBUTION_DAYS;
+	}
+
 	/**
 	 * Whether the store opted in to deleting all FlowForge data on uninstall.
 	 */

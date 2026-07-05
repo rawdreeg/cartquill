@@ -36,7 +36,14 @@ final class AttributionTrigger {
 	}
 
 	public static function window(): int {
-		return (int) \apply_filters( 'flowforge_attribution_window', self::DEFAULT_WINDOW );
+		$days = ( new \FlowForge\Settings\OptionsSettings() )->attribution_window_days();
+		/**
+		 * Override the attribution window (seconds). Defaults to the days set in
+		 * FlowForge Settings.
+		 *
+		 * @param int $window Window in seconds.
+		 */
+		return (int) \apply_filters( 'flowforge_attribution_window', $days * DAY_IN_SECONDS );
 	}
 
 	/**
