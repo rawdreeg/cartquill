@@ -2,18 +2,18 @@
 /**
  * $wpdb-backed SuppressionList, stored in the `settings` table.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Compliance;
+namespace CartQuill\Compliance;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\Schema;
+use CartQuill\Persistence\Schema;
 
 /**
  * Persists suppressed addresses as unique rows in the settings table

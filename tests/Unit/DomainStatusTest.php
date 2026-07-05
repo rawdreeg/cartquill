@@ -2,14 +2,14 @@
 /**
  * Mapping Resend's domain payload into the wizard's DomainStatus.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Deliverability\DomainStatus;
+use CartQuill\Deliverability\DomainStatus;
 use PHPUnit\Framework\TestCase;
 
 final class DomainStatusTest extends TestCase {

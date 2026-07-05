@@ -2,12 +2,12 @@
 /**
  * One row of the reporting dashboard: a flow's engagement + revenue.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Reporting;
+namespace CartQuill\Reporting;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

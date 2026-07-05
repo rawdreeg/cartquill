@@ -2,12 +2,12 @@
 /**
  * A resumable scan cursor.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Support;
+namespace CartQuill\Support;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

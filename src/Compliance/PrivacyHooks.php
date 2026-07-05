@@ -1,13 +1,13 @@
 <?php
 /**
- * Wires FlowForge personal data into WordPress privacy export/erase tools.
+ * Wires CartQuill personal data into WordPress privacy export/erase tools.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Compliance;
+namespace CartQuill\Compliance;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
@@ -31,8 +31,8 @@ final class PrivacyHooks {
 	 * @return array<string, mixed>
 	 */
 	public function register_exporter( array $exporters ): array {
-		$exporters['flowforge'] = array(
-			'exporter_friendly_name' => \__( 'FlowForge', 'flowforge' ),
+		$exporters['cartquill'] = array(
+			'exporter_friendly_name' => \__( 'CartQuill', 'cartquill' ),
 			'callback'               => array( $this, 'export' ),
 		);
 		return $exporters;
@@ -43,8 +43,8 @@ final class PrivacyHooks {
 	 * @return array<string, mixed>
 	 */
 	public function register_eraser( array $erasers ): array {
-		$erasers['flowforge'] = array(
-			'eraser_friendly_name' => \__( 'FlowForge', 'flowforge' ),
+		$erasers['cartquill'] = array(
+			'eraser_friendly_name' => \__( 'CartQuill', 'cartquill' ),
 			'callback'             => array( $this, 'erase' ),
 		);
 		return $erasers;
@@ -86,7 +86,7 @@ final class PrivacyHooks {
 			'items_removed'  => $removed > 0,
 			'items_retained' => $retained,
 			'messages'       => $retained
-				? array( \__( 'A suppression (opt-out) record was retained to honor the prior unsubscribe.', 'flowforge' ) )
+				? array( \__( 'A suppression (opt-out) record was retained to honor the prior unsubscribe.', 'cartquill' ) )
 				: array(),
 			'done'           => true,
 		);

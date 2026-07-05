@@ -2,14 +2,14 @@
 /**
  * The WooCommerce dependency gate.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Support\Requirements;
+use CartQuill\Support\Requirements;
 use PHPUnit\Framework\TestCase;
 
 final class RequirementsTest extends TestCase {

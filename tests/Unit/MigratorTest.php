@@ -2,15 +2,15 @@
 /**
  * The DB migration runner's upgrade decision at its injected seam.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Persistence\Migrator;
-use FlowForge\Persistence\Schema;
+use CartQuill\Persistence\Migrator;
+use CartQuill\Persistence\Schema;
 use PHPUnit\Framework\TestCase;
 
 final class MigratorTest extends TestCase {

@@ -2,22 +2,22 @@
 /**
  * Activation hook: enforce the WooCommerce dependency, then install tables.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge;
+namespace CartQuill;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Admin\Onboarding;
-use FlowForge\Integration\AbandonedCartScanner;
-use FlowForge\Integration\WinBackScanner;
-use FlowForge\Persistence\Schema;
-use FlowForge\Support\Requirements;
+use CartQuill\Admin\Onboarding;
+use CartQuill\Integration\AbandonedCartScanner;
+use CartQuill\Integration\WinBackScanner;
+use CartQuill\Persistence\Schema;
+use CartQuill\Support\Requirements;
 
 final class Activation {
 
@@ -40,13 +40,13 @@ final class Activation {
 		}
 
 		if ( ! self::woocommerce_ready() ) {
-			\deactivate_plugins( \plugin_basename( FLOWFORGE_FILE ) );
+			\deactivate_plugins( \plugin_basename( CARTQUILL_FILE ) );
 			\wp_die(
 				\esc_html__(
-					'FlowForge requires WooCommerce 8.0 or newer to be installed and active.',
-					'flowforge'
+					'CartQuill requires WooCommerce 8.0 or newer to be installed and active.',
+					'cartquill'
 				),
-				\esc_html__( 'Plugin dependency check', 'flowforge' ),
+				\esc_html__( 'Plugin dependency check', 'cartquill' ),
 				array( 'back_link' => true )
 			);
 		}
@@ -57,7 +57,7 @@ final class Activation {
 	}
 
 	/**
-	 * Provision a newly-created site while FlowForge is network-active, so a
+	 * Provision a newly-created site while CartQuill is network-active, so a
 	 * multisite network never leaves a later site without its tables.
 	 *
 	 * @param \WP_Site $site The new site.
@@ -66,7 +66,7 @@ final class Activation {
 		if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
-		if ( ! \is_plugin_active_for_network( \plugin_basename( FLOWFORGE_FILE ) ) ) {
+		if ( ! \is_plugin_active_for_network( \plugin_basename( CARTQUILL_FILE ) ) ) {
 			return;
 		}
 
@@ -84,7 +84,7 @@ final class Activation {
 			return;
 		}
 		foreach ( array( AbandonedCartScanner::HOOK, WinBackScanner::HOOK ) as $hook ) {
-			\as_unschedule_all_actions( $hook, array(), 'flowforge' );
+			\as_unschedule_all_actions( $hook, array(), 'cartquill' );
 		}
 	}
 

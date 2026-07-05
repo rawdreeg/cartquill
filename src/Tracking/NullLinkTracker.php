@@ -2,12 +2,12 @@
 /**
  * No-op LinkTracker (tracking disabled / tests).
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tracking;
+namespace CartQuill\Tracking;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

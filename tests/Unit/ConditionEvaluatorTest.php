@@ -2,17 +2,17 @@
 /**
  * Step condition evaluation: proceed / exit / skip.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Engine\ConditionEvaluator;
-use FlowForge\Flow\FlowStep;
-use FlowForge\Persistence\EnrollmentRecord;
-use FlowForge\Tests\Fake\FakeCustomerActivity;
+use CartQuill\Engine\ConditionEvaluator;
+use CartQuill\Flow\FlowStep;
+use CartQuill\Persistence\EnrollmentRecord;
+use CartQuill\Tests\Fake\FakeCustomerActivity;
 use PHPUnit\Framework\TestCase;
 
 final class ConditionEvaluatorTest extends TestCase {

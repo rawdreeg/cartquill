@@ -2,19 +2,19 @@
 /**
  * Captures the customer's email as early as possible and marks recovery.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Integration;
+namespace CartQuill\Integration;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\CartCaptureStore;
-use FlowForge\Support\Clock;
+use CartQuill\Persistence\CartCaptureStore;
+use CartQuill\Support\Clock;
 
 /**
  * Email capture is the hardest data bit for abandoned cart, so this grabs it at
@@ -126,7 +126,7 @@ final class AbandonedCartTracker {
 		if ( ! function_exists( 'get_transient' ) || ! function_exists( 'set_transient' ) ) {
 			return true;
 		}
-		$key   = 'flowforge_cc_rl_' . md5( $this->requester_ip() );
+		$key   = 'cartquill_cc_rl_' . md5( $this->requester_ip() );
 		$count = (int) \get_transient( $key );
 		if ( $count >= self::CAPTURE_LIMIT ) {
 			return false;

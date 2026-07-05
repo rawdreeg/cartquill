@@ -3,23 +3,23 @@
  * The composer embeds tracking, and a wrapped link round-trips through the
  * endpoint to record a click on the right message.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Engine\MessageComposer;
-use FlowForge\Flow\FlowStep;
-use FlowForge\Flow\Renderer;
-use FlowForge\Persistence\InMemoryMessageRepository;
-use FlowForge\Persistence\MessageRecord;
-use FlowForge\Settings\ArraySettings;
-use FlowForge\Tracking\SelfHostedLinkTracker;
-use FlowForge\Tracking\Signer;
-use FlowForge\Tracking\TrackingEndpoint;
-use FlowForge\Tracking\TrackingUrls;
+use CartQuill\Engine\MessageComposer;
+use CartQuill\Flow\FlowStep;
+use CartQuill\Flow\Renderer;
+use CartQuill\Persistence\InMemoryMessageRepository;
+use CartQuill\Persistence\MessageRecord;
+use CartQuill\Settings\ArraySettings;
+use CartQuill\Tracking\SelfHostedLinkTracker;
+use CartQuill\Tracking\Signer;
+use CartQuill\Tracking\TrackingEndpoint;
+use CartQuill\Tracking\TrackingUrls;
 use PHPUnit\Framework\TestCase;
 
 final class TrackedComposeTest extends TestCase {
@@ -50,12 +50,12 @@ final class TrackedComposeTest extends TestCase {
 		$message = $composer->compose( $step, 'buyer@example.com', 1, 0, 1, $id );
 
 		// Pixel embedded, and the content link is wrapped through the redirect.
-		$this->assertStringContainsString( 'flowforge_track=open', $message->body );
-		$this->assertStringContainsString( 'flowforge_track=click', $message->body );
+		$this->assertStringContainsString( 'cartquill_track=open', $message->body );
+		$this->assertStringContainsString( 'cartquill_track=click', $message->body );
 
 		// Recover the signed click URL and simulate the browser + PHP decoding
 		// $_GET exactly once (parse_str), then drive the endpoint.
-		$this->assertSame( 1, preg_match( '/href="([^"]*flowforge_track=click[^"]*)"/', $message->body, $m ) );
+		$this->assertSame( 1, preg_match( '/href="([^"]*cartquill_track=click[^"]*)"/', $message->body, $m ) );
 		parse_str( (string) parse_url( html_entity_decode( $m[1] ), PHP_URL_QUERY ), $q );
 
 		$redirect = $endpoint->handle_click( (int) $q['mid'], (string) $q['url'], (string) $q['t'] );

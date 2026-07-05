@@ -2,19 +2,19 @@
 /**
  * Installs a library template as a real, editable flow.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Flow;
+namespace CartQuill\Flow;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\FlowRecord;
-use FlowForge\Persistence\FlowRepository;
+use CartQuill\Persistence\FlowRecord;
+use CartQuill\Persistence\FlowRepository;
 
 /**
  * One-click install: copies a template into the `flows` table as a draft the

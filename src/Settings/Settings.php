@@ -2,12 +2,12 @@
 /**
  * Read access to plugin settings.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Settings;
+namespace CartQuill\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

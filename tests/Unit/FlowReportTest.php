@@ -3,16 +3,16 @@
  * Reporting aggregation: per-flow sent/opens/clicks + revenue, opens counting
  * clicks, and zero-rows for flows with no activity.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Persistence\InMemoryMessageRepository;
-use FlowForge\Persistence\MessageRecord;
-use FlowForge\Reporting\FlowReport;
+use CartQuill\Persistence\InMemoryMessageRepository;
+use CartQuill\Persistence\MessageRecord;
+use CartQuill\Reporting\FlowReport;
 use PHPUnit\Framework\TestCase;
 
 final class FlowReportTest extends TestCase {
@@ -100,7 +100,7 @@ final class FlowReportTest extends TestCase {
 		$repo->update_status( (int) $rec->id, $status );
 	}
 
-	private function flow( int $id, string $name ): \FlowForge\Persistence\FlowRecord {
-		return new \FlowForge\Persistence\FlowRecord( $id, $name, 'welcome', 'active', 'template', array() );
+	private function flow( int $id, string $name ): \CartQuill\Persistence\FlowRecord {
+		return new \CartQuill\Persistence\FlowRecord( $id, $name, 'welcome', 'active', 'template', array() );
 	}
 }

@@ -2,12 +2,12 @@
 /**
  * Adds open/click tracking to a rendered email body.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tracking;
+namespace CartQuill\Tracking;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

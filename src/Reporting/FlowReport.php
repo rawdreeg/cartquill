@@ -2,18 +2,18 @@
 /**
  * Builds the per-flow reporting rows from raw stats.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Reporting;
+namespace CartQuill\Reporting;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\FlowRecord;
+use CartQuill\Persistence\FlowRecord;
 
 /**
  * Pure aggregation: given the store's flows plus per-flow engagement stats and

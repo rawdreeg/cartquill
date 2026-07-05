@@ -2,20 +2,20 @@
 /**
  * Flow editor admin screen: edit steps, delays, subjects, body, conditions.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Admin;
+namespace CartQuill\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Flow\FlowEditor;
-use FlowForge\Persistence\FlowRecord;
-use FlowForge\Persistence\FlowRepository;
+use CartQuill\Flow\FlowEditor;
+use CartQuill\Persistence\FlowRecord;
+use CartQuill\Persistence\FlowRepository;
 
 /**
  * A hidden submenu page reached from the flow list. Renders a form for the
@@ -25,8 +25,8 @@ use FlowForge\Persistence\FlowRepository;
  */
 final class FlowEditorPage {
 
-	private const PARENT = 'flowforge';
-	public const SLUG    = 'flowforge-flow-edit';
+	private const PARENT = 'cartquill';
+	public const SLUG    = 'cartquill-flow-edit';
 
 	public function __construct(
 		private readonly FlowRepository $flows,
@@ -35,14 +35,14 @@ final class FlowEditorPage {
 
 	public function register(): void {
 		\add_action( 'admin_menu', array( $this, 'add_menu' ) );
-		\add_action( 'admin_post_flowforge_save_flow', array( $this, 'handle_save' ) );
+		\add_action( 'admin_post_cartquill_save_flow', array( $this, 'handle_save' ) );
 	}
 
 	public function add_menu(): void {
 		\add_submenu_page(
 			'',
-			\__( 'Edit flow', 'flowforge' ),
-			\__( 'Edit flow', 'flowforge' ),
+			\__( 'Edit flow', 'cartquill' ),
+			\__( 'Edit flow', 'cartquill' ),
 			'manage_options',
 			self::SLUG,
 			array( $this, 'render' )
@@ -50,8 +50,8 @@ final class FlowEditorPage {
 	}
 
 	public function handle_save(): void {
-		if ( ! \current_user_can( 'manage_options' ) || ! \check_admin_referer( 'flowforge_save_flow' ) ) {
-			\wp_die( \esc_html__( 'Not allowed.', 'flowforge' ) );
+		if ( ! \current_user_can( 'manage_options' ) || ! \check_admin_referer( 'cartquill_save_flow' ) ) {
+			\wp_die( \esc_html__( 'Not allowed.', 'cartquill' ) );
 		}
 
 		$id   = isset( $_POST['flow'] ) ? (int) $_POST['flow'] : 0;
@@ -76,7 +76,7 @@ final class FlowEditorPage {
 		exit;
 	}
 
-	private function has_exit_condition( \FlowForge\Flow\FlowStep $step ): bool {
+	private function has_exit_condition( \CartQuill\Flow\FlowStep $step ): bool {
 		foreach ( $step->conditions as $condition ) {
 			if ( 'exit_if_ordered' === ( ( (array) $condition )['type'] ?? '' ) ) {
 				return true;
@@ -111,34 +111,34 @@ final class FlowEditorPage {
 		$id   = isset( $_GET['flow'] ) ? (int) $_GET['flow'] : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$flow = $this->flows->find( $id );
 		if ( null === $flow ) {
-			echo '<div class="wrap"><p>' . \esc_html__( 'Flow not found.', 'flowforge' ) . '</p></div>';
+			echo '<div class="wrap"><p>' . \esc_html__( 'Flow not found.', 'cartquill' ) . '</p></div>';
 			return;
 		}
 		?>
 		<div class="wrap">
-			<h1><?php echo \esc_html__( 'Edit flow', 'flowforge' ); ?></h1>
+			<h1><?php echo \esc_html__( 'Edit flow', 'cartquill' ); ?></h1>
 			<?php if ( isset( $_GET['updated'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
-				<div class="notice notice-success"><p><?php echo \esc_html__( 'Flow saved.', 'flowforge' ); ?></p></div>
+				<div class="notice notice-success"><p><?php echo \esc_html__( 'Flow saved.', 'cartquill' ); ?></p></div>
 			<?php endif; ?>
-			<?php if ( isset( $_GET['flowforge_ai_rewritten'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
-				<div class="notice notice-success"><p><?php echo \esc_html__( 'Step rewritten. Review the draft below before activating.', 'flowforge' ); ?></p></div>
+			<?php if ( isset( $_GET['cartquill_ai_rewritten'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+				<div class="notice notice-success"><p><?php echo \esc_html__( 'Step rewritten. Review the draft below before activating.', 'cartquill' ); ?></p></div>
 			<?php endif; ?>
-			<?php if ( isset( $_GET['flowforge_ai_error'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
-				<div class="notice notice-error"><p><?php echo \esc_html__( 'Could not rewrite the step (AI unavailable or usage limit reached). Your copy is unchanged.', 'flowforge' ); ?></p></div>
+			<?php if ( isset( $_GET['cartquill_ai_error'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+				<div class="notice notice-error"><p><?php echo \esc_html__( 'Could not rewrite the step (AI unavailable or usage limit reached). Your copy is unchanged.', 'cartquill' ); ?></p></div>
 			<?php endif; ?>
 
 			<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
-				<?php \wp_nonce_field( 'flowforge_save_flow' ); ?>
-				<input type="hidden" name="action" value="flowforge_save_flow" />
+				<?php \wp_nonce_field( 'cartquill_save_flow' ); ?>
+				<input type="hidden" name="action" value="cartquill_save_flow" />
 				<input type="hidden" name="flow" value="<?php echo (int) $flow->id; ?>" />
 
 				<table class="form-table">
 					<tr>
-						<th><label for="ff-name"><?php echo \esc_html__( 'Name', 'flowforge' ); ?></label></th>
+						<th><label for="ff-name"><?php echo \esc_html__( 'Name', 'cartquill' ); ?></label></th>
 						<td><input id="ff-name" type="text" name="name" class="regular-text" value="<?php echo \esc_attr( $flow->name ); ?>" /></td>
 					</tr>
 					<tr>
-						<th><?php echo \esc_html__( 'Status', 'flowforge' ); ?></th>
+						<th><?php echo \esc_html__( 'Status', 'cartquill' ); ?></th>
 						<td>
 							<select name="status">
 								<?php foreach ( array( FlowRecord::STATUS_DRAFT, FlowRecord::STATUS_ACTIVE, FlowRecord::STATUS_PAUSED ) as $status ) : ?>
@@ -149,42 +149,42 @@ final class FlowEditorPage {
 					</tr>
 				</table>
 
-				<h2><?php echo \esc_html__( 'Steps', 'flowforge' ); ?></h2>
+				<h2><?php echo \esc_html__( 'Steps', 'cartquill' ); ?></h2>
 				<?php foreach ( $flow->steps as $i => $step ) : ?>
 					<fieldset style="border:1px solid #ccd0d4;padding:12px;margin-bottom:12px">
-						<legend><?php printf( \esc_html__( 'Step %d', 'flowforge' ), (int) $i + 1 ); ?></legend>
+						<legend><?php printf( \esc_html__( 'Step %d', 'cartquill' ), (int) $i + 1 ); ?></legend>
 						<p>
-							<label><?php echo \esc_html__( 'Delay (seconds)', 'flowforge' ); ?><br />
+							<label><?php echo \esc_html__( 'Delay (seconds)', 'cartquill' ); ?><br />
 							<input type="number" min="0" name="steps[<?php echo (int) $i; ?>][delay]" value="<?php echo (int) $step->delay; ?>" /></label>
 						</p>
 						<p>
-							<label style="display:block"><?php echo \esc_html__( 'Subject', 'flowforge' ); ?><br />
+							<label style="display:block"><?php echo \esc_html__( 'Subject', 'cartquill' ); ?><br />
 							<input type="text" class="large-text" name="steps[<?php echo (int) $i; ?>][subject]" value="<?php echo \esc_attr( $step->subject ); ?>" /></label>
 						</p>
 						<p>
-							<label style="display:block"><?php echo \esc_html__( 'Body', 'flowforge' ); ?><br />
+							<label style="display:block"><?php echo \esc_html__( 'Body', 'cartquill' ); ?><br />
 							<textarea class="large-text" rows="4" name="steps[<?php echo (int) $i; ?>][body]"><?php echo \esc_textarea( $step->body ); ?></textarea></label>
 						</p>
 						<p>
 							<label>
 								<input type="checkbox" name="steps[<?php echo (int) $i; ?>][exit_if_ordered]" value="1" <?php \checked( $this->has_exit_condition( $step ) ); ?> />
-								<?php echo \esc_html__( 'Exit this flow if the customer places an order', 'flowforge' ); ?>
+								<?php echo \esc_html__( 'Exit this flow if the customer places an order', 'cartquill' ); ?>
 							</label>
 						</p>
 						<p>
 							<label>
 								<input type="checkbox" name="steps[<?php echo (int) $i; ?>][remove]" value="1" />
-								<?php echo \esc_html__( 'Remove this step', 'flowforge' ); ?>
+								<?php echo \esc_html__( 'Remove this step', 'cartquill' ); ?>
 							</label>
 						</p>
 					</fieldset>
 				<?php endforeach; ?>
 
 				<p>
-					<button type="submit" name="add_step" value="1" class="button"><?php echo \esc_html__( '+ Add step', 'flowforge' ); ?></button>
+					<button type="submit" name="add_step" value="1" class="button"><?php echo \esc_html__( '+ Add step', 'cartquill' ); ?></button>
 				</p>
 
-				<?php \submit_button( \__( 'Save flow', 'flowforge' ) ); ?>
+				<?php \submit_button( \__( 'Save flow', 'cartquill' ) ); ?>
 			</form>
 
 			<?php
@@ -195,7 +195,7 @@ final class FlowEditorPage {
 			 *
 			 * @param FlowRecord $flow The flow being edited.
 			 */
-			\do_action( 'flowforge_flow_editor_after_form', $flow );
+			\do_action( 'cartquill_flow_editor_after_form', $flow );
 			?>
 		</div>
 		<?php

@@ -2,28 +2,28 @@
 /**
  * The engine's per-step pipeline.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Engine;
+namespace CartQuill\Engine;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Compliance\SuppressionList;
-use FlowForge\Flow\FlowDefinition;
-use FlowForge\Model\SendResult;
-use FlowForge\Persistence\EnrollmentRecord;
-use FlowForge\Persistence\EnrollmentRepository;
-use FlowForge\Persistence\FlowRepository;
-use FlowForge\Persistence\MessageRecord;
-use FlowForge\Persistence\MessageRepository;
-use FlowForge\Scheduling\Scheduler;
-use FlowForge\Sender\SenderInterface;
-use FlowForge\Support\Clock;
+use CartQuill\Compliance\SuppressionList;
+use CartQuill\Flow\FlowDefinition;
+use CartQuill\Model\SendResult;
+use CartQuill\Persistence\EnrollmentRecord;
+use CartQuill\Persistence\EnrollmentRepository;
+use CartQuill\Persistence\FlowRepository;
+use CartQuill\Persistence\MessageRecord;
+use CartQuill\Persistence\MessageRepository;
+use CartQuill\Scheduling\Scheduler;
+use CartQuill\Sender\SenderInterface;
+use CartQuill\Support\Clock;
 
 /**
  * Runs one step of one enrollment, then schedules the next.
@@ -34,7 +34,7 @@ use FlowForge\Support\Clock;
  *
  * A send that fails or throws is retried with bounded backoff on the same step;
  * only after the retry budget is exhausted is the step dead-lettered (recorded
- * failed, failure surfaced via the `flowforge_step_send_failed` action) and the
+ * failed, failure surfaced via the `cartquill_step_send_failed` action) and the
  * flow advanced. Idempotency: a step whose message is already settled (sent or
  * dead-lettered) never re-sends; a queued row is either a foreign/in-flight
  * pre-send claim (left alone) or this step's own failed attempt awaiting retry.
@@ -198,7 +198,7 @@ final class StepRunner {
 		if ( ! function_exists( 'do_action' ) ) {
 			return;
 		}
-		\do_action( 'flowforge_step_send_failed', $enrollment_id, $step_index, $attempts, $exhausted, $error );
+		\do_action( 'cartquill_step_send_failed', $enrollment_id, $step_index, $attempts, $exhausted, $error );
 	}
 
 	/**

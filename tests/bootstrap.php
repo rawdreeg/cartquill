@@ -7,7 +7,7 @@
  * functions, where a class calls them directly, are stubbed per-test with
  * Brain\Monkey.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);

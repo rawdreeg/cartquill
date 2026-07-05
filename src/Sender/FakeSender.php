@@ -2,19 +2,19 @@
 /**
  * Test double: records send() calls instead of sending real email.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Sender;
+namespace CartQuill\Sender;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Model\Message;
-use FlowForge\Model\SendResult;
+use CartQuill\Model\Message;
+use CartQuill\Model\SendResult;
 
 /**
  * The primary test seam.

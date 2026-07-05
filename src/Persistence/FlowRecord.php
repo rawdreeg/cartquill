@@ -2,19 +2,19 @@
 /**
  * A row in the `flows` table: a flow definition with JSON-encoded steps.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Persistence;
+namespace CartQuill\Persistence;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Flow\FlowDefinition;
-use FlowForge\Flow\FlowStep;
+use CartQuill\Flow\FlowDefinition;
+use CartQuill\Flow\FlowStep;
 
 /**
  * Mirrors the `flows` table. Steps are stored as JSON and decoded into

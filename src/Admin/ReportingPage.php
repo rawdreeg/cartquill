@@ -2,24 +2,24 @@
 /**
  * Reporting dashboard: revenue-per-flow + engagement.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Admin;
+namespace CartQuill\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Integration\AttributionTrigger;
-use FlowForge\Licensing\License;
-use FlowForge\Licensing\Plans;
-use FlowForge\Persistence\AttributionRepository;
-use FlowForge\Persistence\FlowRepository;
-use FlowForge\Persistence\MessageRepository;
-use FlowForge\Reporting\FlowReport;
+use CartQuill\Integration\AttributionTrigger;
+use CartQuill\Licensing\License;
+use CartQuill\Licensing\Plans;
+use CartQuill\Persistence\AttributionRepository;
+use CartQuill\Persistence\FlowRepository;
+use CartQuill\Persistence\MessageRepository;
+use CartQuill\Reporting\FlowReport;
 
 /**
  * Renders the one reporting screen: per-flow sent / opens / clicks / revenue,
@@ -28,8 +28,8 @@ use FlowForge\Reporting\FlowReport;
  */
 final class ReportingPage {
 
-	private const PARENT = 'flowforge';
-	private const SLUG   = 'flowforge-reporting';
+	private const PARENT = 'cartquill';
+	private const SLUG   = 'cartquill-reporting';
 
 	public function __construct(
 		private readonly FlowRepository $flows,
@@ -45,8 +45,8 @@ final class ReportingPage {
 	public function add_menu(): void {
 		\add_submenu_page(
 			self::PARENT,
-			\__( 'Reporting', 'flowforge' ),
-			\__( 'Reporting', 'flowforge' ),
+			\__( 'Reporting', 'cartquill' ),
+			\__( 'Reporting', 'cartquill' ),
 			'manage_options',
 			self::SLUG,
 			array( $this, 'render' )
@@ -70,14 +70,14 @@ final class ReportingPage {
 		$days           = max( 1, (int) round( AttributionTrigger::window() / DAY_IN_SECONDS ) );
 		?>
 		<div class="wrap">
-			<h1><?php echo \esc_html__( 'FlowForge Reporting', 'flowforge' ); ?></h1>
+			<h1><?php echo \esc_html__( 'CartQuill Reporting', 'cartquill' ); ?></h1>
 
 			<p class="description">
 				<?php
 				printf(
 					/* translators: %s: attribution window, e.g. "1 day" or "7 days". */
-					\esc_html__( 'Revenue is attributed last-touch: an order credits the most recent flow email sent within %s.', 'flowforge' ),
-					\esc_html( sprintf( \_n( '%d day', '%d days', $days, 'flowforge' ), $days ) )
+					\esc_html__( 'Revenue is attributed last-touch: an order credits the most recent flow email sent within %s.', 'cartquill' ),
+					\esc_html( sprintf( \_n( '%d day', '%d days', $days, 'cartquill' ), $days ) )
 				);
 				?>
 			</p>
@@ -85,24 +85,24 @@ final class ReportingPage {
 			<table class="widefat striped">
 				<thead>
 					<tr>
-						<th><?php echo \esc_html__( 'Flow', 'flowforge' ); ?></th>
-						<th><?php echo \esc_html__( 'Sent', 'flowforge' ); ?></th>
+						<th><?php echo \esc_html__( 'Flow', 'cartquill' ); ?></th>
+						<th><?php echo \esc_html__( 'Sent', 'cartquill' ); ?></th>
 						<?php if ( $deliverability ) : ?>
-							<th><?php echo \esc_html__( 'Delivered', 'flowforge' ); ?></th>
+							<th><?php echo \esc_html__( 'Delivered', 'cartquill' ); ?></th>
 						<?php endif; ?>
-						<th><?php echo \esc_html__( 'Opens', 'flowforge' ); ?></th>
-						<th><?php echo \esc_html__( 'Clicks', 'flowforge' ); ?></th>
+						<th><?php echo \esc_html__( 'Opens', 'cartquill' ); ?></th>
+						<th><?php echo \esc_html__( 'Clicks', 'cartquill' ); ?></th>
 						<?php if ( $deliverability ) : ?>
-							<th><?php echo \esc_html__( 'Bounced', 'flowforge' ); ?></th>
-							<th><?php echo \esc_html__( 'Complaints', 'flowforge' ); ?></th>
+							<th><?php echo \esc_html__( 'Bounced', 'cartquill' ); ?></th>
+							<th><?php echo \esc_html__( 'Complaints', 'cartquill' ); ?></th>
 						<?php endif; ?>
-						<th><?php echo \esc_html__( 'Revenue', 'flowforge' ); ?></th>
+						<th><?php echo \esc_html__( 'Revenue', 'cartquill' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
 					<?php $cols = $deliverability ? 8 : 5; ?>
 					<?php if ( array() === $rows ) : ?>
-						<tr><td colspan="<?php echo (int) $cols; ?>"><?php echo \esc_html__( 'No flows yet — install one from the flow library.', 'flowforge' ); ?></td></tr>
+						<tr><td colspan="<?php echo (int) $cols; ?>"><?php echo \esc_html__( 'No flows yet — install one from the flow library.', 'cartquill' ); ?></td></tr>
 					<?php endif; ?>
 					<?php foreach ( $rows as $row ) : ?>
 						<tr>
@@ -123,7 +123,7 @@ final class ReportingPage {
 				</tbody>
 				<tfoot>
 					<tr>
-						<th><?php echo \esc_html__( 'Total', 'flowforge' ); ?></th>
+						<th><?php echo \esc_html__( 'Total', 'cartquill' ); ?></th>
 						<th colspan="<?php echo (int) ( $cols - 2 ); ?>"></th>
 						<th><?php echo \wp_kses_post( $this->money( $total ) ); ?></th>
 					</tr>
@@ -133,15 +133,15 @@ final class ReportingPage {
 			<?php if ( $deliverability ) : ?>
 				<div class="notice notice-success inline" style="margin-top:16px">
 					<p>
-						<strong><?php echo \esc_html__( 'Delivery tracking active.', 'flowforge' ); ?></strong>
-						<?php echo \esc_html__( 'Delivered, bounce, and complaint data populates here as your ESP sends webhook events. Bounced and complained addresses are automatically suppressed.', 'flowforge' ); ?>
+						<strong><?php echo \esc_html__( 'Delivery tracking active.', 'cartquill' ); ?></strong>
+						<?php echo \esc_html__( 'Delivered, bounce, and complaint data populates here as your ESP sends webhook events. Bounced and complained addresses are automatically suppressed.', 'cartquill' ); ?>
 					</p>
 				</div>
 			<?php else : ?>
 				<div class="notice notice-info inline" style="margin-top:16px">
 					<p>
-						<strong><?php echo \esc_html__( 'Delivery unconfirmed.', 'flowforge' ); ?></strong>
-						<?php echo \esc_html__( 'The free tier sends via your site mail, so inbox delivery can’t be confirmed. Add the Deliverability add-on to see delivered, bounce, and inbox-placement data.', 'flowforge' ); ?>
+						<strong><?php echo \esc_html__( 'Delivery unconfirmed.', 'cartquill' ); ?></strong>
+						<?php echo \esc_html__( 'The free tier sends via your site mail, so inbox delivery can’t be confirmed. Add the Deliverability add-on to see delivered, bounce, and inbox-placement data.', 'cartquill' ); ?>
 					</p>
 				</div>
 			<?php endif; ?>

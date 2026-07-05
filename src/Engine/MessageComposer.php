@@ -2,24 +2,24 @@
 /**
  * Builds the Message for a step: renders templates, guarantees the unsubscribe.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Engine;
+namespace CartQuill\Engine;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Compliance\UnsubscribeLink;
-use FlowForge\Flow\FlowStep;
-use FlowForge\Flow\Renderer;
-use FlowForge\Model\Message;
-use FlowForge\Settings\Settings;
-use FlowForge\Tracking\LinkTracker;
-use FlowForge\Tracking\NullLinkTracker;
+use CartQuill\Compliance\UnsubscribeLink;
+use CartQuill\Flow\FlowStep;
+use CartQuill\Flow\Renderer;
+use CartQuill\Model\Message;
+use CartQuill\Settings\Settings;
+use CartQuill\Tracking\LinkTracker;
+use CartQuill\Tracking\NullLinkTracker;
 
 /**
  * Turns a step + recipient into a ready-to-send Message. Every message it

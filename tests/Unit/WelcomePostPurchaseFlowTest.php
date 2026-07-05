@@ -3,30 +3,30 @@
  * Drives the welcome and post-purchase flows through the engine (FakeSender)
  * to prove both steps fire at the right delays and the consent source sticks.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Compliance\ArraySuppressionList;
-use FlowForge\Engine\ConditionEvaluator;
-use FlowForge\Engine\Enroller;
-use FlowForge\Engine\FlowTypeEnroller;
-use FlowForge\Engine\MessageComposer;
-use FlowForge\Engine\StepRunner;
-use FlowForge\Flow\DefaultFlows;
-use FlowForge\Flow\Renderer;
-use FlowForge\Persistence\FlowRecord;
-use FlowForge\Persistence\InMemoryEnrollmentRepository;
-use FlowForge\Persistence\InMemoryFlowRepository;
-use FlowForge\Persistence\InMemoryMessageRepository;
-use FlowForge\Scheduling\ArrayScheduler;
-use FlowForge\Sender\FakeSender;
-use FlowForge\Settings\ArraySettings;
-use FlowForge\Support\FixedClock;
-use FlowForge\Tests\Fake\FakeCustomerActivity;
+use CartQuill\Compliance\ArraySuppressionList;
+use CartQuill\Engine\ConditionEvaluator;
+use CartQuill\Engine\Enroller;
+use CartQuill\Engine\FlowTypeEnroller;
+use CartQuill\Engine\MessageComposer;
+use CartQuill\Engine\StepRunner;
+use CartQuill\Flow\DefaultFlows;
+use CartQuill\Flow\Renderer;
+use CartQuill\Persistence\FlowRecord;
+use CartQuill\Persistence\InMemoryEnrollmentRepository;
+use CartQuill\Persistence\InMemoryFlowRepository;
+use CartQuill\Persistence\InMemoryMessageRepository;
+use CartQuill\Scheduling\ArrayScheduler;
+use CartQuill\Sender\FakeSender;
+use CartQuill\Settings\ArraySettings;
+use CartQuill\Support\FixedClock;
+use CartQuill\Tests\Fake\FakeCustomerActivity;
 use PHPUnit\Framework\TestCase;
 
 final class WelcomePostPurchaseFlowTest extends TestCase {

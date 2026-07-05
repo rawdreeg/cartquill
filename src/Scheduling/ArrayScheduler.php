@@ -2,12 +2,12 @@
 /**
  * In-memory scheduler that can be advanced in tests.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Scheduling;
+namespace CartQuill\Scheduling;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

@@ -2,17 +2,17 @@
 /**
  * Scripted ResendClient for tests — no network.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Fake;
+namespace CartQuill\Tests\Fake;
 
-use FlowForge\Deliverability\DomainStatus;
-use FlowForge\Deliverability\ResendClient;
-use FlowForge\Deliverability\ResendException;
-use FlowForge\Model\Message;
+use CartQuill\Deliverability\DomainStatus;
+use CartQuill\Deliverability\ResendClient;
+use CartQuill\Deliverability\ResendException;
+use CartQuill\Model\Message;
 
 /**
  * Records the messages handed to it and returns canned ids / domain status,

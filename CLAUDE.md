@@ -1,4 +1,4 @@
-# CLAUDE.md — FlowForge
+# CLAUDE.md — CartQuill
 
 Guidance for AI coding agents working in this repo.
 

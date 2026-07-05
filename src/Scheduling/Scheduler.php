@@ -2,12 +2,12 @@
 /**
  * Queue seam: schedules a flow step to run at a future time.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Scheduling;
+namespace CartQuill\Scheduling;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

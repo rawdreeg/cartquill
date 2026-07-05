@@ -2,20 +2,20 @@
 /**
  * Last-touch revenue attribution.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Attribution;
+namespace CartQuill\Attribution;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\AttributionRecord;
-use FlowForge\Persistence\AttributionRepository;
-use FlowForge\Persistence\MessageRepository;
+use CartQuill\Persistence\AttributionRecord;
+use CartQuill\Persistence\AttributionRepository;
+use CartQuill\Persistence\MessageRepository;
 
 /**
  * Credits an order's revenue to the single most-recent flow message sent to the

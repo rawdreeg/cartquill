@@ -1,26 +1,26 @@
 <?php
 /**
- * GDPR export/erase over FlowForge's stored personal data.
+ * GDPR export/erase over CartQuill's stored personal data.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Compliance;
+namespace CartQuill\Compliance;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\AttributionRepository;
-use FlowForge\Persistence\CartCaptureStore;
-use FlowForge\Persistence\EnrollmentRepository;
-use FlowForge\Persistence\MessageRepository;
+use CartQuill\Persistence\AttributionRepository;
+use CartQuill\Persistence\CartCaptureStore;
+use CartQuill\Persistence\EnrollmentRepository;
+use CartQuill\Persistence\MessageRepository;
 
 /**
  * The pure core behind the WordPress privacy exporter/eraser: gather (or delete)
- * everything FlowForge knows about an email — enrollments (with consent source),
+ * everything CartQuill knows about an email — enrollments (with consent source),
  * sent messages, the cart capture, and suppression status.
  */
 final class PersonalData {
@@ -44,7 +44,7 @@ final class PersonalData {
 
 		foreach ( $this->enrollments->for_customer( $email ) as $enrollment ) {
 			$items[] = array(
-				'group' => 'flowforge_enrollments',
+				'group' => 'cartquill_enrollments',
 				'label' => 'Flow enrollment',
 				'value' => sprintf(
 					'flow #%d — status %s, consent source: %s',
@@ -57,7 +57,7 @@ final class PersonalData {
 
 		foreach ( $this->messages->for_recipient( $email ) as $message ) {
 			$items[] = array(
-				'group' => 'flowforge_messages',
+				'group' => 'cartquill_messages',
 				'label' => 'Email sent',
 				'value' => sprintf( 'flow #%d step %d — status %s', $message->flow_id, $message->step_index, $message->status ),
 			);
@@ -65,7 +65,7 @@ final class PersonalData {
 
 		if ( null !== $this->captures->find( $email ) ) {
 			$items[] = array(
-				'group' => 'flowforge_cart',
+				'group' => 'cartquill_cart',
 				'label' => 'Cart capture',
 				'value' => 'An abandoned-cart capture exists for this address.',
 			);
@@ -73,7 +73,7 @@ final class PersonalData {
 
 		if ( $this->suppression->is_suppressed( $email ) ) {
 			$items[] = array(
-				'group' => 'flowforge_suppression',
+				'group' => 'cartquill_suppression',
 				'label' => 'Suppression',
 				'value' => 'This address is on the suppression list (opted out).',
 			);
@@ -82,9 +82,9 @@ final class PersonalData {
 		$attributed = $this->attributions_for( $email );
 		if ( array() !== $attributed ) {
 			$items[] = array(
-				'group' => 'flowforge_attributions',
+				'group' => 'cartquill_attributions',
 				'label' => 'Revenue attribution',
-				'value' => sprintf( '%d order(s) attributed to FlowForge flows.', count( $attributed ) ),
+				'value' => sprintf( '%d order(s) attributed to CartQuill flows.', count( $attributed ) ),
 			);
 		}
 
@@ -92,7 +92,7 @@ final class PersonalData {
 	}
 
 	/**
-	 * Delete FlowForge personal data for the email.
+	 * Delete CartQuill personal data for the email.
 	 *
 	 * Enrollments, messages and the cart capture are removed. The suppression
 	 * entry is deliberately RETAINED: it is the record of a prior opt-out, and
@@ -119,7 +119,7 @@ final class PersonalData {
 	}
 
 	/**
-	 * @return list<\FlowForge\Persistence\AttributionRecord>
+	 * @return list<\CartQuill\Persistence\AttributionRecord>
 	 */
 	private function attributions_for( string $email ): array {
 		$message_ids = array_map( static fn ( $m ) => (int) $m->id, $this->messages->for_recipient( $email ) );

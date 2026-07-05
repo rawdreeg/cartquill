@@ -1,23 +1,23 @@
 <?php
 /**
- * GDPR export/erase round-trip over FlowForge's stored personal data.
+ * GDPR export/erase round-trip over CartQuill's stored personal data.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Compliance\ArraySuppressionList;
-use FlowForge\Compliance\PersonalData;
-use FlowForge\Persistence\AttributionRecord;
-use FlowForge\Persistence\EnrollmentRecord;
-use FlowForge\Persistence\InMemoryAttributionRepository;
-use FlowForge\Persistence\InMemoryCartCaptureStore;
-use FlowForge\Persistence\InMemoryEnrollmentRepository;
-use FlowForge\Persistence\InMemoryMessageRepository;
-use FlowForge\Persistence\MessageRecord;
+use CartQuill\Compliance\ArraySuppressionList;
+use CartQuill\Compliance\PersonalData;
+use CartQuill\Persistence\AttributionRecord;
+use CartQuill\Persistence\EnrollmentRecord;
+use CartQuill\Persistence\InMemoryAttributionRepository;
+use CartQuill\Persistence\InMemoryCartCaptureStore;
+use CartQuill\Persistence\InMemoryEnrollmentRepository;
+use CartQuill\Persistence\InMemoryMessageRepository;
+use CartQuill\Persistence\MessageRecord;
 use PHPUnit\Framework\TestCase;
 
 final class PersonalDataTest extends TestCase {
@@ -63,12 +63,12 @@ final class PersonalDataTest extends TestCase {
 		$items  = $this->data->export( 'buyer@example.com' );
 		$groups = array_column( $items, 'group' );
 
-		$this->assertContains( 'flowforge_enrollments', $groups );
-		$this->assertContains( 'flowforge_messages', $groups );
-		$this->assertContains( 'flowforge_cart', $groups );
-		$this->assertContains( 'flowforge_suppression', $groups );
+		$this->assertContains( 'cartquill_enrollments', $groups );
+		$this->assertContains( 'cartquill_messages', $groups );
+		$this->assertContains( 'cartquill_cart', $groups );
+		$this->assertContains( 'cartquill_suppression', $groups );
 
-		$enrollment_item = $items[ array_search( 'flowforge_enrollments', $groups, true ) ];
+		$enrollment_item = $items[ array_search( 'cartquill_enrollments', $groups, true ) ];
 		$this->assertStringContainsString( 'newsletter', $enrollment_item['value'], 'consent source is exported' );
 	}
 

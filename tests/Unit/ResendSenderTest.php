@@ -2,34 +2,34 @@
 /**
  * ResendSender behaviour and its integration behind the engine's sending seam.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Compliance\ArraySuppressionList;
-use FlowForge\Deliverability\ResendSender;
-use FlowForge\Engine\ConditionEvaluator;
-use FlowForge\Engine\Enroller;
-use FlowForge\Engine\MessageComposer;
-use FlowForge\Engine\StepRunner;
-use FlowForge\Flow\FlowStep;
-use FlowForge\Flow\Renderer;
-use FlowForge\Model\Message;
-use FlowForge\Persistence\FlowRecord;
-use FlowForge\Persistence\InMemoryEnrollmentRepository;
-use FlowForge\Persistence\InMemoryFlowRepository;
-use FlowForge\Persistence\InMemoryMessageRepository;
-use FlowForge\Persistence\MessageRecord;
-use FlowForge\Scheduling\ArrayScheduler;
-use FlowForge\Sender\SenderRegistry;
-use FlowForge\Sender\WpMailSender;
-use FlowForge\Settings\ArraySettings;
-use FlowForge\Support\FixedClock;
-use FlowForge\Tests\Fake\FakeCustomerActivity;
-use FlowForge\Tests\Fake\StubResendClient;
+use CartQuill\Compliance\ArraySuppressionList;
+use CartQuill\Deliverability\ResendSender;
+use CartQuill\Engine\ConditionEvaluator;
+use CartQuill\Engine\Enroller;
+use CartQuill\Engine\MessageComposer;
+use CartQuill\Engine\StepRunner;
+use CartQuill\Flow\FlowStep;
+use CartQuill\Flow\Renderer;
+use CartQuill\Model\Message;
+use CartQuill\Persistence\FlowRecord;
+use CartQuill\Persistence\InMemoryEnrollmentRepository;
+use CartQuill\Persistence\InMemoryFlowRepository;
+use CartQuill\Persistence\InMemoryMessageRepository;
+use CartQuill\Persistence\MessageRecord;
+use CartQuill\Scheduling\ArrayScheduler;
+use CartQuill\Sender\SenderRegistry;
+use CartQuill\Sender\WpMailSender;
+use CartQuill\Settings\ArraySettings;
+use CartQuill\Support\FixedClock;
+use CartQuill\Tests\Fake\FakeCustomerActivity;
+use CartQuill\Tests\Fake\StubResendClient;
 use PHPUnit\Framework\TestCase;
 
 final class ResendSenderTest extends TestCase {

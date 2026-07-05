@@ -2,12 +2,12 @@
 /**
  * libsodium-backed Crypto: authenticated symmetric encryption.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Security;
+namespace CartQuill\Security;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

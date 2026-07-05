@@ -2,12 +2,12 @@
 /**
  * Custom-table names and DDL.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Persistence;
+namespace CartQuill\Persistence;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
@@ -26,31 +26,31 @@ final class Schema {
 	/** Bumped whenever the DDL changes so {@see Migrator} re-applies dbDelta on update. */
 	public const VERSION = '8';
 
-	public const OPTION_DB_VERSION = 'flowforge_db_version';
+	public const OPTION_DB_VERSION = 'cartquill_db_version';
 
 	public static function flows_table(): string {
 		global $wpdb;
-		return $wpdb->prefix . 'flowforge_flows';
+		return $wpdb->prefix . 'cartquill_flows';
 	}
 
 	public static function enrollments_table(): string {
 		global $wpdb;
-		return $wpdb->prefix . 'flowforge_enrollments';
+		return $wpdb->prefix . 'cartquill_enrollments';
 	}
 
 	public static function messages_table(): string {
 		global $wpdb;
-		return $wpdb->prefix . 'flowforge_messages';
+		return $wpdb->prefix . 'cartquill_messages';
 	}
 
 	public static function attributions_table(): string {
 		global $wpdb;
-		return $wpdb->prefix . 'flowforge_attributions';
+		return $wpdb->prefix . 'cartquill_attributions';
 	}
 
 	public static function settings_table(): string {
 		global $wpdb;
-		return $wpdb->prefix . 'flowforge_settings';
+		return $wpdb->prefix . 'cartquill_settings';
 	}
 
 	/**
@@ -59,7 +59,7 @@ final class Schema {
 	 */
 	public static function cart_captures_table(): string {
 		global $wpdb;
-		return $wpdb->prefix . 'flowforge_cart_captures';
+		return $wpdb->prefix . 'cartquill_cart_captures';
 	}
 
 	/**

@@ -2,12 +2,12 @@
 /**
  * Runtime scheduler backed by Action Scheduler (bundled with WooCommerce).
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Scheduling;
+namespace CartQuill\Scheduling;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
@@ -15,15 +15,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Schedules each step as a single Action Scheduler action on the
- * `flowforge_run_step` hook, which the plugin wires to the StepRunner. Passing
+ * `cartquill_run_step` hook, which the plugin wires to the StepRunner. Passing
  * the enrollment id and step index as unique-ish args, plus Action Scheduler's
  * own dedup, keeps duplicate scheduling cheap; the engine's message-level
  * idempotency is the real guard against double-sends.
  */
 final class ActionSchedulerScheduler implements Scheduler {
 
-	public const HOOK  = 'flowforge_run_step';
-	public const GROUP = 'flowforge';
+	public const HOOK  = 'cartquill_run_step';
+	public const GROUP = 'cartquill';
 
 	public function schedule( int $timestamp, int $enrollment_id, int $step_index ): void {
 		if ( ! function_exists( 'as_schedule_single_action' ) ) {

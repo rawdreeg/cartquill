@@ -2,17 +2,17 @@
 /**
  * Flow step JSON (de)serialization and definition conversion.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
 use Brain\Monkey;
 use Brain\Monkey\Functions;
-use FlowForge\Flow\FlowStep;
-use FlowForge\Persistence\FlowRecord;
+use CartQuill\Flow\FlowStep;
+use CartQuill\Persistence\FlowRecord;
 use PHPUnit\Framework\TestCase;
 
 final class FlowRecordTest extends TestCase {

@@ -2,18 +2,18 @@
 /**
  * First-run onboarding screen.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Admin;
+namespace CartQuill\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Settings\OptionsSettings;
+use CartQuill\Settings\OptionsSettings;
 
 /**
  * A short onboarding: confirm the from-identity and point the user at the flow
@@ -22,7 +22,7 @@ use FlowForge\Settings\OptionsSettings;
  */
 final class OnboardingPage {
 
-	public const SLUG = 'flowforge-onboarding';
+	public const SLUG = 'cartquill-onboarding';
 
 	public function __construct(
 		private readonly Onboarding $onboarding,
@@ -33,14 +33,14 @@ final class OnboardingPage {
 		\add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		\add_action( 'admin_init', array( $this, 'maybe_redirect' ) );
 		\add_action( 'admin_notices', array( $this, 'maybe_notice' ) );
-		\add_action( 'admin_post_flowforge_finish_onboarding', array( $this, 'handle_finish' ) );
+		\add_action( 'admin_post_cartquill_finish_onboarding', array( $this, 'handle_finish' ) );
 	}
 
 	public function add_menu(): void {
 		\add_submenu_page(
 			'',
-			\__( 'Welcome to FlowForge', 'flowforge' ),
-			\__( 'Welcome', 'flowforge' ),
+			\__( 'Welcome to CartQuill', 'cartquill' ),
+			\__( 'Welcome', 'cartquill' ),
 			'manage_options',
 			self::SLUG,
 			array( $this, 'render' )
@@ -75,15 +75,15 @@ final class OnboardingPage {
 		echo '<div class="notice notice-info is-dismissible"><p>';
 		printf(
 			/* translators: %s: onboarding page URL. */
-			\wp_kses_post( __( 'Finish setting up FlowForge to send your first flow. <a href="%s">Complete setup</a>.', 'flowforge' ) ),
+			\wp_kses_post( __( 'Finish setting up CartQuill to send your first flow. <a href="%s">Complete setup</a>.', 'cartquill' ) ),
 			\esc_url( $url )
 		);
 		echo '</p></div>';
 	}
 
 	public function handle_finish(): void {
-		if ( ! \current_user_can( 'manage_options' ) || ! \check_admin_referer( 'flowforge_finish_onboarding' ) ) {
-			\wp_die( \esc_html__( 'Not allowed.', 'flowforge' ) );
+		if ( ! \current_user_can( 'manage_options' ) || ! \check_admin_referer( 'cartquill_finish_onboarding' ) ) {
+			\wp_die( \esc_html__( 'Not allowed.', 'cartquill' ) );
 		}
 
 		$skip = isset( $_POST['skip'] );
@@ -98,7 +98,7 @@ final class OnboardingPage {
 
 		$dest = isset( $_POST['go_to_library'] )
 			? 'admin.php?page=' . FlowLibraryPage::SLUG
-			: 'admin.php?page=flowforge';
+			: 'admin.php?page=cartquill';
 		\wp_safe_redirect( \admin_url( $dest ) );
 		exit;
 	}
@@ -109,32 +109,32 @@ final class OnboardingPage {
 		}
 		?>
 		<div class="wrap">
-			<h1><?php echo \esc_html__( 'Welcome to FlowForge', 'flowforge' ); ?></h1>
-			<p><?php echo \esc_html__( 'Two quick things and you are ready to send your first flow.', 'flowforge' ); ?></p>
+			<h1><?php echo \esc_html__( 'Welcome to CartQuill', 'cartquill' ); ?></h1>
+			<p><?php echo \esc_html__( 'Two quick things and you are ready to send your first flow.', 'cartquill' ); ?></p>
 
 			<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
-				<?php \wp_nonce_field( 'flowforge_finish_onboarding' ); ?>
-				<input type="hidden" name="action" value="flowforge_finish_onboarding" />
+				<?php \wp_nonce_field( 'cartquill_finish_onboarding' ); ?>
+				<input type="hidden" name="action" value="cartquill_finish_onboarding" />
 
-				<h2><?php echo \esc_html__( '1. Confirm who your emails come from', 'flowforge' ); ?></h2>
+				<h2><?php echo \esc_html__( '1. Confirm who your emails come from', 'cartquill' ); ?></h2>
 				<table class="form-table">
 					<tr>
-						<th><label for="ff-from-name"><?php echo \esc_html__( 'From name', 'flowforge' ); ?></label></th>
+						<th><label for="ff-from-name"><?php echo \esc_html__( 'From name', 'cartquill' ); ?></label></th>
 						<td><input id="ff-from-name" type="text" name="from_name" class="regular-text" value="<?php echo \esc_attr( $this->settings->from_name() ); ?>" /></td>
 					</tr>
 					<tr>
-						<th><label for="ff-from-email"><?php echo \esc_html__( 'From email', 'flowforge' ); ?></label></th>
+						<th><label for="ff-from-email"><?php echo \esc_html__( 'From email', 'cartquill' ); ?></label></th>
 						<td><input id="ff-from-email" type="email" name="from_email" class="regular-text" value="<?php echo \esc_attr( $this->settings->from_email() ); ?>" /></td>
 					</tr>
 				</table>
 
-				<h2><?php echo \esc_html__( '2. Install your first flow', 'flowforge' ); ?></h2>
-				<p><?php echo \esc_html__( 'Pick a proven template from the flow library — abandoned cart, welcome, post-purchase, or win-back.', 'flowforge' ); ?></p>
+				<h2><?php echo \esc_html__( '2. Install your first flow', 'cartquill' ); ?></h2>
+				<p><?php echo \esc_html__( 'Pick a proven template from the flow library — abandoned cart, welcome, post-purchase, or win-back.', 'cartquill' ); ?></p>
 
 				<p>
-					<button type="submit" name="go_to_library" value="1" class="button button-primary"><?php echo \esc_html__( 'Finish and go to the flow library', 'flowforge' ); ?></button>
-					<button type="submit" class="button"><?php echo \esc_html__( 'Finish', 'flowforge' ); ?></button>
-					<button type="submit" name="skip" value="1" class="button-link" style="margin-left:8px"><?php echo \esc_html__( 'Skip for now', 'flowforge' ); ?></button>
+					<button type="submit" name="go_to_library" value="1" class="button button-primary"><?php echo \esc_html__( 'Finish and go to the flow library', 'cartquill' ); ?></button>
+					<button type="submit" class="button"><?php echo \esc_html__( 'Finish', 'cartquill' ); ?></button>
+					<button type="submit" name="skip" value="1" class="button-link" style="margin-left:8px"><?php echo \esc_html__( 'Skip for now', 'cartquill' ); ?></button>
 				</p>
 			</form>
 		</div>

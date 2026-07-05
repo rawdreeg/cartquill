@@ -2,18 +2,18 @@
 /**
  * Attributes an order's revenue to a flow when the order is placed.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Integration;
+namespace CartQuill\Integration;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Attribution\Attributor;
+use CartQuill\Attribution\Attributor;
 
 /**
  * On order placement, hands the order to the Attributor. The attribution window
@@ -36,14 +36,14 @@ final class AttributionTrigger {
 	}
 
 	public static function window(): int {
-		$days = ( new \FlowForge\Settings\OptionsSettings() )->attribution_window_days();
+		$days = ( new \CartQuill\Settings\OptionsSettings() )->attribution_window_days();
 		/**
 		 * Override the attribution window (seconds). Defaults to the days set in
-		 * FlowForge Settings.
+		 * CartQuill Settings.
 		 *
 		 * @param int $window Window in seconds.
 		 */
-		return (int) \apply_filters( 'flowforge_attribution_window', $days * DAY_IN_SECONDS );
+		return (int) \apply_filters( 'cartquill_attribution_window', $days * DAY_IN_SECONDS );
 	}
 
 	/**
