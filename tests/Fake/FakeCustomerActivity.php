@@ -2,14 +2,14 @@
 /**
  * Configurable CustomerActivity for tests.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Fake;
+namespace CartQuill\Tests\Fake;
 
-use FlowForge\Engine\CustomerActivity;
+use CartQuill\Engine\CustomerActivity;
 
 final class FakeCustomerActivity implements CustomerActivity {
 

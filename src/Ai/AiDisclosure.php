@@ -2,12 +2,12 @@
 /**
  * External-service disclosure + opt-in gate for the AI proxy.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Ai;
+namespace CartQuill\Ai;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class AiDisclosure {
 
-	public const OPTION = 'flowforge_ai_disclosure_ack';
+	public const OPTION = 'cartquill_ai_disclosure_ack';
 
 	/**
 	 * HITL: replace with the real vendor legal URLs before WP.org submission —
@@ -45,8 +45,8 @@ final class AiDisclosure {
 	 */
 	public function summary(): string {
 		return \__(
-			'Generating or rewriting copy sends the flow type, store context (store name, tone, currency, and a few top product names), any copy you ask to rewrite, and your AI license key to the FlowForge AI service at api.cartquill.com. This is a paid vendor service; drafts are returned to the editor for your review and are never sent to customers automatically.',
-			'flowforge'
+			'Generating or rewriting copy sends the flow type, store context (store name, tone, currency, and a few top product names), any copy you ask to rewrite, and your AI license key to the CartQuill AI service at api.cartquill.com. This is a paid vendor service; drafts are returned to the editor for your review and are never sent to customers automatically.',
+			'cartquill'
 		);
 	}
 }

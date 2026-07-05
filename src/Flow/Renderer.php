@@ -2,12 +2,12 @@
 /**
  * Renders step templates into concrete subject/body text.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Flow;
+namespace CartQuill\Flow;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

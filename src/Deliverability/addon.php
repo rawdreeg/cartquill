@@ -4,21 +4,21 @@
  *
  * Included by the composition root when this directory is present; the free
  * WordPress.org build ships without it. Self-registers on
- * `flowforge_register_senders`, `flowforge_register_addons`, and the
- * `flowforge_active_sender` filter.
+ * `cartquill_register_senders`, `cartquill_register_addons`, and the
+ * `cartquill_active_sender` filter.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-use FlowForge\Compliance\WpdbSuppressionList;
-use FlowForge\Deliverability\DeliverabilityAddon;
-use FlowForge\Deliverability\EspSettings;
-use FlowForge\Licensing\OptionLicense;
-use FlowForge\Persistence\WpdbMessageRepository;
-use FlowForge\Security\InstallKey;
-use FlowForge\Security\SodiumCrypto;
+use CartQuill\Compliance\WpdbSuppressionList;
+use CartQuill\Deliverability\DeliverabilityAddon;
+use CartQuill\Deliverability\EspSettings;
+use CartQuill\Licensing\OptionLicense;
+use CartQuill\Persistence\WpdbMessageRepository;
+use CartQuill\Security\InstallKey;
+use CartQuill\Security\SodiumCrypto;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

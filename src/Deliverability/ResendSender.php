@@ -2,20 +2,20 @@
 /**
  * Deliverability add-on sender: delivers via the customer's Resend account.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Deliverability;
+namespace CartQuill\Deliverability;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Model\Message;
-use FlowForge\Model\SendResult;
-use FlowForge\Sender\SenderInterface;
+use CartQuill\Model\Message;
+use CartQuill\Model\SendResult;
+use CartQuill\Sender\SenderInterface;
 
 /**
  * Swaps in behind SenderInterface with zero engine changes: the store selects

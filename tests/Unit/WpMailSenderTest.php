@@ -3,17 +3,17 @@
  * WpMailSender maps wp_mail()'s boolean into a SendResult and caps status at
  * "sent" (no external id, no delivery signal).
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
 use Brain\Monkey;
 use Brain\Monkey\Functions;
-use FlowForge\Model\Message;
-use FlowForge\Sender\WpMailSender;
+use CartQuill\Model\Message;
+use CartQuill\Sender\WpMailSender;
 use PHPUnit\Framework\TestCase;
 
 final class WpMailSenderTest extends TestCase {

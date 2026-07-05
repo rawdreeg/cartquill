@@ -2,19 +2,19 @@
 /**
  * Inbound Resend webhook endpoint.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Deliverability;
+namespace CartQuill\Deliverability;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
 /**
- * Exposes a single URL (`?flowforge_webhook=resend`) that Resend POSTs delivery
+ * Exposes a single URL (`?cartquill_webhook=resend`) that Resend POSTs delivery
  * events to. It reads the raw body + Svix headers, rejects anything the
  * {@see WebhookVerifier} can't authenticate (locked rule: signatures verified),
  * then hands the decoded event to the {@see WebhookProcessor}. The verify/parse
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class WebhookEndpoint {
 
-	public const PARAM = 'flowforge_webhook';
+	public const PARAM = 'cartquill_webhook';
 
 	public function __construct(
 		private readonly WebhookVerifier $verifier,

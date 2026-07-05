@@ -4,17 +4,17 @@
  *
  * Included by the composition root when this directory is present; the free
  * WordPress.org build ships without it. Self-registers on the
- * `flowforge_register_addons` hook.
+ * `cartquill_register_addons` hook.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-use FlowForge\Ai\AiAddon;
-use FlowForge\Flow\FlowLibrary;
-use FlowForge\Licensing\OptionLicense;
-use FlowForge\Persistence\WpdbFlowRepository;
+use CartQuill\Ai\AiAddon;
+use CartQuill\Flow\FlowLibrary;
+use CartQuill\Licensing\OptionLicense;
+use CartQuill\Persistence\WpdbFlowRepository;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

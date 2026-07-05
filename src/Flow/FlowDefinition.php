@@ -2,12 +2,12 @@
 /**
  * A flow: an ordered list of steps.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Flow;
+namespace CartQuill\Flow;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

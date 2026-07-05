@@ -2,26 +2,26 @@
 /**
  * The AI Flow Generation add-on: wires itself in only when licensed.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Ai;
+namespace CartQuill\Ai;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Admin\AiGeneratePage;
-use FlowForge\Flow\FlowLibrary;
-use FlowForge\Licensing\License;
-use FlowForge\Licensing\OptionLicense;
-use FlowForge\Licensing\Plans;
-use FlowForge\Persistence\FlowRepository;
+use CartQuill\Admin\AiGeneratePage;
+use CartQuill\Flow\FlowLibrary;
+use CartQuill\Licensing\License;
+use CartQuill\Licensing\OptionLicense;
+use CartQuill\Licensing\Plans;
+use CartQuill\Persistence\FlowRepository;
 
 /**
- * Hooks `flowforge_register_addons` and only boots when the AI capability is
+ * Hooks `cartquill_register_addons` and only boots when the AI capability is
  * licensed — so the paid feature's admin surface and proxy client never load for
  * free-tier stores. Rate limiting keeps proxy usage (and cost) bounded.
  */
@@ -37,7 +37,7 @@ final class AiAddon {
 	) {}
 
 	public function register(): void {
-		\add_action( 'flowforge_register_addons', array( $this, 'boot' ) );
+		\add_action( 'cartquill_register_addons', array( $this, 'boot' ) );
 	}
 
 	/**
@@ -49,9 +49,9 @@ final class AiAddon {
 		}
 
 		/** Max AI generations per rolling window. */
-		$limit = (int) \apply_filters( 'flowforge_ai_rate_limit', self::DEFAULT_LIMIT );
+		$limit = (int) \apply_filters( 'cartquill_ai_rate_limit', self::DEFAULT_LIMIT );
 		/** Rate-limit window length, in seconds. */
-		$window = (int) \apply_filters( 'flowforge_ai_rate_window', self::DEFAULT_WINDOW );
+		$window = (int) \apply_filters( 'cartquill_ai_rate_window', self::DEFAULT_WINDOW );
 
 		$limiter   = new TransientRateLimiter( $limit, $window );
 		$generator = new AiFlowGenerator(

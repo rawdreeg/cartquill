@@ -2,18 +2,18 @@
 /**
  * Verifies Resend (Svix) webhook signatures.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Deliverability;
+namespace CartQuill\Deliverability;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Support\Clock;
+use CartQuill\Support\Clock;
 
 /**
  * Resend signs webhooks with Svix: the signed content is

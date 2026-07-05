@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Build the clean, production WordPress.org package (free core) into
-# build/flowforge.zip. Regenerates a no-dev optimized autoloader and strips
+# build/cartquill.zip. Regenerates a no-dev optimized autoloader and strips
 # everything listed in .distignore — including the paid add-on directories, so
 # the free build cannot ship (or unlock) paid code.
 #
@@ -9,7 +9,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD="$ROOT/build"
-STAGE="$BUILD/flowforge"
+STAGE="$BUILD/cartquill"
 
 for tool in composer rsync zip; do
 	command -v "$tool" >/dev/null 2>&1 || { echo "error: '$tool' is required" >&2; exit 1; }
@@ -39,6 +39,6 @@ rm -f "$STAGE/composer.json" "$STAGE/composer.lock"
 rm -rf "$STAGE/vendor/bin"
 
 echo "==> Zipping"
-( cd "$BUILD" && zip -rqX flowforge.zip flowforge )
+( cd "$BUILD" && zip -rqX cartquill.zip cartquill )
 
-echo "==> Built $BUILD/flowforge.zip"
+echo "==> Built $BUILD/cartquill.zip"

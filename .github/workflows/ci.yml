@@ -29,7 +29,7 @@ jobs:
         run: composer install --no-interaction --prefer-dist
 
       - name: Lint PHP
-        run: find src flowforge.php tests -name '*.php' -print0 | xargs -0 -n1 php -l
+        run: find src cartquill.php tests -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Run tests
         run: ./vendor/bin/phpunit
@@ -53,17 +53,17 @@ jobs:
       - name: Assert free/paid separation and a production autoloader
         run: |
           for path in src/Ai src/Deliverability src/Admin/AiGeneratePage.php src/Admin/DeliverabilityPage.php tests composer.json CLAUDE.md; do
-            if [ -e "build/flowforge/$path" ]; then
+            if [ -e "build/cartquill/$path" ]; then
               echo "::error::'$path' leaked into the free build"; exit 1
             fi
           done
-          test -f build/flowforge/vendor/autoload.php || { echo "::error::built package is missing vendor/autoload.php"; exit 1; }
+          test -f build/cartquill/vendor/autoload.php || { echo "::error::built package is missing vendor/autoload.php"; exit 1; }
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: flowforge-plugin
-          path: build/flowforge.zip
+          name: cartquill-plugin
+          path: build/cartquill.zip
 
       # Plugin Check runs against the built free package. Informational for now:
       # some checks need a live WP environment and the AI proxy legal URLs are
@@ -72,5 +72,5 @@ jobs:
         continue-on-error: true
         uses: wordpress/plugin-check-action@v1
         with:
-          build-dir: ./build/flowforge
+          build-dir: ./build/cartquill
           ignore-warnings: true

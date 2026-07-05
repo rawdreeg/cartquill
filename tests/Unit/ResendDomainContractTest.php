@@ -2,15 +2,15 @@
 /**
  * The id-keyed Resend domain contract, exercised through the stub client.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Deliverability\DomainStatus;
-use FlowForge\Tests\Fake\StubResendClient;
+use CartQuill\Deliverability\DomainStatus;
+use CartQuill\Tests\Fake\StubResendClient;
 use PHPUnit\Framework\TestCase;
 
 final class ResendDomainContractTest extends TestCase {

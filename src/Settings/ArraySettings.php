@@ -2,12 +2,12 @@
 /**
  * Array-backed Settings for tests.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Settings;
+namespace CartQuill\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

@@ -2,20 +2,20 @@
 /**
  * Welcome trigger: enrolls a customer on their first order or newsletter signup.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Integration;
+namespace CartQuill\Integration;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Engine\CustomerActivity;
-use FlowForge\Engine\FlowTypeEnroller;
-use FlowForge\Flow\DefaultFlows;
+use CartQuill\Engine\CustomerActivity;
+use CartQuill\Engine\FlowTypeEnroller;
+use CartQuill\Flow\DefaultFlows;
 
 /**
  * Starts the welcome flow (immediate hello + t+3d follow-up) when a relationship
@@ -27,12 +27,12 @@ use FlowForge\Flow\DefaultFlows;
  * and API-created orders are covered. First-order detection uses the order count
  * — a returning customer whose count is greater than one is not re-welcomed —
  * and enrollment is idempotent, so a hook re-fire never double-enrolls. Newsletter
- * signups enroll via a public method other code (or a `flowforge_newsletter_signup`
+ * signups enroll via a public method other code (or a `cartquill_newsletter_signup`
  * action) can call.
  */
 final class WelcomeTrigger {
 
-	public const SIGNUP_HOOK = 'flowforge_newsletter_signup';
+	public const SIGNUP_HOOK = 'cartquill_newsletter_signup';
 
 	public function __construct(
 		private readonly FlowTypeEnroller $enroller,

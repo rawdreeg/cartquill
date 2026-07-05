@@ -2,17 +2,17 @@
 /**
  * Last-touch attribution tested as an observable function of messages + orders.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Attribution\Attributor;
-use FlowForge\Persistence\InMemoryAttributionRepository;
-use FlowForge\Persistence\InMemoryMessageRepository;
-use FlowForge\Persistence\MessageRecord;
+use CartQuill\Attribution\Attributor;
+use CartQuill\Persistence\InMemoryAttributionRepository;
+use CartQuill\Persistence\InMemoryMessageRepository;
+use CartQuill\Persistence\MessageRecord;
 use PHPUnit\Framework\TestCase;
 
 final class AttributorTest extends TestCase {

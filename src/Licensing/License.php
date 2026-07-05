@@ -2,12 +2,12 @@
 /**
  * Licensing gate the add-ons check before registering their capabilities.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Licensing;
+namespace CartQuill\Licensing;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

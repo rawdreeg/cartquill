@@ -2,12 +2,12 @@
 /**
  * Read seam for WooCommerce customer activity used by step conditions.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Engine;
+namespace CartQuill\Engine;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

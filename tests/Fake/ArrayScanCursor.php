@@ -2,14 +2,14 @@
 /**
  * In-memory ScanCursor for tests.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Fake;
+namespace CartQuill\Tests\Fake;
 
-use FlowForge\Support\ScanCursor;
+use CartQuill\Support\ScanCursor;
 
 /**
  * Holds the scan offset in memory and records whether it was cleared, so tests

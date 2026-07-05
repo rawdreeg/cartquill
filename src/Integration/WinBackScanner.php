@@ -2,24 +2,24 @@
 /**
  * Scans for lapsed customers and enrolls them into the win-back flow.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Integration;
+namespace CartQuill\Integration;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Engine\Enroller;
-use FlowForge\Engine\LapsedCustomerFinder;
-use FlowForge\Flow\DefaultFlows;
-use FlowForge\Persistence\EnrollmentRepository;
-use FlowForge\Persistence\FlowRepository;
-use FlowForge\Support\Clock;
-use FlowForge\Support\ScanCursor;
+use CartQuill\Engine\Enroller;
+use CartQuill\Engine\LapsedCustomerFinder;
+use CartQuill\Flow\DefaultFlows;
+use CartQuill\Persistence\EnrollmentRepository;
+use CartQuill\Persistence\FlowRepository;
+use CartQuill\Support\Clock;
+use CartQuill\Support\ScanCursor;
 
 /**
  * Runs on a recurring (daily) Action Scheduler tick. A customer whose most
@@ -42,7 +42,7 @@ final class WinBackScanner {
 
 	public const FLOW_TYPE = DefaultFlows::TYPE_WIN_BACK;
 
-	public const HOOK = 'flowforge_scan_win_back';
+	public const HOOK = 'cartquill_scan_win_back';
 
 	/** Daily. */
 	public const SCAN_INTERVAL = 86400;
@@ -54,7 +54,7 @@ final class WinBackScanner {
 	public const BATCH_SIZE = 200;
 
 	/** wp_option key for the cross-tick scan cursor. */
-	public const CURSOR_OPTION = 'flowforge_win_back_cursor';
+	public const CURSOR_OPTION = 'cartquill_win_back_cursor';
 
 	public function __construct(
 		private readonly LapsedCustomerFinder $finder,
@@ -109,7 +109,7 @@ final class WinBackScanner {
 	 */
 	private function enqueue_continuation(): void {
 		if ( function_exists( 'as_enqueue_async_action' ) ) {
-			\as_enqueue_async_action( self::HOOK, array(), 'flowforge' );
+			\as_enqueue_async_action( self::HOOK, array(), 'cartquill' );
 		}
 	}
 }

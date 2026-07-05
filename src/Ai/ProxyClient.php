@@ -2,12 +2,12 @@
 /**
  * Contract with the vendor's license-gated AI proxy.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Ai;
+namespace CartQuill\Ai;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

@@ -2,31 +2,31 @@
 /**
  * The Deliverability add-on: registers the Resend sender + wizard when licensed.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Deliverability;
+namespace CartQuill\Deliverability;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Admin\DeliverabilityPage;
-use FlowForge\Compliance\SuppressionList;
-use FlowForge\Licensing\License;
-use FlowForge\Licensing\Plans;
-use FlowForge\Persistence\MessageRepository;
-use FlowForge\Sender\SenderRegistry;
-use FlowForge\Support\SystemClock;
+use CartQuill\Admin\DeliverabilityPage;
+use CartQuill\Compliance\SuppressionList;
+use CartQuill\Licensing\License;
+use CartQuill\Licensing\Plans;
+use CartQuill\Persistence\MessageRepository;
+use CartQuill\Sender\SenderRegistry;
+use CartQuill\Support\SystemClock;
 
 /**
  * Wires itself in only when the Deliverability plan is active. Registers
  * {@see ResendSender} through the locked `register_sender()` seam (so the engine
  * is untouched), exposes the domain-auth wizard, and — once the store has saved
  * a key and verified its sending domain — makes Resend the active sender via the
- * `flowforge_active_sender` filter. Clearing the key, or an unverified domain,
+ * `cartquill_active_sender` filter. Clearing the key, or an unverified domain,
  * falls straight back to wp_mail with no flow changes.
  */
 final class DeliverabilityAddon {
@@ -39,9 +39,9 @@ final class DeliverabilityAddon {
 	) {}
 
 	public function register(): void {
-		\add_action( 'flowforge_register_senders', array( $this, 'register_sender' ), 10, 2 );
-		\add_action( 'flowforge_register_addons', array( $this, 'register_surfaces' ) );
-		\add_filter( 'flowforge_active_sender', array( $this, 'pick_active_sender' ) );
+		\add_action( 'cartquill_register_senders', array( $this, 'register_sender' ), 10, 2 );
+		\add_action( 'cartquill_register_addons', array( $this, 'register_surfaces' ) );
+		\add_filter( 'cartquill_active_sender', array( $this, 'pick_active_sender' ) );
 	}
 
 	/**
@@ -81,8 +81,8 @@ final class DeliverabilityAddon {
 		}
 		echo '<div class="notice notice-error"><p>';
 		echo \esc_html__(
-			'FlowForge could not decrypt your saved Resend API key (the site security keys may have changed). Sending has fallen back to wp_mail — re-enter your key on the Deliverability screen to resume.',
-			'flowforge'
+			'CartQuill could not decrypt your saved Resend API key (the site security keys may have changed). Sending has fallen back to wp_mail — re-enter your key on the Deliverability screen to resume.',
+			'cartquill'
 		);
 		echo '</p></div>';
 	}

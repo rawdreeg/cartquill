@@ -2,18 +2,18 @@
 /**
  * License gating: plan grants, the Pro bundle, and the option-backed store.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
 use Brain\Monkey;
 use Brain\Monkey\Functions;
-use FlowForge\Licensing\ArrayLicense;
-use FlowForge\Licensing\OptionLicense;
-use FlowForge\Licensing\Plans;
+use CartQuill\Licensing\ArrayLicense;
+use CartQuill\Licensing\OptionLicense;
+use CartQuill\Licensing\Plans;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 

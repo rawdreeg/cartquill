@@ -2,12 +2,12 @@
 /**
  * A stable per-install secret key for signing and encryption.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Security;
+namespace CartQuill\Security;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class InstallKey {
 
-	public const OPTION = 'flowforge_secret_key';
+	public const OPTION = 'cartquill_secret_key';
 
 	public static function get(): string {
 		$key = \get_option( self::OPTION, '' );

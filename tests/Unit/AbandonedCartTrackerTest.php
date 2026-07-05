@@ -2,19 +2,19 @@
 /**
  * Email capture and recovery at the WooCommerce boundary.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
 use Brain\Monkey;
 use Brain\Monkey\Functions;
-use FlowForge\Integration\AbandonedCartTracker;
-use FlowForge\Persistence\CartCaptureRecord;
-use FlowForge\Persistence\InMemoryCartCaptureStore;
-use FlowForge\Support\FixedClock;
+use CartQuill\Integration\AbandonedCartTracker;
+use CartQuill\Persistence\CartCaptureRecord;
+use CartQuill\Persistence\InMemoryCartCaptureStore;
+use CartQuill\Support\FixedClock;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 

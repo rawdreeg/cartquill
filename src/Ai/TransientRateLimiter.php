@@ -2,19 +2,19 @@
 /**
  * Transient-backed RateLimiter (runtime): N generations per rolling window.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Ai;
+namespace CartQuill\Ai;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Support\Clock;
-use FlowForge\Support\SystemClock;
+use CartQuill\Support\Clock;
+use CartQuill\Support\SystemClock;
 
 /**
  * A fixed-window counter kept in a transient: the window is anchored on first
@@ -29,7 +29,7 @@ use FlowForge\Support\SystemClock;
  */
 final class TransientRateLimiter implements RateLimiter {
 
-	private const KEY = 'flowforge_ai_rate';
+	private const KEY = 'cartquill_ai_rate';
 
 	private readonly Clock $clock;
 

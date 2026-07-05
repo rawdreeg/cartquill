@@ -2,18 +2,18 @@
 /**
  * Builds signed one-click unsubscribe URLs.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Compliance;
+namespace CartQuill\Compliance;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Tracking\Signer;
+use CartQuill\Tracking\Signer;
 
 /**
  * Produces the per-recipient unsubscribe URL embedded in every email. Signed so
@@ -22,7 +22,7 @@ use FlowForge\Tracking\Signer;
  */
 final class UnsubscribeLink {
 
-	public const PARAM = 'flowforge_unsubscribe';
+	public const PARAM = 'cartquill_unsubscribe';
 
 	public function __construct(
 		private readonly string $base_url,

@@ -2,15 +2,15 @@
 /**
  * Configurable LapsedCustomerFinder for tests.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Fake;
+namespace CartQuill\Tests\Fake;
 
-use FlowForge\Engine\LapsedBatch;
-use FlowForge\Engine\LapsedCustomerFinder;
+use CartQuill\Engine\LapsedBatch;
+use CartQuill\Engine\LapsedCustomerFinder;
 
 /**
  * Seeded with each customer's most recent order time; reports those whose

@@ -2,12 +2,12 @@
 /**
  * Builds signed open-pixel and click-redirect URLs.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tracking;
+namespace CartQuill\Tracking;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class TrackingUrls {
 
-	public const PARAM       = 'flowforge_track';
+	public const PARAM       = 'cartquill_track';
 	public const ACTION_OPEN = 'open';
 	public const ACTION_CLICK = 'click';
 

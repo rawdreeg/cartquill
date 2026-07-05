@@ -3,19 +3,19 @@
  * The webhook endpoint's verify → parse → process decision, exercised through
  * its WordPress-free handle() seam.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Tests\Unit;
+namespace CartQuill\Tests\Unit;
 
-use FlowForge\Compliance\ArraySuppressionList;
-use FlowForge\Deliverability\ResendWebhookVerifier;
-use FlowForge\Deliverability\WebhookEndpoint;
-use FlowForge\Deliverability\WebhookProcessor;
-use FlowForge\Persistence\InMemoryMessageRepository;
-use FlowForge\Persistence\MessageRecord;
+use CartQuill\Compliance\ArraySuppressionList;
+use CartQuill\Deliverability\ResendWebhookVerifier;
+use CartQuill\Deliverability\WebhookEndpoint;
+use CartQuill\Deliverability\WebhookProcessor;
+use CartQuill\Persistence\InMemoryMessageRepository;
+use CartQuill\Persistence\MessageRecord;
 use PHPUnit\Framework\TestCase;
 
 final class WebhookEndpointTest extends TestCase {

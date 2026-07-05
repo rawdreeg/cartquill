@@ -2,19 +2,19 @@
 /**
  * Handles one-click unsubscribe requests.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Compliance;
+namespace CartQuill\Compliance;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\EnrollmentRepository;
-use FlowForge\Tracking\Signer;
+use CartQuill\Persistence\EnrollmentRepository;
+use CartQuill\Tracking\Signer;
 
 /**
  * Unsubscribing suppresses the address globally (honored before every send by
@@ -77,12 +77,12 @@ final class UnsubscribeEndpoint {
 	private function render_result( bool $ok ): void {
 		\nocache_headers();
 		$message = $ok
-			? \__( 'You have been unsubscribed. You will no longer receive these emails.', 'flowforge' )
-			: \__( 'This unsubscribe link is invalid or has expired.', 'flowforge' );
+			? \__( 'You have been unsubscribed. You will no longer receive these emails.', 'cartquill' )
+			: \__( 'This unsubscribe link is invalid or has expired.', 'cartquill' );
 
 		\wp_die(
 			\esc_html( $message ),
-			\esc_html__( 'Unsubscribe', 'flowforge' ),
+			\esc_html__( 'Unsubscribe', 'cartquill' ),
 			array( 'response' => $ok ? 200 : 400 )
 		);
 	}
@@ -98,17 +98,17 @@ final class UnsubscribeEndpoint {
 			'<p>%s</p><form method="post" action="%s"><input type="hidden" name="%s" value="confirm" />'
 				. '<input type="hidden" name="email" value="%s" /><input type="hidden" name="t" value="%s" />'
 				. '<button type="submit">%s</button></form>',
-			\esc_html__( 'Click below to unsubscribe from these emails.', 'flowforge' ),
+			\esc_html__( 'Click below to unsubscribe from these emails.', 'cartquill' ),
 			\esc_url( $action ),
 			\esc_attr( UnsubscribeLink::PARAM ),
 			\esc_attr( $email ),
 			\esc_attr( $token ),
-			\esc_html__( 'Unsubscribe', 'flowforge' )
+			\esc_html__( 'Unsubscribe', 'cartquill' )
 		);
 
 		\wp_die(
 			$body, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts above.
-			\esc_html__( 'Unsubscribe', 'flowforge' ),
+			\esc_html__( 'Unsubscribe', 'cartquill' ),
 			array( 'response' => 200 )
 		);
 	}

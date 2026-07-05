@@ -2,28 +2,28 @@
 /**
  * Minimal admin settings screen: the from-identity.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Admin;
+namespace CartQuill\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Settings\OptionsSettings;
+use CartQuill\Settings\OptionsSettings;
 
 /**
- * Registers a top-level "FlowForge" admin menu with a settings form for the
+ * Registers a top-level "CartQuill" admin menu with a settings form for the
  * from-name and from-address. Persistence goes through OptionsSettings so the
  * engine reads the same values.
  */
 final class SettingsPage {
 
-	private const PAGE_SLUG   = 'flowforge';
-	private const OPTION_GROUP = 'flowforge_settings_group';
+	private const PAGE_SLUG   = 'cartquill';
+	private const OPTION_GROUP = 'cartquill_settings_group';
 
 	public function __construct( private readonly OptionsSettings $settings ) {}
 
@@ -34,8 +34,8 @@ final class SettingsPage {
 
 	public function add_menu(): void {
 		\add_menu_page(
-			\__( 'FlowForge', 'flowforge' ),
-			\__( 'FlowForge', 'flowforge' ),
+			\__( 'CartQuill', 'cartquill' ),
+			\__( 'CartQuill', 'cartquill' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render' ),
@@ -77,16 +77,16 @@ final class SettingsPage {
 		$option = OptionsSettings::OPTION;
 		?>
 		<div class="wrap">
-			<h1><?php echo \esc_html__( 'FlowForge Settings', 'flowforge' ); ?></h1>
+			<h1><?php echo \esc_html__( 'CartQuill Settings', 'cartquill' ); ?></h1>
 			<form action="options.php" method="post">
 				<?php \settings_fields( self::OPTION_GROUP ); ?>
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row">
-							<label for="flowforge_from_name"><?php echo \esc_html__( 'From name', 'flowforge' ); ?></label>
+							<label for="cartquill_from_name"><?php echo \esc_html__( 'From name', 'cartquill' ); ?></label>
 						</th>
 						<td>
-							<input type="text" id="flowforge_from_name"
+							<input type="text" id="cartquill_from_name"
 								name="<?php echo \esc_attr( $option ); ?>[from_name]"
 								value="<?php echo \esc_attr( $this->settings->from_name() ); ?>"
 								class="regular-text" />
@@ -94,10 +94,10 @@ final class SettingsPage {
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="flowforge_from_email"><?php echo \esc_html__( 'From email', 'flowforge' ); ?></label>
+							<label for="cartquill_from_email"><?php echo \esc_html__( 'From email', 'cartquill' ); ?></label>
 						</th>
 						<td>
-							<input type="email" id="flowforge_from_email"
+							<input type="email" id="cartquill_from_email"
 								name="<?php echo \esc_attr( $option ); ?>[from_email]"
 								value="<?php echo \esc_attr( $this->settings->from_email() ); ?>"
 								class="regular-text" />
@@ -105,26 +105,26 @@ final class SettingsPage {
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="flowforge_attribution_window_days"><?php echo \esc_html__( 'Attribution window (days)', 'flowforge' ); ?></label>
+							<label for="cartquill_attribution_window_days"><?php echo \esc_html__( 'Attribution window (days)', 'cartquill' ); ?></label>
 						</th>
 						<td>
-							<input type="number" min="1" step="1" id="flowforge_attribution_window_days"
+							<input type="number" min="1" step="1" id="cartquill_attribution_window_days"
 								name="<?php echo \esc_attr( $option ); ?>[attribution_window_days]"
 								value="<?php echo \esc_attr( (string) $this->settings->attribution_window_days() ); ?>"
 								class="small-text" />
-							<p class="description"><?php echo \esc_html__( 'An order credits the most recent flow email sent within this many days.', 'flowforge' ); ?></p>
+							<p class="description"><?php echo \esc_html__( 'An order credits the most recent flow email sent within this many days.', 'cartquill' ); ?></p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php echo \esc_html__( 'Data on uninstall', 'flowforge' ); ?></th>
+						<th scope="row"><?php echo \esc_html__( 'Data on uninstall', 'cartquill' ); ?></th>
 						<td>
 							<label>
 								<input type="checkbox"
 									name="<?php echo \esc_attr( $option ); ?>[remove_data_on_uninstall]"
 									value="1" <?php \checked( $this->settings->remove_data_on_uninstall() ); ?> />
-								<?php echo \esc_html__( 'Delete all FlowForge data (flows, enrollments, reports, settings) when the plugin is deleted.', 'flowforge' ); ?>
+								<?php echo \esc_html__( 'Delete all CartQuill data (flows, enrollments, reports, settings) when the plugin is deleted.', 'cartquill' ); ?>
 							</label>
-							<p class="description"><?php echo \esc_html__( 'Off by default — your data is kept if you delete and later reinstall.', 'flowforge' ); ?></p>
+							<p class="description"><?php echo \esc_html__( 'Off by default — your data is kept if you delete and later reinstall.', 'cartquill' ); ?></p>
 						</td>
 					</tr>
 				</table>

@@ -2,12 +2,12 @@
 /**
  * Onboarding state: whether the first-run flow is done, and redirect gating.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Admin;
+namespace CartQuill\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
@@ -20,8 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Onboarding {
 
-	public const OPTION_COMPLETE    = 'flowforge_onboarding_complete';
-	public const TRANSIENT_REDIRECT = 'flowforge_activation_redirect';
+	public const OPTION_COMPLETE    = 'cartquill_onboarding_complete';
+	public const TRANSIENT_REDIRECT = 'cartquill_activation_redirect';
 
 	/** How long the post-activation redirect stays pending. */
 	public const REDIRECT_TTL = 300;

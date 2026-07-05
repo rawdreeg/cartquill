@@ -2,12 +2,12 @@
 /**
  * A row in the `flow_enrollments` table: one customer's run through a flow.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Persistence;
+namespace CartQuill\Persistence;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.

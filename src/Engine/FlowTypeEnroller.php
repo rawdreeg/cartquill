@@ -2,18 +2,18 @@
 /**
  * Enrolls a customer into every active flow of a given type.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Engine;
+namespace CartQuill\Engine;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\FlowRepository;
+use CartQuill\Persistence\FlowRepository;
 
 /**
  * The bridge triggers use: given a flow type and an email, enroll the customer

@@ -2,18 +2,18 @@
 /**
  * Outcome of an AI generation attempt.
  *
- * @package FlowForge
+ * @package CartQuill
  */
 
 declare(strict_types=1);
 
-namespace FlowForge\Ai;
+namespace CartQuill\Ai;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-use FlowForge\Persistence\FlowRecord;
+use CartQuill\Persistence\FlowRecord;
 
 /**
  * Lets the caller distinguish success from the graceful-degrade cases (not
