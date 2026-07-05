@@ -24,6 +24,7 @@ final class AiRewriteController {
 	public function __construct(
 		private readonly AiFlowGenerator $generator,
 		private readonly FlowRepository $flows,
+		private readonly AiDisclosure $disclosure,
 	) {}
 
 	public function register(): void {
@@ -38,6 +39,15 @@ final class AiRewriteController {
 		?>
 		<h2><?php echo \esc_html__( 'Rewrite with AI', 'flowforge' ); ?></h2>
 		<p class="description"><?php echo \esc_html__( 'Vary a step\'s copy. The draft opens back here for review — nothing is sent.', 'flowforge' ); ?></p>
+		<?php $acknowledged = $this->disclosure->is_acknowledged(); ?>
+		<div class="notice notice-info inline" style="padding:8px 12px">
+			<p><?php echo \esc_html( $this->disclosure->summary() ); ?></p>
+			<p>
+				<a href="<?php echo \esc_url( AiDisclosure::TERMS_URL ); ?>" target="_blank" rel="noopener noreferrer"><?php echo \esc_html__( 'Terms of Service', 'flowforge' ); ?></a>
+				&nbsp;·&nbsp;
+				<a href="<?php echo \esc_url( AiDisclosure::PRIVACY_URL ); ?>" target="_blank" rel="noopener noreferrer"><?php echo \esc_html__( 'Privacy Policy', 'flowforge' ); ?></a>
+			</p>
+		</div>
 		<?php foreach ( $flow->steps as $i => $step ) : ?>
 			<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="margin-bottom:8px">
 				<?php \wp_nonce_field( 'flowforge_ai_rewrite' ); ?>
@@ -48,6 +58,12 @@ final class AiRewriteController {
 					<strong><?php printf( \esc_html__( 'Step %d', 'flowforge' ), (int) $i + 1 ); ?>:</strong>
 					<input type="text" name="instruction" class="regular-text" placeholder="<?php echo \esc_attr__( 'e.g. make it shorter and warmer', 'flowforge' ); ?>" />
 				</label>
+				<?php if ( ! $acknowledged ) : ?>
+					<label style="display:block;margin-top:4px">
+						<input type="checkbox" name="ai_ack" value="1" required />
+						<?php echo \esc_html__( 'Send this step to the FlowForge AI service (see disclosure above).', 'flowforge' ); ?>
+					</label>
+				<?php endif; ?>
 				<button type="submit" class="button"><?php echo \esc_html__( 'Rewrite', 'flowforge' ); ?></button>
 			</form>
 		<?php endforeach; ?>
@@ -57,6 +73,21 @@ final class AiRewriteController {
 	public function handle_rewrite(): void {
 		if ( ! \current_user_can( 'manage_options' ) || ! \check_admin_referer( 'flowforge_ai_rewrite' ) ) {
 			\wp_die( \esc_html__( 'Not allowed.', 'flowforge' ) );
+		}
+
+		// No proxy request until the external-service disclosure is acknowledged.
+		if ( ! $this->disclosure->is_acknowledged() ) {
+			if ( empty( $_POST['ai_ack'] ) ) {
+				$flow_id = isset( $_POST['flow'] ) ? (int) $_POST['flow'] : 0;
+				\wp_safe_redirect(
+					\add_query_arg(
+						array( 'page' => FlowEditorPage::SLUG, 'flow' => $flow_id, 'flowforge_ai_error' => 1 ),
+						\admin_url( 'admin.php' )
+					)
+				);
+				exit;
+			}
+			$this->disclosure->acknowledge();
 		}
 
 		$id          = isset( $_POST['flow'] ) ? (int) $_POST['flow'] : 0;

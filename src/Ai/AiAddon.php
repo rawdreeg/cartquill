@@ -56,7 +56,9 @@ final class AiAddon {
 			$license,
 		);
 
-		( new AiGeneratePage( $generator, $this->library ) )->register();
-		( new AiRewriteController( $generator, $this->flows ) )->register();
+		$disclosure = new AiDisclosure();
+
+		( new AiGeneratePage( $generator, $this->library, $disclosure ) )->register();
+		( new AiRewriteController( $generator, $this->flows, $disclosure ) )->register();
 	}
 }
