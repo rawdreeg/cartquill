@@ -32,6 +32,13 @@ final class InMemoryEnrollmentRepository implements EnrollmentRepository {
 		return $stored;
 	}
 
+	public function create( EnrollmentRecord $record ): ?EnrollmentRecord {
+		if ( null !== $this->find_active( $record->flow_id, $record->customer_email ) ) {
+			return null;
+		}
+		return $this->save( $record );
+	}
+
 	public function find( int $id ): ?EnrollmentRecord {
 		return $this->records[ $id ] ?? null;
 	}

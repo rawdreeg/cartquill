@@ -39,6 +39,7 @@ final class MessageRecord {
 	 * @param string      $status       One of the STATUS_* constants.
 	 * @param string|null $external_id  Transport message id, if any.
 	 * @param string|null $sent_at      MySQL datetime the send was recorded.
+	 * @param int         $attempts     Send attempts made so far (for retries).
 	 */
 	public function __construct(
 		public readonly ?int $id,
@@ -50,6 +51,7 @@ final class MessageRecord {
 		public readonly string $status,
 		public readonly ?string $external_id = null,
 		public readonly ?string $sent_at = null,
+		public readonly int $attempts = 0,
 	) {}
 
 	/**
@@ -66,6 +68,7 @@ final class MessageRecord {
 			$this->status,
 			$this->external_id,
 			$this->sent_at,
+			$this->attempts,
 		);
 	}
 
@@ -85,6 +88,26 @@ final class MessageRecord {
 			$status,
 			$external_id,
 			$sent_at,
+			$this->attempts,
+		);
+	}
+
+	/**
+	 * Return a copy that has recorded another (failed) send attempt, staying
+	 * queued for retry.
+	 */
+	public function with_attempt( int $attempts ): self {
+		return new self(
+			$this->id,
+			$this->enrollment_id,
+			$this->flow_id,
+			$this->step_index,
+			$this->recipient,
+			$this->sender,
+			self::STATUS_QUEUED,
+			$this->external_id,
+			$this->sent_at,
+			$attempts,
 		);
 	}
 }

@@ -18,6 +18,7 @@ use FlowForge\Engine\MessageComposer;
 use FlowForge\Engine\StepRunner;
 use FlowForge\Flow\FlowStep;
 use FlowForge\Flow\Renderer;
+use FlowForge\Model\SendResult;
 use FlowForge\Persistence\EnrollmentRecord;
 use FlowForge\Persistence\FlowRecord;
 use FlowForge\Persistence\InMemoryEnrollmentRepository;
@@ -185,6 +186,84 @@ final class EngineTest extends TestCase {
 			MessageRecord::STATUS_SENT,
 			$this->messages->all()[0]->status
 		);
+	}
+
+	public function test_a_transient_send_failure_retries_then_succeeds(): void {
+		$flow = $this->active_flow( array( new FlowStep( 0, 'Hi', 'body' ) ) );
+		$this->enroller->enroll( $flow, 'buyer@example.com' );
+
+		$this->sender->will_return( SendResult::failed( 'temporary SMTP error' ) );
+		$this->tick(); // attempt 1 fails
+
+		$this->assertSame( 1, $this->sender->count() );
+		$message = $this->messages->all()[0];
+		$this->assertSame( MessageRecord::STATUS_QUEUED, $message->status, 'stays queued for retry, not dropped' );
+		$this->assertSame( 1, $message->attempts );
+		$this->assertSame( EnrollmentRecord::STATUS_ACTIVE, $this->enrollments->all()[0]->status, 'flow does not advance past a failed step' );
+		$pending = $this->scheduler->pending();
+		$this->assertCount( 1, $pending, 'the same step is rescheduled with backoff' );
+		$this->assertSame( self::T0 + 300, $pending[0]['timestamp'] );
+		$this->assertSame( 0, $pending[0]['step_index'] );
+
+		// The retry succeeds (FakeSender's default accepted result).
+		$this->clock->advance( 300 );
+		$this->tick();
+
+		$this->assertSame( 2, $this->sender->count() );
+		$this->assertSame( MessageRecord::STATUS_SENT, $this->messages->all()[0]->status );
+		$this->assertSame( EnrollmentRecord::STATUS_COMPLETED, $this->enrollments->all()[0]->status );
+	}
+
+	public function test_a_sender_exception_does_not_strand_the_enrollment(): void {
+		$flow = $this->active_flow( array( new FlowStep( 0, 'Hi', 'body' ) ) );
+		$this->enroller->enroll( $flow, 'buyer@example.com' );
+
+		$this->sender->will_throw( new \RuntimeException( 'malformed ESP response' ) );
+		$this->tick(); // attempt 1 throws — caught and treated as a failed attempt
+
+		$message = $this->messages->all()[0];
+		$this->assertSame( MessageRecord::STATUS_QUEUED, $message->status, 'the claimed row is not left stranded' );
+		$this->assertSame( 1, $message->attempts );
+		$this->assertSame( EnrollmentRecord::STATUS_ACTIVE, $this->enrollments->all()[0]->status );
+		$this->assertCount( 1, $this->scheduler->pending(), 'a retry is scheduled, not lost' );
+
+		// The enrollment recovers on the next attempt.
+		$this->clock->advance( 300 );
+		$this->tick();
+
+		$this->assertSame( MessageRecord::STATUS_SENT, $this->messages->all()[0]->status );
+		$this->assertSame( EnrollmentRecord::STATUS_COMPLETED, $this->enrollments->all()[0]->status );
+	}
+
+	public function test_a_step_is_dead_lettered_after_exhausting_retries_and_the_flow_continues(): void {
+		$flow = $this->active_flow(
+			array(
+				new FlowStep( 0, 'Step 1', 'first' ),
+				new FlowStep( 0, 'Step 2', 'second' ),
+			)
+		);
+		$this->enroller->enroll( $flow, 'buyer@example.com' );
+
+		// Every attempt on step 0 fails; step 1 will send normally.
+		$this->sender->will_return( SendResult::failed( 'down' ) );
+		$this->tick(); // attempt 1
+
+		$this->clock->advance( 300 );
+		$this->sender->will_return( SendResult::failed( 'down' ) );
+		$this->tick(); // attempt 2
+
+		$this->clock->advance( 600 );
+		$this->sender->will_return( SendResult::failed( 'down' ) );
+		$this->tick(); // attempt 3 -> exhausted -> dead-letter step 0, advance to step 1 (sends)
+
+		$byStep = array();
+		foreach ( $this->messages->all() as $m ) {
+			$byStep[ $m->step_index ] = $m;
+		}
+		$this->assertSame( MessageRecord::STATUS_FAILED, $byStep[0]->status, 'step 0 dead-lettered after 3 attempts' );
+		$this->assertSame( 3, $byStep[0]->attempts );
+		$this->assertSame( MessageRecord::STATUS_SENT, $byStep[1]->status, 'the flow moved on to step 1' );
+		$this->assertSame( EnrollmentRecord::STATUS_COMPLETED, $this->enrollments->all()[0]->status );
 	}
 
 	public function test_a_pre_claimed_slot_blocks_the_send(): void {

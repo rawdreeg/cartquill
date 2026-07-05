@@ -91,6 +91,15 @@ final class InMemoryMessageRepository implements MessageRepository {
 		return isset( $this->unique[ $enrollment_id . ':' . $step_index ] );
 	}
 
+	public function find_for_step( int $enrollment_id, int $step_index ): ?MessageRecord {
+		foreach ( $this->records as $record ) {
+			if ( $record->enrollment_id === $enrollment_id && $record->step_index === $step_index ) {
+				return $record;
+			}
+		}
+		return null;
+	}
+
 	/** Statuses that are never eligible for last-touch attribution. */
 	private const ATTRIBUTION_EXCLUDED = array(
 		MessageRecord::STATUS_QUEUED,

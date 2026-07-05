@@ -32,6 +32,9 @@ final class FakeSender implements SenderInterface {
 	/** Optional canned result; defaults to accepted with a synthetic id. */
 	private ?SendResult $next_result = null;
 
+	/** Optional exception thrown by the next send() call. */
+	private ?\Throwable $next_throw = null;
+
 	/** Monotonic counter used to mint synthetic external ids. */
 	private int $counter = 0;
 
@@ -41,6 +44,12 @@ final class FakeSender implements SenderInterface {
 
 	public function send( Message $message ): SendResult {
 		$this->sent[] = $message;
+
+		if ( null !== $this->next_throw ) {
+			$throw            = $this->next_throw;
+			$this->next_throw = null;
+			throw $throw;
+		}
 
 		if ( null !== $this->next_result ) {
 			$result           = $this->next_result;
@@ -57,6 +66,13 @@ final class FakeSender implements SenderInterface {
 	 */
 	public function will_return( SendResult $result ): void {
 		$this->next_result = $result;
+	}
+
+	/**
+	 * Make the next send() call throw, to simulate an unexpected transport error.
+	 */
+	public function will_throw( \Throwable $e ): void {
+		$this->next_throw = $e;
 	}
 
 	/**

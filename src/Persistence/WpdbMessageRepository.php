@@ -33,9 +33,10 @@ final class WpdbMessageRepository implements MessageRepository {
 			'sender'        => $record->sender,
 			'external_id'   => $record->external_id,
 			'status'        => $record->status,
+			'attempts'      => $record->attempts,
 			'sent_at'       => $record->sent_at,
 		);
-		$formats = array( '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s' );
+		$formats = array( '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%s' );
 
 		if ( null !== $record->id ) {
 			$wpdb->update( $table, $data, array( 'id' => $record->id ), $formats, array( '%d' ) );
@@ -58,9 +59,10 @@ final class WpdbMessageRepository implements MessageRepository {
 			'sender'        => $record->sender,
 			'external_id'   => $record->external_id,
 			'status'        => $record->status,
+			'attempts'      => $record->attempts,
 			'sent_at'       => $record->sent_at,
 		);
-		$formats = array( '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s' );
+		$formats = array( '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%s' );
 
 		// Rely on the unique (enrollment_id, step_index) index as a lock: a
 		// concurrent worker's insert fails here, so only one send ever happens.
@@ -126,6 +128,22 @@ final class WpdbMessageRepository implements MessageRepository {
 		);
 
 		return (int) $count > 0;
+	}
+
+	public function find_for_step( int $enrollment_id, int $step_index ): ?MessageRecord {
+		global $wpdb;
+		$table = Schema::messages_table();
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$table} WHERE enrollment_id = %d AND step_index = %d LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL
+				$enrollment_id,
+				$step_index
+			),
+			ARRAY_A
+		);
+
+		return $row ? $this->hydrate( $row ) : null;
 	}
 
 	public function latest_to_recipient_between( string $email, string $from, string $to ): ?MessageRecord {
@@ -240,6 +258,7 @@ final class WpdbMessageRepository implements MessageRepository {
 			status: (string) $row['status'],
 			external_id: null !== $row['external_id'] ? (string) $row['external_id'] : null,
 			sent_at: null !== $row['sent_at'] ? (string) $row['sent_at'] : null,
+			attempts: isset( $row['attempts'] ) ? (int) $row['attempts'] : 0,
 		);
 	}
 }

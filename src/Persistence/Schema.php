@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Schema {
 
 	/** Bumped whenever the DDL changes so {@see Migrator} re-applies dbDelta on update. */
-	public const VERSION = '7';
+	public const VERSION = '8';
 
 	public const OPTION_DB_VERSION = 'flowforge_db_version';
 
@@ -95,6 +95,10 @@ final class Schema {
 			KEY status (status)
 		) {$charset_collate};";
 
+		// active_key is a hash of (flow_id, email) set only while the enrollment
+		// is active, else NULL. The unique index (which allows many NULLs) makes
+		// at most one *active* enrollment per (flow, customer) — re-enrollment
+		// after a prior run went non-active is still allowed.
 		$statements[] = "CREATE TABLE {$enrollments} (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			flow_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
@@ -104,7 +108,9 @@ final class Schema {
 			next_run_at DATETIME NULL,
 			created_at DATETIME NULL,
 			source VARCHAR(30) NOT NULL DEFAULT '',
+			active_key CHAR(32) NULL DEFAULT NULL,
 			PRIMARY KEY  (id),
+			UNIQUE KEY active_key (active_key),
 			KEY flow_id (flow_id),
 			KEY customer_email (customer_email),
 			KEY status (status)
@@ -121,6 +127,7 @@ final class Schema {
 			sender VARCHAR(50) NOT NULL DEFAULT '',
 			external_id VARCHAR(191) NULL,
 			status VARCHAR(20) NOT NULL DEFAULT 'queued',
+			attempts INT UNSIGNED NOT NULL DEFAULT 0,
 			sent_at DATETIME NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY enrollment_step (enrollment_id, step_index),
