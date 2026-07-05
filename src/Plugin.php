@@ -54,6 +54,7 @@ use FlowForge\Persistence\WpdbMessageRepository;
 use FlowForge\Scheduling\ActionSchedulerScheduler;
 use FlowForge\Sender\WpMailSender;
 use FlowForge\Settings\OptionsSettings;
+use FlowForge\Support\OptionScanCursor;
 use FlowForge\Support\SystemClock;
 use FlowForge\Tracking\SelfHostedLinkTracker;
 use FlowForge\Tracking\Signer;
@@ -187,7 +188,14 @@ final class Plugin {
 			}
 		);
 
-		$win_back = new WinBackScanner( new WooLapsedCustomerFinder(), $flows, $enrollments, $enroller, $clock );
+		$win_back = new WinBackScanner(
+			new WooLapsedCustomerFinder(),
+			$flows,
+			$enrollments,
+			$enroller,
+			$clock,
+			new OptionScanCursor( WinBackScanner::CURSOR_OPTION )
+		);
 		\add_action(
 			WinBackScanner::HOOK,
 			static function () use ( $win_back ): void {

@@ -41,15 +41,18 @@ final class WooCustomerActivity implements CustomerActivity {
 			return 0;
 		}
 
-		$orders = \wc_get_orders(
+		// Ask for the total via pagination rather than hydrating every order ID:
+		// `paginate` computes the count in SQL and returns just one row.
+		$result = \wc_get_orders(
 			array(
 				'billing_email' => $email,
-				'limit'         => -1,
+				'limit'         => 1,
 				'return'        => 'ids',
+				'paginate'      => true,
 				'status'        => array( 'wc-processing', 'wc-completed', 'wc-on-hold', 'wc-pending' ),
 			)
 		);
 
-		return is_array( $orders ) ? count( $orders ) : 0;
+		return isset( $result->total ) ? (int) $result->total : 0;
 	}
 }
