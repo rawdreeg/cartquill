@@ -65,6 +65,7 @@ final class SettingsPage {
 		return array(
 			'from_name'                => \sanitize_text_field( $input['from_name'] ?? '' ),
 			'from_email'               => \sanitize_email( $input['from_email'] ?? '' ),
+			'attribution_window_days'  => max( 1, (int) ( $input['attribution_window_days'] ?? OptionsSettings::DEFAULT_ATTRIBUTION_DAYS ) ),
 			'remove_data_on_uninstall' => empty( $input['remove_data_on_uninstall'] ) ? '' : '1',
 		);
 	}
@@ -100,6 +101,18 @@ final class SettingsPage {
 								name="<?php echo \esc_attr( $option ); ?>[from_email]"
 								value="<?php echo \esc_attr( $this->settings->from_email() ); ?>"
 								class="regular-text" />
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="flowforge_attribution_window_days"><?php echo \esc_html__( 'Attribution window (days)', 'flowforge' ); ?></label>
+						</th>
+						<td>
+							<input type="number" min="1" step="1" id="flowforge_attribution_window_days"
+								name="<?php echo \esc_attr( $option ); ?>[attribution_window_days]"
+								value="<?php echo \esc_attr( (string) $this->settings->attribution_window_days() ); ?>"
+								class="small-text" />
+							<p class="description"><?php echo \esc_html__( 'An order credits the most recent flow email sent within this many days.', 'flowforge' ); ?></p>
 						</td>
 					</tr>
 					<tr>
