@@ -35,10 +35,10 @@ This plugin can connect to two external services. Neither is contacted until you
 
 = FlowForge AI service (AI Flow Generation add-on, paid vendor service) =
 
-When you use "Generate with AI" or "Rewrite with AI", the plugin sends a request to the FlowForge AI proxy at https://proxy.flowforge.app to draft or rewrite email copy. Each request includes: the flow type you selected; store context (your store name, the tone you type, your store currency, and a few of your top product names); the copy you ask to rewrite; and your AI add-on license key, sent as a Bearer token for authentication. Requests are made only when you click **Generate draft** or **Rewrite**. This is a paid vendor service operated by FlowForge; the copy is drafted server-side and returned to your editor for review. The first request is made only after you explicitly acknowledge this disclosure in the plugin.
+When you use "Generate with AI" or "Rewrite with AI", the plugin sends a request to the FlowForge AI proxy at https://api.cartquill.com to draft or rewrite email copy. Each request includes: the flow type you selected; store context (your store name, the tone you type, your store currency, and a few of your top product names); the copy you ask to rewrite; and your AI add-on license key, sent as a Bearer token for authentication. Requests are made only when you click **Generate draft** or **Rewrite**. This is a paid vendor service operated by FlowForge; the copy is drafted server-side and returned to your editor for review. The first request is made only after you explicitly acknowledge this disclosure in the plugin.
 
-* Terms of Service: https://flowforge.app/legal/ai-terms
-* Privacy Policy: https://flowforge.app/legal/ai-privacy
+* Terms of Service: https://api.cartquill.com/legal/ai-terms
+* Privacy Policy: https://api.cartquill.com/legal/ai-privacy
 
 = Resend (Deliverability add-on, your own account) =
 

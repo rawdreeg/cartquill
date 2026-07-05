@@ -27,7 +27,7 @@ use FlowForge\Licensing\Plans;
  */
 final class HttpProxyClient implements ProxyClient {
 
-	private const DEFAULT_ENDPOINT = 'https://proxy.flowforge.app/v1';
+	private const DEFAULT_ENDPOINT = 'https://api.cartquill.com/v1';
 
 	public function __construct(
 		private readonly OptionLicense $license,

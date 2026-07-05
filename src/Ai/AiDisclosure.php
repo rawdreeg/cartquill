@@ -26,10 +26,10 @@ final class AiDisclosure {
 
 	/**
 	 * HITL: replace with the real vendor legal URLs before WP.org submission —
-	 * the proxy backend at proxy.flowforge.app is a deferred human step.
+	 * the proxy backend at api.cartquill.com is a deferred human step.
 	 */
-	public const TERMS_URL   = 'https://flowforge.app/legal/ai-terms';
-	public const PRIVACY_URL = 'https://flowforge.app/legal/ai-privacy';
+	public const TERMS_URL   = 'https://api.cartquill.com/legal/ai-terms';
+	public const PRIVACY_URL = 'https://api.cartquill.com/legal/ai-privacy';
 
 	public function is_acknowledged(): bool {
 		return (bool) \get_option( self::OPTION, false );
@@ -45,7 +45,7 @@ final class AiDisclosure {
 	 */
 	public function summary(): string {
 		return \__(
-			'Generating or rewriting copy sends the flow type, store context (store name, tone, currency, and a few top product names), any copy you ask to rewrite, and your AI license key to the FlowForge AI service at proxy.flowforge.app. This is a paid vendor service; drafts are returned to the editor for your review and are never sent to customers automatically.',
+			'Generating or rewriting copy sends the flow type, store context (store name, tone, currency, and a few top product names), any copy you ask to rewrite, and your AI license key to the FlowForge AI service at api.cartquill.com. This is a paid vendor service; drafts are returned to the editor for your review and are never sent to customers automatically.',
 			'flowforge'
 		);
 	}
