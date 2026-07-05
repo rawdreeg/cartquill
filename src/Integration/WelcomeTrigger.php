@@ -21,9 +21,14 @@ use FlowForge\Flow\DefaultFlows;
  * Starts the welcome flow (immediate hello + t+3d follow-up) when a relationship
  * begins: a customer's first order, or a newsletter signup.
  *
- * First-order detection uses the order count — a returning customer whose count
- * is greater than one is not re-welcomed. Newsletter signups enroll via a public
- * method other code (or a `flowforge_newsletter_signup` action) can call.
+ * Order enrollment hooks `woocommerce_checkout_order_processed` (fires when the
+ * order is created) rather than `woocommerce_thankyou` (fires only when the buyer
+ * loads the order-received page), so off-site/redirect gateways, admin-created,
+ * and API-created orders are covered. First-order detection uses the order count
+ * — a returning customer whose count is greater than one is not re-welcomed —
+ * and enrollment is idempotent, so a hook re-fire never double-enrolls. Newsletter
+ * signups enroll via a public method other code (or a `flowforge_newsletter_signup`
+ * action) can call.
  */
 final class WelcomeTrigger {
 
@@ -35,12 +40,12 @@ final class WelcomeTrigger {
 	) {}
 
 	public function register(): void {
-		\add_action( 'woocommerce_thankyou', array( $this, 'on_order' ), 10, 1 );
+		\add_action( 'woocommerce_checkout_order_processed', array( $this, 'on_order' ), 10, 1 );
 		\add_action( self::SIGNUP_HOOK, array( $this, 'on_newsletter_signup' ), 10, 1 );
 	}
 
 	/**
-	 * @param int $order_id The order that was just placed.
+	 * @param int $order_id The order that was just created.
 	 */
 	public function on_order( $order_id ): void {
 		$order = \wc_get_order( $order_id );
