@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Schema {
 
 	/** Bumped whenever the DDL changes so {@see Migrator} re-applies dbDelta on update. */
-	public const VERSION = '8';
+	public const VERSION = '9';
 
 	public const OPTION_DB_VERSION = 'cartquill_db_version';
 
@@ -109,6 +109,7 @@ final class Schema {
 			created_at DATETIME NULL,
 			source VARCHAR(30) NOT NULL DEFAULT '',
 			active_key CHAR(32) NULL DEFAULT NULL,
+			context LONGTEXT NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY active_key (active_key),
 			KEY flow_id (flow_id),
@@ -129,11 +130,14 @@ final class Schema {
 			status VARCHAR(20) NOT NULL DEFAULT 'queued',
 			attempts INT UNSIGNED NOT NULL DEFAULT 0,
 			sent_at DATETIME NULL,
+			channel VARCHAR(20) NOT NULL DEFAULT 'email',
+			target VARCHAR(191) NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY enrollment_step (enrollment_id, step_index),
 			KEY flow_id (flow_id),
 			KEY recipient (recipient),
-			KEY external_id (external_id)
+			KEY external_id (external_id),
+			KEY channel (channel)
 		) {$charset_collate};";
 
 		$statements[] = "CREATE TABLE {$attributions} (

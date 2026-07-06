@@ -22,21 +22,21 @@ use CartQuill\Persistence\Schema;
  */
 final class WpdbSuppressionList implements SuppressionList {
 
-	public function is_suppressed( string $email ): bool {
+	public function is_suppressed( string $identifier, string $channel = self::CHANNEL_EMAIL ): bool {
 		global $wpdb;
 		$table = Schema::settings_table();
 
 		$count = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$table} WHERE setting_key = %s", // phpcs:ignore WordPress.DB.PreparedSQL
-				$this->key( $email )
+				$this->key( $identifier, $channel )
 			)
 		);
 
 		return (int) $count > 0;
 	}
 
-	public function suppress( string $email, string $reason = '' ): void {
+	public function suppress( string $identifier, string $reason = '', string $channel = self::CHANNEL_EMAIL ): void {
 		global $wpdb;
 		$table = Schema::settings_table();
 
@@ -44,22 +44,28 @@ final class WpdbSuppressionList implements SuppressionList {
 		$wpdb->query(
 			$wpdb->prepare(
 				"INSERT INTO {$table} (setting_key, setting_value) VALUES (%s, %s) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)", // phpcs:ignore WordPress.DB.PreparedSQL
-				$this->key( $email ),
+				$this->key( $identifier, $channel ),
 				$reason
 			)
 		);
 	}
 
-	public function remove( string $email ): void {
+	public function remove( string $identifier, string $channel = self::CHANNEL_EMAIL ): void {
 		global $wpdb;
 		$wpdb->delete(
 			Schema::settings_table(),
-			array( 'setting_key' => $this->key( $email ) ),
+			array( 'setting_key' => $this->key( $identifier, $channel ) ),
 			array( '%s' )
 		);
 	}
 
-	private function key( string $email ): string {
-		return 'suppress:' . strtolower( trim( $email ) );
+	/**
+	 * The settings-table key for a suppressed identifier. The email channel keeps
+	 * the original `suppress:<email>` shape so existing rows stay valid; other
+	 * channels are namespaced as `suppress:<channel>:<identifier>`.
+	 */
+	private function key( string $identifier, string $channel ): string {
+		$id = strtolower( trim( $identifier ) );
+		return self::CHANNEL_EMAIL === $channel ? 'suppress:' . $id : 'suppress:' . $channel . ':' . $id;
 	}
 }

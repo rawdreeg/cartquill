@@ -15,11 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class ArraySuppressionList implements SuppressionList {
 
-	/** @var array<string, string> email => reason */
+	/** @var array<string, string> "channel:identifier" => reason */
 	private array $suppressed = array();
 
 	/**
-	 * @param list<string> $seed Addresses to start suppressed.
+	 * @param list<string> $seed Email addresses to start suppressed.
 	 */
 	public function __construct( array $seed = array() ) {
 		foreach ( $seed as $email ) {
@@ -27,19 +27,19 @@ final class ArraySuppressionList implements SuppressionList {
 		}
 	}
 
-	public function is_suppressed( string $email ): bool {
-		return isset( $this->suppressed[ $this->normalize( $email ) ] );
+	public function is_suppressed( string $identifier, string $channel = self::CHANNEL_EMAIL ): bool {
+		return isset( $this->suppressed[ $this->key( $identifier, $channel ) ] );
 	}
 
-	public function suppress( string $email, string $reason = '' ): void {
-		$this->suppressed[ $this->normalize( $email ) ] = $reason;
+	public function suppress( string $identifier, string $reason = '', string $channel = self::CHANNEL_EMAIL ): void {
+		$this->suppressed[ $this->key( $identifier, $channel ) ] = $reason;
 	}
 
-	public function remove( string $email ): void {
-		unset( $this->suppressed[ $this->normalize( $email ) ] );
+	public function remove( string $identifier, string $channel = self::CHANNEL_EMAIL ): void {
+		unset( $this->suppressed[ $this->key( $identifier, $channel ) ] );
 	}
 
-	private function normalize( string $email ): string {
-		return strtolower( trim( $email ) );
+	private function key( string $identifier, string $channel ): string {
+		return $channel . ':' . strtolower( trim( $identifier ) );
 	}
 }
