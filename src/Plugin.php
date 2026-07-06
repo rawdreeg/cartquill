@@ -236,7 +236,7 @@ final class Plugin {
 	 * directories, so this loads whichever add-ons are actually present.
 	 */
 	private function load_addons(): void {
-		foreach ( array( 'Ai', 'Deliverability' ) as $addon ) {
+		foreach ( array( 'Ai', 'Deliverability', 'Automations' ) as $addon ) {
 			$bootstrap = CARTQUILL_PATH . 'src/' . $addon . '/addon.php';
 			if ( is_readable( $bootstrap ) ) {
 				require_once $bootstrap;

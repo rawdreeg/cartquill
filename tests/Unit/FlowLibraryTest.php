@@ -9,14 +9,30 @@ declare(strict_types=1);
 
 namespace CartQuill\Tests\Unit;
 
+use Brain\Monkey;
+use Brain\Monkey\Functions;
 use CartQuill\Flow\DefaultFlows;
 use CartQuill\Flow\FlowInstaller;
 use CartQuill\Flow\FlowLibrary;
 use CartQuill\Persistence\FlowRecord;
 use CartQuill\Persistence\InMemoryFlowRepository;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 
 final class FlowLibraryTest extends TestCase {
+
+	use MockeryPHPUnitIntegration;
+
+	protected function setUp(): void {
+		Monkey\setUp();
+		// templates() runs the cartquill_flow_templates filter; pass it through so
+		// the core set is returned unchanged (no add-on contributing recipes here).
+		Functions\when( 'apply_filters' )->returnArg( 2 );
+	}
+
+	protected function tearDown(): void {
+		Monkey\tearDown();
+	}
 
 	public function test_library_offers_the_four_core_templates(): void {
 		$types = array_map( static fn( $t ) => $t->type, ( new FlowLibrary() )->templates() );

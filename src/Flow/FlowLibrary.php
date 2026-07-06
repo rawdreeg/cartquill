@@ -27,12 +27,23 @@ final class FlowLibrary {
 	 * @return list<FlowRecord>
 	 */
 	public function templates(): array {
-		return array(
+		$templates = array(
 			DefaultFlows::abandoned_cart(),
 			DefaultFlows::welcome(),
 			DefaultFlows::post_purchase(),
 			DefaultFlows::win_back(),
 		);
+
+		/**
+		 * Let add-ons contribute installable recipes (e.g. the multi-tool
+		 * automation add-on's Slack/Sheets/SMS recipes). Callbacks append draft
+		 * FlowRecords; non-FlowRecord entries are ignored.
+		 *
+		 * @param list<FlowRecord> $templates The core flow templates.
+		 */
+		$templates = \apply_filters( 'cartquill_flow_templates', $templates );
+
+		return array_values( array_filter( (array) $templates, static fn ( $t ) => $t instanceof FlowRecord ) );
 	}
 
 	/**
