@@ -142,8 +142,8 @@ final class ConnectionsPage {
 
 	private function status_label( string $status ): string {
 		return match ( $status ) {
-			ConnectionRecord::STATUS_CONNECTED => \__( '✓ Connected', 'cartquill' ),
-			ConnectionRecord::STATUS_ERROR     => \__( '✗ Connection error', 'cartquill' ),
+			ConnectionRecord::STATUS_CONNECTED => '✓ ' . \__( 'Connected', 'cartquill' ),
+			ConnectionRecord::STATUS_ERROR     => '✗ ' . \__( 'Connection error', 'cartquill' ),
 			default                            => \__( 'Not configured', 'cartquill' ),
 		};
 	}

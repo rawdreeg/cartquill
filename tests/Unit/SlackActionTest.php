@@ -53,7 +53,7 @@ final class SlackActionTest extends TestCase {
 		$this->assertNull( $action->target( $this->context( $this->step() ) ), 'no suppression target' );
 	}
 
-	public function test_posts_the_rendered_message_and_records_the_ref(): void {
+	public function test_posts_the_rendered_message(): void {
 		$client = new StubSlackClient();
 		$action = new SlackAction( $this->connected_store(), $client, new Renderer() );
 
@@ -64,10 +64,35 @@ final class SlackActionTest extends TestCase {
 		);
 
 		$this->assertTrue( $result->is_accepted() );
-		$this->assertSame( 'slack-1700000000.000100', $result->external_id, 'the Slack ref is stored' );
 		$this->assertSame( 1, $client->count() );
 		$this->assertSame( '#orders', $client->last()['channel'] );
 		$this->assertSame( 'Order from buyer@example.com', $client->last()['text'], 'the template is rendered' );
+	}
+
+	public function test_records_the_transport_ref_when_one_is_returned(): void {
+		// A transport that returns a message reference (e.g. the Slack Web API's
+		// ts) has it recorded as the external id.
+		$client = new StubSlackClient();
+		$client->will_return( SlackResult::ok( 'ts-123' ) );
+		$action = new SlackAction( $this->connected_store(), $client, new Renderer() );
+
+		$result = $action->execute( $this->context( $this->step() ) );
+
+		$this->assertTrue( $result->is_accepted() );
+		$this->assertSame( 'ts-123', $result->external_id );
+	}
+
+	public function test_incoming_webhook_with_no_ref_accepts_with_a_null_external_id(): void {
+		// The production HttpSlackClient posts to an incoming webhook, which
+		// acknowledges with "ok" and no ts — the send is accepted with no id.
+		$client = new StubSlackClient();
+		$client->will_return( SlackResult::ok() );
+		$action = new SlackAction( $this->connected_store(), $client, new Renderer() );
+
+		$result = $action->execute( $this->context( $this->step() ) );
+
+		$this->assertTrue( $result->is_accepted() );
+		$this->assertNull( $result->external_id );
 	}
 
 	public function test_missing_connection_fails_without_posting(): void {

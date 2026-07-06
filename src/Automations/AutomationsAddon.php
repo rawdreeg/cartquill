@@ -19,6 +19,7 @@ use CartQuill\Engine\FlowTypeEnroller;
 use CartQuill\Flow\Renderer;
 use CartQuill\Licensing\License;
 use CartQuill\Licensing\Plans;
+use CartQuill\Persistence\ConnectionRecord;
 use CartQuill\Persistence\ConnectionStore;
 use CartQuill\Persistence\WpdbEnrollmentRepository;
 use CartQuill\Persistence\WpdbFlowRepository;
@@ -59,8 +60,11 @@ final class AutomationsAddon {
 			return;
 		}
 
+		// Gated on connection status: only a healthy (connected) Slack connection
+		// registers the action. An unconfigured or errored connection leaves the
+		// action unavailable, so the step runner dead-letters and advances.
 		$slack = $this->connections->find( SlackAction::SERVICE );
-		if ( null !== $slack && $slack->is_configured() ) {
+		if ( null !== $slack && ConnectionRecord::STATUS_CONNECTED === $slack->status && $slack->is_configured() ) {
 			$actions->register( new SlackAction( $this->connections, $this->client, new Renderer() ) );
 		}
 	}

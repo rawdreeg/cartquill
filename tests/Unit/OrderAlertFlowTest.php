@@ -13,6 +13,7 @@ namespace CartQuill\Tests\Unit;
 use CartQuill\Action\ActionRegistry;
 use CartQuill\Automations\AutomationsRecipes;
 use CartQuill\Automations\SlackAction;
+use CartQuill\Automations\SlackResult;
 use CartQuill\Compliance\ArraySuppressionList;
 use CartQuill\Engine\ConditionEvaluator;
 use CartQuill\Engine\Enroller;
@@ -107,6 +108,11 @@ final class OrderAlertFlowTest extends TestCase {
 		// Suppress the buyer's email to prove the internal action ignores it.
 		$this->suppression->suppress( 'buyer@example.com', 'unsubscribe' );
 
+		// A real Slack incoming webhook acknowledges with "ok" and no message ts,
+		// so the recorded external id is null (like wp_mail). The channel is what
+		// distinguishes the touch.
+		$this->slack->will_return( SlackResult::ok() );
+
 		$flow = $this->active( AutomationsRecipes::order_alert() );
 		$this->enroller->enroll( $flow, 'buyer@example.com', 'order_paid', array( 'order_total' => 50 ) );
 
@@ -118,7 +124,7 @@ final class OrderAlertFlowTest extends TestCase {
 		$message = $this->messages->all()[0];
 		$this->assertSame( SlackAction::TYPE, $message->channel );
 		$this->assertSame( 'slack', $message->sender );
-		$this->assertSame( 'slack-1700000000.000100', $message->external_id, 'the Slack ref is recorded' );
+		$this->assertNull( $message->external_id, 'an incoming webhook returns no message id' );
 		$this->assertSame( MessageRecord::STATUS_SENT, $message->status );
 		$this->assertSame( 0, $this->sender->count(), 'no email is sent by this recipe' );
 		$this->assertSame( EnrollmentRecord::STATUS_COMPLETED, $this->enrollments->all()[0]->status );
@@ -142,7 +148,7 @@ final class OrderAlertFlowTest extends TestCase {
 	public function test_failed_slack_post_dead_letters_and_the_flow_advances(): void {
 		$this->connect_slack();
 		$this->activity->record_order( 'buyer@example.com', self::T0 );
-		$this->slack->will_return( \CartQuill\Automations\SlackResult::failed( 'Slack responded 500' ) );
+		$this->slack->will_return( SlackResult::failed( 'Slack responded 500' ) );
 
 		// A two-step flow: the Slack post fails, an email step follows.
 		$flow = $this->active(
