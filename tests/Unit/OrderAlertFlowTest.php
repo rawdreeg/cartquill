@@ -12,6 +12,8 @@ namespace CartQuill\Tests\Unit;
 
 use CartQuill\Action\ActionRegistry;
 use CartQuill\Automations\AutomationsRecipes;
+use CartQuill\Automations\SheetsAction;
+use CartQuill\Automations\SheetsResult;
 use CartQuill\Automations\SlackAction;
 use CartQuill\Automations\SlackResult;
 use CartQuill\Compliance\ArraySuppressionList;
@@ -34,6 +36,7 @@ use CartQuill\Sender\FakeSender;
 use CartQuill\Settings\ArraySettings;
 use CartQuill\Support\FixedClock;
 use CartQuill\Tests\Fake\FakeCustomerActivity;
+use CartQuill\Tests\Fake\StubSheetsClient;
 use CartQuill\Tests\Fake\StubSlackClient;
 use PHPUnit\Framework\TestCase;
 
@@ -51,6 +54,7 @@ final class OrderAlertFlowTest extends TestCase {
 	private FakeCustomerActivity $activity;
 	private InMemoryConnectionStore $connections;
 	private StubSlackClient $slack;
+	private StubSheetsClient $sheets;
 	private Enroller $enroller;
 
 	protected function setUp(): void {
@@ -64,6 +68,7 @@ final class OrderAlertFlowTest extends TestCase {
 		$this->activity    = new FakeCustomerActivity();
 		$this->connections = new InMemoryConnectionStore();
 		$this->slack       = new StubSlackClient();
+		$this->sheets      = new StubSheetsClient();
 		$this->enroller    = new Enroller( $this->enrollments, $this->scheduler, $this->clock );
 	}
 
@@ -73,9 +78,25 @@ final class OrderAlertFlowTest extends TestCase {
 		);
 	}
 
+	private function connect_sheets(): void {
+		$this->connections->save(
+			new ConnectionRecord(
+				null,
+				'sheets',
+				ConnectionRecord::STATUS_CONNECTED,
+				array(
+					'service_account' => '{"client_email":"bot@proj.iam.gserviceaccount.com","private_key":"KEY"}',
+					'spreadsheet_id'  => 'SHEET-1',
+					'range'           => 'Sheet1',
+				)
+			)
+		);
+	}
+
 	private function runner(): StepRunner {
 		$actions = new ActionRegistry();
 		$actions->register( new SlackAction( $this->connections, $this->slack, new Renderer() ) );
+		$actions->register( new SheetsAction( $this->connections, $this->sheets, new Renderer() ) );
 
 		return new StepRunner(
 			$this->flows,
@@ -101,37 +122,80 @@ final class OrderAlertFlowTest extends TestCase {
 		$this->scheduler->run_due( $this->clock->now(), fn( int $e, int $s ) => $runner->run_step( $e, $s ) );
 	}
 
-	public function test_first_time_paid_order_posts_to_slack_and_records_the_channel(): void {
+	public function test_first_time_paid_order_fans_out_to_slack_and_sheets(): void {
 		$this->connect_slack();
+		$this->connect_sheets();
 		$this->activity->record_order( 'buyer@example.com', self::T0 ); // first order
 
-		// Suppress the buyer's email to prove the internal action ignores it.
+		// Suppress the buyer's email to prove the internal actions ignore it.
 		$this->suppression->suppress( 'buyer@example.com', 'unsubscribe' );
 
 		// A real Slack incoming webhook acknowledges with "ok" and no message ts,
-		// so the recorded external id is null (like wp_mail). The channel is what
-		// distinguishes the touch.
+		// so the recorded external id is null (like wp_mail).
 		$this->slack->will_return( SlackResult::ok() );
 
 		$flow = $this->active( AutomationsRecipes::order_alert() );
-		$this->enroller->enroll( $flow, 'buyer@example.com', 'order_paid', array( 'order_total' => 50 ) );
+		$this->enroller->enroll( $flow, 'buyer@example.com', 'order_paid', array( 'order_id' => 42, 'order_total' => 50 ) );
 
 		$this->tick( $this->runner() );
 
-		$this->assertSame( 1, $this->slack->count(), 'suppression is not consulted for an internal action' );
-		$this->assertStringContainsString( 'buyer@example.com', $this->slack->last()['text'], 'the alert names the customer' );
+		// One trigger fanned across two tools.
+		$this->assertSame( 1, $this->slack->count(), 'suppression is not consulted for internal actions' );
+		$this->assertSame( 1, $this->sheets->count() );
+		$this->assertStringContainsString( 'buyer@example.com', $this->slack->last()['text'] );
+		$this->assertSame( array( '42', 'buyer@example.com', '50' ), $this->sheets->last()['row'], 'the sale is logged from context' );
 
-		$message = $this->messages->all()[0];
-		$this->assertSame( SlackAction::TYPE, $message->channel );
-		$this->assertSame( 'slack', $message->sender );
-		$this->assertNull( $message->external_id, 'an incoming webhook returns no message id' );
-		$this->assertSame( MessageRecord::STATUS_SENT, $message->status );
+		// Each action is its own (enrollment, step) message with the right channel.
+		$byStep = array();
+		foreach ( $this->messages->all() as $m ) {
+			$byStep[ $m->step_index ] = $m;
+		}
+		$this->assertSame( SlackAction::TYPE, $byStep[0]->channel );
+		$this->assertSame( 'slack', $byStep[0]->sender );
+		$this->assertNull( $byStep[0]->external_id, 'an incoming webhook returns no message id' );
+		$this->assertSame( MessageRecord::STATUS_SENT, $byStep[0]->status );
+		$this->assertSame( SheetsAction::TYPE, $byStep[1]->channel );
+		$this->assertSame( 'google_sheets', $byStep[1]->sender );
+		$this->assertSame( 'Sheet1!A5:C5', $byStep[1]->external_id, 'the Sheets updated range is recorded' );
+		$this->assertSame( MessageRecord::STATUS_SENT, $byStep[1]->status );
+
 		$this->assertSame( 0, $this->sender->count(), 'no email is sent by this recipe' );
+		$this->assertSame( EnrollmentRecord::STATUS_COMPLETED, $this->enrollments->all()[0]->status );
+	}
+
+	public function test_sheets_failure_dead_letters_without_affecting_the_sent_slack_step(): void {
+		$this->connect_slack();
+		$this->connect_sheets();
+		$this->activity->record_order( 'buyer@example.com', self::T0 );
+		$this->slack->will_return( SlackResult::ok() );
+		$this->sheets->will_return( SheetsResult::failed( 'Sheets API responded 500.' ) );
+
+		$flow = $this->active( AutomationsRecipes::order_alert() );
+		$this->enroller->enroll( $flow, 'buyer@example.com', 'order_paid', array( 'order_id' => 1, 'order_total' => 10 ) );
+
+		// Step 0 (Slack) sends; step 1 (Sheets) fails attempt 1 and reschedules.
+		$this->tick( $this->runner() );
+		$this->assertSame( 1, $this->slack->count() );
+
+		$this->clock->advance( 300 );
+		$this->tick( $this->runner() ); // Sheets attempt 2
+		$this->clock->advance( 600 );
+		$this->tick( $this->runner() ); // Sheets attempt 3 -> dead-letter -> advance -> complete
+
+		$byStep = array();
+		foreach ( $this->messages->all() as $m ) {
+			$byStep[ $m->step_index ] = $m;
+		}
+		$this->assertSame( MessageRecord::STATUS_SENT, $byStep[0]->status, 'the already-sent Slack step is untouched' );
+		$this->assertSame( 1, $this->slack->count(), 'Slack was not re-posted while Sheets retried' );
+		$this->assertSame( MessageRecord::STATUS_FAILED, $byStep[1]->status, 'Sheets dead-lettered after its retries' );
+		$this->assertSame( 3, $byStep[1]->attempts );
 		$this->assertSame( EnrollmentRecord::STATUS_COMPLETED, $this->enrollments->all()[0]->status );
 	}
 
 	public function test_returning_customer_is_skipped(): void {
 		$this->connect_slack();
+		$this->connect_sheets();
 		$this->activity->record_order( 'buyer@example.com', self::T0 - 100 );
 		$this->activity->record_order( 'buyer@example.com', self::T0 ); // second order
 
@@ -141,6 +205,7 @@ final class OrderAlertFlowTest extends TestCase {
 		$this->tick( $this->runner() );
 
 		$this->assertSame( 0, $this->slack->count(), 'the first-time gate skips a returning customer' );
+		$this->assertSame( 0, $this->sheets->count(), 'both steps skip' );
 		$this->assertCount( 0, $this->messages->all(), 'a skipped step records no message' );
 		$this->assertSame( EnrollmentRecord::STATUS_COMPLETED, $this->enrollments->all()[0]->status );
 	}

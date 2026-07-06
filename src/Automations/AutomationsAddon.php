@@ -43,6 +43,7 @@ final class AutomationsAddon {
 		private readonly ConnectionStore $connections,
 		private readonly License $license,
 		private readonly SlackClient $client,
+		private readonly SheetsClient $sheets,
 	) {}
 
 	public function register(): void {
@@ -60,13 +61,22 @@ final class AutomationsAddon {
 			return;
 		}
 
-		// Gated on connection status: only a healthy (connected) Slack connection
-		// registers the action. An unconfigured or errored connection leaves the
+		// Gated on connection status: only a healthy (connected) connection
+		// registers its action. An unconfigured or errored connection leaves the
 		// action unavailable, so the step runner dead-letters and advances.
-		$slack = $this->connections->find( SlackAction::SERVICE );
-		if ( null !== $slack && ConnectionRecord::STATUS_CONNECTED === $slack->status && $slack->is_configured() ) {
+		if ( $this->is_connected( SlackAction::SERVICE ) ) {
 			$actions->register( new SlackAction( $this->connections, $this->client, new Renderer() ) );
 		}
+		if ( $this->is_connected( SheetsAction::SERVICE ) ) {
+			$actions->register( new SheetsAction( $this->connections, $this->sheets, new Renderer() ) );
+		}
+	}
+
+	private function is_connected( string $service ): bool {
+		$connection = $this->connections->find( $service );
+		return null !== $connection
+			&& ConnectionRecord::STATUS_CONNECTED === $connection->status
+			&& $connection->is_configured();
 	}
 
 	public function register_surfaces(): void {
@@ -74,7 +84,7 @@ final class AutomationsAddon {
 			return;
 		}
 
-		( new ConnectionsPage( $this->connections, $this->client ) )->register();
+		( new ConnectionsPage( $this->connections, $this->client, $this->sheets ) )->register();
 
 		$enroller = new Enroller(
 			new WpdbEnrollmentRepository(),
