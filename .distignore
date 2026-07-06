@@ -23,5 +23,6 @@ dist
 # build omits their code and the admin screens that only they instantiate.
 src/Ai
 src/Deliverability
+src/Automations
 src/Admin/AiGeneratePage.php
 src/Admin/DeliverabilityPage.php

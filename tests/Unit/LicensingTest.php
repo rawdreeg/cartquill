@@ -24,9 +24,9 @@ final class LicensingTest extends TestCase {
 	public function test_a_plan_grants_only_itself_except_pro(): void {
 		$this->assertSame( array( Plans::AI ), Plans::grants( Plans::AI ) );
 		$this->assertSame(
-			array( Plans::AI, Plans::DELIVERABILITY, Plans::PRO ),
+			array( Plans::AI, Plans::DELIVERABILITY, Plans::AUTOMATIONS, Plans::PRO ),
 			Plans::grants( Plans::PRO ),
-			'the Pro bundle unlocks both add-ons'
+			'the Pro bundle unlocks every add-on'
 		);
 	}
 

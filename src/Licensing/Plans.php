@@ -14,14 +14,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * CartQuill sells two add-ons à la carte plus a Pro bundle. The Pro bundle
- * grants both add-ons, so gating logic asks about a capability (ai /
- * deliverability) and the license expands the bundle for it.
+ * CartQuill sells add-ons à la carte plus a Pro bundle. The Pro bundle grants
+ * every add-on, so gating logic asks about a capability (ai / deliverability /
+ * automations) and the license expands the bundle for it. The tiers slice (#69)
+ * maps the Starter/Growth/Agency plans onto the automations capability.
  */
 final class Plans {
 
 	public const AI            = 'ai';
 	public const DELIVERABILITY = 'deliverability';
+	public const AUTOMATIONS   = 'automations';
 	public const PRO           = 'pro';
 
 	/**
@@ -31,7 +33,7 @@ final class Plans {
 	 */
 	public static function grants( string $plan ): array {
 		if ( self::PRO === $plan ) {
-			return array( self::AI, self::DELIVERABILITY, self::PRO );
+			return array( self::AI, self::DELIVERABILITY, self::AUTOMATIONS, self::PRO );
 		}
 		return array( $plan );
 	}
@@ -40,6 +42,6 @@ final class Plans {
 	 * @return list<string>
 	 */
 	public static function all(): array {
-		return array( self::AI, self::DELIVERABILITY, self::PRO );
+		return array( self::AI, self::DELIVERABILITY, self::AUTOMATIONS, self::PRO );
 	}
 }
