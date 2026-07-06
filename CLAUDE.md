@@ -39,4 +39,6 @@ Test **external behavior through the highest seam**, not private methods.
 
 ## Scope discipline
 
-The v1 exclusion list is a **contract** — nothing on it ships in v1: visual journey builder, full CRM, SMS, A/B testing, advanced/predictive segmentation, multi-ESP-at-launch, resold sending, agency multi-site console, browse-abandonment. Do not add features from this list "while you're in there."
+**Product direction:** CartQuill is the no-code, multi-tool automation hub the marketing site (cartquill.com) describes — WooCommerce events fan out to Slack, Google Sheets, Mailchimp, and Twilio SMS via "recipes", billed by metered actions/month across Starter/Growth/Agency tiers — **not** an email-only tool. Email stays a first-class channel and every locked engine decision above still holds (SMS routes through the same step pipeline; metering is local and fail-closed). SMS and metered "actions/month" billing are therefore **in scope**.
+
+The v1 exclusion list is a **contract** — nothing on it ships in v1: visual journey builder, full CRM, A/B testing, advanced/predictive segmentation, multi-ESP-at-launch, resold sending, browse-abandonment, and the **agency multi-site console / white-label workflows / team roles & audit log** (deferred — the Agency tier ships as a higher action cap only, with those features labeled "coming soon"). Do not add features from this list "while you're in there."
