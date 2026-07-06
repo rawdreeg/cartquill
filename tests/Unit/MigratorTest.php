@@ -28,6 +28,23 @@ final class MigratorTest extends TestCase {
 		$this->assertSame( 1, $installs );
 	}
 
+	public function test_upgrades_a_v8_install_to_the_current_schema(): void {
+		// The multi-tool slice bumps the schema (channel/target on messages,
+		// context on enrollments); a v8 install must additively upgrade.
+		$this->assertNotSame( '8', Schema::VERSION, 'this test is meaningful only past v8' );
+
+		$installs = 0;
+		$migrator = new Migrator(
+			static fn (): string => '8',
+			static function () use ( &$installs ): void {
+				$installs++;
+			}
+		);
+
+		$this->assertTrue( $migrator->maybe_upgrade(), 'a v8 install upgrades to the current schema' );
+		$this->assertSame( 1, $installs );
+	}
+
 	public function test_is_a_no_op_when_stored_version_matches(): void {
 		$installs = 0;
 		$migrator = new Migrator(

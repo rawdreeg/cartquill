@@ -20,6 +20,7 @@ use CartQuill\Admin\Onboarding;
 use CartQuill\Admin\OnboardingPage;
 use CartQuill\Admin\ReportingPage;
 use CartQuill\Admin\SettingsPage;
+use CartQuill\Action\ActionRegistry;
 use CartQuill\Licensing\OptionLicense;
 use CartQuill\Security\InstallKey;
 use CartQuill\Sender\SenderRegistry;
@@ -130,6 +131,19 @@ final class Plugin {
 		\do_action( 'cartquill_register_senders', $senders, $license );
 		$senders->set_active( (string) \apply_filters( 'cartquill_active_sender', 'wp_mail' ) );
 
+		// Action registry: the multi-tool step layer. The core `email` action is
+		// always available (the step runner builds it from the composer + active
+		// sender below); add-on actions (slack_post, sheets_append, mailchimp_sync,
+		// sms_send) self-register here, gated on license + connection status.
+		$actions = new ActionRegistry();
+		/**
+		 * Action add-ons register their step actions here.
+		 *
+		 * @param ActionRegistry $actions The action registry.
+		 * @param License        $license The licensing gate.
+		 */
+		\do_action( 'cartquill_register_actions', $actions, $license );
+
 		$library = new FlowLibrary();
 
 		/**
@@ -150,6 +164,7 @@ final class Plugin {
 			new ConditionEvaluator( $activity ),
 			$scheduler,
 			$clock,
+			$actions,
 		);
 
 		// Action Scheduler drives every delayed step through this hook.

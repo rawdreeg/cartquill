@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class WpdbEnrollmentRepository implements EnrollmentRepository {
 
 	/** Column formats for row_data(), in key order. */
-	private const ROW_FORMATS = array( '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s' );
+	private const ROW_FORMATS = array( '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s' );
 
 	public function save( EnrollmentRecord $record ): EnrollmentRecord {
 		global $wpdb;
@@ -64,6 +64,7 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 			'created_at'     => $record->created_at ?? \current_time( 'mysql', true ),
 			'source'         => $record->source,
 			'active_key'     => $this->active_key( $record ),
+			'context'        => array() !== $record->context ? (string) \wp_json_encode( $record->context ) : null,
 		);
 	}
 
@@ -179,6 +180,20 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 			next_run_at: isset( $row['next_run_at'] ) && null !== $row['next_run_at'] ? (string) $row['next_run_at'] : null,
 			created_at: null !== $row['created_at'] ? (string) $row['created_at'] : null,
 			source: isset( $row['source'] ) ? (string) $row['source'] : '',
+			context: $this->decode_context( $row['context'] ?? null ),
 		);
+	}
+
+	/**
+	 * Decode the JSON `context` column into an array (empty when absent/invalid).
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function decode_context( mixed $raw ): array {
+		if ( ! is_string( $raw ) || '' === $raw ) {
+			return array();
+		}
+		$decoded = json_decode( $raw, true );
+		return is_array( $decoded ) ? $decoded : array();
 	}
 }

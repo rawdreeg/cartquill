@@ -21,11 +21,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class WpdbMessageRepository implements MessageRepository {
 
-	public function save( MessageRecord $record ): MessageRecord {
-		global $wpdb;
-		$table = Schema::messages_table();
+	/** Column formats for row_data(), in key order. */
+	private const ROW_FORMATS = array( '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s' );
 
-		$data = array(
+	/**
+	 * The insert/update column map shared by save() and claim().
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function row_data( MessageRecord $record ): array {
+		return array(
 			'enrollment_id' => $record->enrollment_id,
 			'flow_id'       => $record->flow_id,
 			'step_index'    => $record->step_index,
@@ -35,8 +40,26 @@ final class WpdbMessageRepository implements MessageRepository {
 			'status'        => $record->status,
 			'attempts'      => $record->attempts,
 			'sent_at'       => $record->sent_at,
+			'channel'       => $record->channel,
+			'target'        => $record->target,
 		);
-		$formats = array( '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%s' );
+	}
+
+	/**
+	 * SQL fragment listing the customer-facing channels counted for attribution
+	 * and engagement stats. Built from a code constant (no user input), so it is
+	 * safe to interpolate.
+	 */
+	private static function customer_channels_in(): string {
+		return "'" . implode( "','", array_map( '\esc_sql', MessageRecord::CUSTOMER_CHANNELS ) ) . "'";
+	}
+
+	public function save( MessageRecord $record ): MessageRecord {
+		global $wpdb;
+		$table = Schema::messages_table();
+
+		$data    = $this->row_data( $record );
+		$formats = self::ROW_FORMATS;
 
 		if ( null !== $record->id ) {
 			$wpdb->update( $table, $data, array( 'id' => $record->id ), $formats, array( '%d' ) );
@@ -51,18 +74,8 @@ final class WpdbMessageRepository implements MessageRepository {
 		global $wpdb;
 		$table = Schema::messages_table();
 
-		$data = array(
-			'enrollment_id' => $record->enrollment_id,
-			'flow_id'       => $record->flow_id,
-			'step_index'    => $record->step_index,
-			'recipient'     => strtolower( trim( $record->recipient ) ),
-			'sender'        => $record->sender,
-			'external_id'   => $record->external_id,
-			'status'        => $record->status,
-			'attempts'      => $record->attempts,
-			'sent_at'       => $record->sent_at,
-		);
-		$formats = array( '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%s' );
+		$data    = $this->row_data( $record );
+		$formats = self::ROW_FORMATS;
 
 		// Rely on the unique (enrollment_id, step_index) index as a lock: a
 		// concurrent worker's insert fails here, so only one send ever happens.
@@ -150,10 +163,12 @@ final class WpdbMessageRepository implements MessageRepository {
 		global $wpdb;
 		$table = Schema::messages_table();
 
-		$row = $wpdb->get_row(
+		$channels = self::customer_channels_in();
+		$row      = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT * FROM {$table}
 				WHERE recipient = %s AND status NOT IN ('queued','failed','bounced','complained')
+				AND channel IN ({$channels})
 				AND sent_at BETWEEN %s AND %s
 				ORDER BY sent_at DESC, id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL
 				strtolower( trim( $email ) ),
@@ -170,12 +185,13 @@ final class WpdbMessageRepository implements MessageRepository {
 		global $wpdb;
 		$table = Schema::messages_table();
 
-		$rows = $wpdb->get_results(
+		$channels = self::customer_channels_in();
+		$rows     = $wpdb->get_results(
 			"SELECT flow_id,
 				SUM(CASE WHEN status NOT IN ('queued','failed') THEN 1 ELSE 0 END) AS sent,
 				SUM(CASE WHEN status IN ('opened','clicked') THEN 1 ELSE 0 END) AS opened,
 				SUM(CASE WHEN status = 'clicked' THEN 1 ELSE 0 END) AS clicked
-			FROM {$table} GROUP BY flow_id", // phpcs:ignore WordPress.DB
+			FROM {$table} WHERE channel IN ({$channels}) GROUP BY flow_id", // phpcs:ignore WordPress.DB
 			ARRAY_A
 		);
 
@@ -259,6 +275,8 @@ final class WpdbMessageRepository implements MessageRepository {
 			external_id: null !== $row['external_id'] ? (string) $row['external_id'] : null,
 			sent_at: null !== $row['sent_at'] ? (string) $row['sent_at'] : null,
 			attempts: isset( $row['attempts'] ) ? (int) $row['attempts'] : 0,
+			channel: isset( $row['channel'] ) && '' !== (string) $row['channel'] ? (string) $row['channel'] : MessageRecord::CHANNEL_EMAIL,
+			target: isset( $row['target'] ) && null !== $row['target'] ? (string) $row['target'] : null,
 		);
 	}
 }

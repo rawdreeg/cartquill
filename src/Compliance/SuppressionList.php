@@ -23,17 +23,27 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 interface SuppressionList {
 
-	public function is_suppressed( string $email ): bool;
+	/** Default channel: the email suppression namespace (backward-compatible). */
+	public const CHANNEL_EMAIL = 'email';
 
 	/**
-	 * Add an address to the list.
+	 * Whether $identifier is suppressed on the given channel.
 	 *
-	 * @param string $reason Free-text origin (e.g. "unsubscribe", "bounce").
+	 * $channel namespaces the list so a phone number that texted STOP is
+	 * suppressed for SMS without touching the email list, and vice versa. The
+	 * default keeps every existing email caller unchanged.
 	 */
-	public function suppress( string $email, string $reason = '' ): void;
+	public function is_suppressed( string $identifier, string $channel = self::CHANNEL_EMAIL ): bool;
 
 	/**
-	 * Remove an address from the list (GDPR erase).
+	 * Add an identifier to the list for a channel.
+	 *
+	 * @param string $reason Free-text origin (e.g. "unsubscribe", "bounce", "sms_stop").
 	 */
-	public function remove( string $email ): void;
+	public function suppress( string $identifier, string $reason = '', string $channel = self::CHANNEL_EMAIL ): void;
+
+	/**
+	 * Remove an identifier from a channel's list (GDPR erase, SMS START).
+	 */
+	public function remove( string $identifier, string $channel = self::CHANNEL_EMAIL ): void;
 }

@@ -13,8 +13,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
+use CartQuill\Action\ActionContext;
+use CartQuill\Action\ActionRegistry;
+use CartQuill\Action\EmailAction;
 use CartQuill\Compliance\SuppressionList;
 use CartQuill\Flow\FlowDefinition;
+use CartQuill\Flow\FlowStep;
 use CartQuill\Model\SendResult;
 use CartQuill\Persistence\EnrollmentRecord;
 use CartQuill\Persistence\EnrollmentRepository;
@@ -29,17 +33,23 @@ use CartQuill\Support\Clock;
  * Runs one step of one enrollment, then schedules the next.
  *
  * Pipeline (the locked order): guard active + ordering → load flow/step →
- * check suppression → check conditions (exit/skip on conversion) → render →
- * send → record message → schedule next step (or complete).
+ * resolve the step's typed action → check suppression → check conditions
+ * (exit/skip on conversion, skip-unless-satisfied gates) → claim → execute the
+ * action → record message → schedule next step (or complete).
  *
- * A send that fails or throws is retried with bounded backoff on the same step;
- * only after the retry budget is exhausted is the step dead-lettered (recorded
- * failed, failure surfaced via the `cartquill_step_send_failed` action) and the
- * flow advanced. Idempotency: a step whose message is already settled (sent or
- * dead-lettered) never re-sends; a queued row is either a foreign/in-flight
- * pre-send claim (left alone) or this step's own failed attempt awaiting retry.
- * The current_step ordering check ignores stale jobs and the DB's unique
- * (enrollment_id, step_index) index is the final backstop.
+ * Every step runs a typed {@see \CartQuill\Action\ActionInterface} resolved from
+ * the {@see ActionRegistry}. Core always provides the `email` action (which
+ * wraps the compose → {@see SenderInterface::send()} path unchanged), so the
+ * email path — sending, unsubscribe, tracking, attribution — is untouched;
+ * add-ons register Slack/Sheets/Mailchimp/SMS actions on the registry.
+ *
+ * An unknown or unavailable action (add-on absent, unlicensed, connection down)
+ * is permanently dead-lettered so the flow advances instead of stalling. A send
+ * that fails or throws is retried with bounded backoff on the same step; only
+ * after the retry budget is exhausted is the step dead-lettered (recorded
+ * failed, failure surfaced via `cartquill_step_send_failed`) and the flow
+ * advanced. Idempotency: a step whose message is already settled never re-sends;
+ * the DB's unique (enrollment_id, step_index) index is the final backstop.
  */
 final class StepRunner {
 
@@ -50,17 +60,29 @@ final class StepRunner {
 	private const RETRY_BASE = 300;
 	private const RETRY_CAP  = 3600;
 
+	private readonly ActionRegistry $actions;
+
 	public function __construct(
 		private readonly FlowRepository $flows,
 		private readonly EnrollmentRepository $enrollments,
 		private readonly MessageRepository $messages,
-		private readonly MessageComposer $composer,
-		private readonly SenderInterface $sender,
+		MessageComposer $composer,
+		SenderInterface $sender,
 		private readonly SuppressionList $suppression,
 		private readonly ConditionEvaluator $conditions,
 		private readonly Scheduler $scheduler,
 		private readonly Clock $clock,
-	) {}
+		?ActionRegistry $actions = null,
+	) {
+		$this->actions = $actions ?? new ActionRegistry();
+
+		// Core always provides the email action (the default channel), built from
+		// the injected composer + active sender, so the email path is unchanged
+		// whether or not an add-on registry is supplied.
+		if ( null === $this->actions->get( EmailAction::TYPE ) ) {
+			$this->actions->register( new EmailAction( $composer, $sender ) );
+		}
+	}
 
 	public function run_step( int $enrollment_id, int $step_index ): void {
 		$enrollment = $this->enrollments->find( $enrollment_id );
@@ -96,8 +118,31 @@ final class StepRunner {
 			return;
 		}
 
-		// Suppression is the first thing every send checks (locked order).
-		if ( $this->suppression->is_suppressed( $enrollment->customer_email ) ) {
+		// Resolve the step's typed action. An unavailable action never stalls the
+		// flow: it is dead-lettered and the flow advances.
+		$action = $this->actions->get( $step->action );
+		if ( null === $action ) {
+			$this->dead_letter_unavailable( $enrollment, $existing, $step, $step_index, $definition );
+			return;
+		}
+
+		$context = new ActionContext(
+			step: $step,
+			customer_email: $enrollment->customer_email,
+			flow_id: $definition->id,
+			step_index: $step_index,
+			enrollment_id: $enrollment_id,
+			context: $enrollment->context,
+		);
+
+		// Suppression is the first thing every customer-facing send checks (locked
+		// order). Internal actions (Slack/Sheets/Mailchimp) reach no customer inbox
+		// and skip it; SMS checks a phone key, email an email key.
+		$target = $action->target( $context );
+		if ( $action->is_customer_facing()
+			&& null !== $target
+			&& $this->suppression->is_suppressed( $target, $action->type() )
+		) {
 			$this->enrollments->save( $enrollment->with_status( EnrollmentRecord::STATUS_UNSUBSCRIBED ) );
 			return;
 		}
@@ -116,7 +161,7 @@ final class StepRunner {
 		if ( null !== $existing ) {
 			$claimed = $existing; // retry this step's own queued row
 		} else {
-			// Reserve the (enrollment, step) slot atomically before sending. If a
+			// Reserve the (enrollment, step) slot atomically before executing. If a
 			// concurrent worker already claimed it, abort — no double-send.
 			$claimed = $this->messages->claim(
 				new MessageRecord(
@@ -125,8 +170,10 @@ final class StepRunner {
 					flow_id: $definition->id,
 					step_index: $step_index,
 					recipient: $enrollment->customer_email,
-					sender: $this->sender->key(),
+					sender: $action->sender_key(),
 					status: MessageRecord::STATUS_QUEUED,
+					channel: $action->type(),
+					target: $target,
 				)
 			);
 			if ( null === $claimed ) {
@@ -137,15 +184,7 @@ final class StepRunner {
 		// Any throw between the claim and the result is treated as a failed
 		// attempt, so the claimed row is never left stranded queued.
 		try {
-			$message = $this->composer->compose(
-				$step,
-				$enrollment->customer_email,
-				$definition->id,
-				$step_index,
-				$enrollment_id,
-				(int) $claimed->id
-			);
-			$result = $this->sender->send( $message );
+			$result = $action->execute( $context->with_message_id( (int) $claimed->id ) );
 		} catch ( \Throwable $e ) {
 			$result = SendResult::failed( $e->getMessage() );
 		}
@@ -159,6 +198,40 @@ final class StepRunner {
 		}
 
 		$this->handle_failure( $enrollment, $claimed, $step_index, $definition, $result->error );
+	}
+
+	/**
+	 * Permanently dead-letter a step whose action is unavailable, then advance —
+	 * the flow must not stall on a missing add-on/connection. The (enrollment,
+	 * step) slot is claimed (or the existing row reused) and recorded failed so a
+	 * re-run is idempotent.
+	 */
+	private function dead_letter_unavailable( EnrollmentRecord $enrollment, ?MessageRecord $existing, FlowStep $step, int $step_index, FlowDefinition $definition ): void {
+		$claimed = $existing;
+		if ( null === $claimed ) {
+			$claimed = $this->messages->claim(
+				new MessageRecord(
+					id: null,
+					enrollment_id: (int) $enrollment->id,
+					flow_id: $definition->id,
+					step_index: $step_index,
+					recipient: $enrollment->customer_email,
+					sender: '',
+					status: MessageRecord::STATUS_QUEUED,
+					channel: $step->action,
+					target: null,
+				)
+			);
+			if ( null === $claimed ) {
+				return; // lost the claim to a concurrent worker
+			}
+		}
+
+		$this->messages->save(
+			$claimed->with_attempt( self::MAX_ATTEMPTS )->with_result( MessageRecord::STATUS_FAILED, $claimed->external_id, $this->clock->now_mysql() )
+		);
+		$this->surface_failure( (int) $enrollment->id, $step_index, self::MAX_ATTEMPTS, true, sprintf( "action '%s' unavailable", $step->action ) );
+		$this->advance( $enrollment, $step_index, $definition );
 	}
 
 	/**

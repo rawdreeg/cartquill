@@ -33,8 +33,10 @@ final class EnrollmentRecord {
 	 * @param int         $current_step   Index of the next step to run.
 	 * @param string|null $next_run_at    MySQL datetime the next step is due.
 	 * @param string|null $created_at     MySQL datetime the enrollment began.
-	 * @param string      $source         Consent/trigger source (e.g. "newsletter",
-	 *                                     "first_order", "post_purchase", "abandoned_cart").
+	 * @param string               $source        Consent/trigger source (e.g. "newsletter",
+	 *                                              "first_order", "post_purchase", "abandoned_cart").
+	 * @param array<string, mixed> $context       Trigger-time data (order total, phone, opt-in, …)
+	 *                                             captured for value-based step conditions.
 	 */
 	public function __construct(
 		public readonly ?int $id,
@@ -45,6 +47,7 @@ final class EnrollmentRecord {
 		public readonly ?string $next_run_at = null,
 		public readonly ?string $created_at = null,
 		public readonly string $source = '',
+		public readonly array $context = array(),
 	) {}
 
 	public function is_active(): bool {
@@ -84,6 +87,7 @@ final class EnrollmentRecord {
 			array_key_exists( 'next_run_at', $overrides ) ? $overrides['next_run_at'] : $this->next_run_at,
 			$overrides['created_at'] ?? $this->created_at,
 			$overrides['source'] ?? $this->source,
+			$overrides['context'] ?? $this->context,
 		);
 	}
 }

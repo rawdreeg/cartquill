@@ -33,13 +33,15 @@ final class Enroller {
 	) {}
 
 	/**
-	 * @param string $source Consent/trigger source recorded on the enrollment.
+	 * @param string               $source  Consent/trigger source recorded on the enrollment.
+	 * @param array<string, mixed> $context Trigger-time data (order total, phone, opt-in, …)
+	 *                                       captured for value-based step conditions.
 	 *
 	 * @return EnrollmentRecord|null The new enrollment, or null if the flow is
 	 *                               not enrollable or the customer is already
 	 *                               enrolled.
 	 */
-	public function enroll( FlowRecord $flow, string $email, string $source = '' ): ?EnrollmentRecord {
+	public function enroll( FlowRecord $flow, string $email, string $source = '', array $context = array() ): ?EnrollmentRecord {
 		if ( null === $flow->id || ! $flow->is_active() || array() === $flow->steps ) {
 			return null;
 		}
@@ -60,6 +62,7 @@ final class Enroller {
 				next_run_at: null,
 				created_at: $this->clock->now_mysql(),
 				source: $source,
+				context: $context,
 			)
 		);
 		if ( null === $enrollment ) {
