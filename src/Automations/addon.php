@@ -13,6 +13,7 @@
 declare(strict_types=1);
 
 use CartQuill\Automations\AutomationsAddon;
+use CartQuill\Automations\HttpSheetsClient;
 use CartQuill\Automations\HttpSlackClient;
 use CartQuill\Licensing\OptionLicense;
 use CartQuill\Persistence\EncryptedCredentials;
@@ -27,5 +28,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 ( new AutomationsAddon(
 	new WpdbConnectionStore( new EncryptedCredentials( new SodiumCrypto( InstallKey::get() ) ) ),
 	new OptionLicense(),
-	new HttpSlackClient()
+	new HttpSlackClient(),
+	new HttpSheetsClient()
 ) )->register();

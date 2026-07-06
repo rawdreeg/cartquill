@@ -24,14 +24,17 @@ use CartQuill\Persistence\FlowRecord;
 final class AutomationsRecipes {
 
 	/**
-	 * Recipe: when a first-time customer pays, post an alert to Slack.
+	 * Recipe: when a first-time customer pays, post an alert to Slack **and** log
+	 * the sale to Google Sheets — a single trigger fanned across two tools.
 	 *
 	 * @param string $status Initial status (defaults to draft — a store activates it).
 	 */
 	public static function order_alert( string $status = FlowRecord::STATUS_DRAFT ): FlowRecord {
+		$first_time = array( array( 'type' => 'first_time_customer' ) );
+
 		return new FlowRecord(
 			id: null,
-			name: 'New order Slack alert',
+			name: 'New order alert',
 			type: OrderPaidTrigger::TYPE,
 			status: $status,
 			source: FlowRecord::SOURCE_TEMPLATE,
@@ -40,11 +43,21 @@ final class AutomationsRecipes {
 					delay: 0,
 					subject: '',
 					body: '',
-					conditions: array( array( 'type' => 'first_time_customer' ) ),
+					conditions: $first_time,
 					action: SlackAction::TYPE,
 					config: array(
 						'channel' => '#orders',
 						'text'    => '🎉 New first-time order from {{ customer_email }} (total {{ order_total }})',
+					),
+				),
+				new FlowStep(
+					delay: 0,
+					subject: '',
+					body: '',
+					conditions: $first_time,
+					action: SheetsAction::TYPE,
+					config: array(
+						'columns' => array( '{{ order_id }}', '{{ customer_email }}', '{{ order_total }}' ),
 					),
 				),
 			),
