@@ -27,12 +27,16 @@ final class ConditionEvaluatorTest extends TestCase {
 		$this->evaluator = new ConditionEvaluator( $this->activity );
 	}
 
-	private function enrollment(): EnrollmentRecord {
+	/**
+	 * @param array<string, mixed> $context
+	 */
+	private function enrollment( array $context = array() ): EnrollmentRecord {
 		return new EnrollmentRecord(
 			id: 1,
 			flow_id: 1,
 			customer_email: 'buyer@example.com',
 			created_at: self::ENROLLED_AT,
+			context: $context,
 		);
 	}
 
@@ -70,5 +74,39 @@ final class ConditionEvaluatorTest extends TestCase {
 	public function test_unknown_condition_type_proceeds(): void {
 		$step = new FlowStep( 0, 'Hi', 'body', array( array( 'type' => 'made_up' ) ) );
 		$this->assertSame( ConditionEvaluator::PROCEED, $this->evaluator->decide( $step, $this->enrollment() ) );
+	}
+
+	public function test_require_context_gate_skips_when_value_absent(): void {
+		$step = new FlowStep( 0, 'Text', 'tracking', array( array( 'type' => 'require_context', 'key' => 'phone' ) ) );
+
+		$this->assertSame(
+			ConditionEvaluator::SKIP,
+			$this->evaluator->decide( $step, $this->enrollment() ),
+			'a gate whose predicate is unmet skips the step'
+		);
+	}
+
+	public function test_require_context_gate_proceeds_when_value_present(): void {
+		$step = new FlowStep( 0, 'Text', 'tracking', array( array( 'type' => 'require_context', 'key' => 'phone' ) ) );
+
+		$this->assertSame(
+			ConditionEvaluator::PROCEED,
+			$this->evaluator->decide( $step, $this->enrollment( array( 'phone' => '+15551230000' ) ) )
+		);
+	}
+
+	public function test_require_context_gt_gates_on_a_threshold(): void {
+		$step = new FlowStep( 0, 'Recover', 'come back', array( array( 'type' => 'require_context', 'key' => 'cart_value', 'gt' => 50 ) ) );
+
+		$this->assertSame(
+			ConditionEvaluator::SKIP,
+			$this->evaluator->decide( $step, $this->enrollment( array( 'cart_value' => 40 ) ) ),
+			'a below-threshold value skips'
+		);
+		$this->assertSame(
+			ConditionEvaluator::PROCEED,
+			$this->evaluator->decide( $step, $this->enrollment( array( 'cart_value' => 75 ) ) ),
+			'an above-threshold value proceeds'
+		);
 	}
 }

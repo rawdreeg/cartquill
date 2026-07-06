@@ -113,6 +113,7 @@ final class InMemoryMessageRepository implements MessageRepository {
 		$best  = null;
 		foreach ( $this->records as $record ) {
 			if ( strtolower( $record->recipient ) !== $email
+				|| ! $record->is_customer_channel()
 				|| in_array( $record->status, self::ATTRIBUTION_EXCLUDED, true )
 				|| null === $record->sent_at
 				|| $record->sent_at < $from
@@ -134,7 +135,9 @@ final class InMemoryMessageRepository implements MessageRepository {
 	public function stats_by_flow(): array {
 		$stats = array();
 		foreach ( $this->records as $record ) {
-			if ( in_array( $record->status, array( MessageRecord::STATUS_QUEUED, MessageRecord::STATUS_FAILED ), true ) ) {
+			if ( ! $record->is_customer_channel()
+				|| in_array( $record->status, array( MessageRecord::STATUS_QUEUED, MessageRecord::STATUS_FAILED ), true )
+			) {
 				continue;
 			}
 			$flow = $record->flow_id;
