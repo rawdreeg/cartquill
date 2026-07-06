@@ -28,14 +28,15 @@ final class FlowTypeEnroller {
 	) {}
 
 	/**
-	 * @param string $source Consent/trigger source recorded on each enrollment.
+	 * @param string               $source  Consent/trigger source recorded on each enrollment.
+	 * @param array<string, mixed> $context Trigger-time data captured for value-based conditions.
 	 *
 	 * @return int Number of enrollments created.
 	 */
-	public function enroll( string $type, string $email, string $source = '' ): int {
+	public function enroll( string $type, string $email, string $source = '', array $context = array() ): int {
 		$created = 0;
 		foreach ( $this->flows->active_by_type( $type ) as $flow ) {
-			if ( null !== $this->enroller->enroll( $flow, $email, $source ) ) {
+			if ( null !== $this->enroller->enroll( $flow, $email, $source, $context ) ) {
 				++$created;
 			}
 		}

@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Schema {
 
 	/** Bumped whenever the DDL changes so {@see Migrator} re-applies dbDelta on update. */
-	public const VERSION = '9';
+	public const VERSION = '10';
 
 	public const OPTION_DB_VERSION = 'cartquill_db_version';
 
@@ -51,6 +51,16 @@ final class Schema {
 	public static function settings_table(): string {
 		global $wpdb;
 		return $wpdb->prefix . 'cartquill_settings';
+	}
+
+	/**
+	 * External-service connections (Slack, Sheets, Mailchimp, ...): one row per
+	 * service with its status and credentials encrypted at rest. Used by the
+	 * multi-tool automation add-on's actions.
+	 */
+	public static function connections_table(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'cartquill_connections';
 	}
 
 	/**
@@ -169,6 +179,19 @@ final class Schema {
 			PRIMARY KEY  (id),
 			UNIQUE KEY customer_email (customer_email),
 			KEY status (status)
+		) {$charset_collate};";
+
+		// One row per connected external service; credentials are stored encrypted
+		// in the LONGTEXT column (never in the clear). Unique service key upserts.
+		$connections = self::connections_table();
+		$statements[] = "CREATE TABLE {$connections} (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			service VARCHAR(50) NOT NULL DEFAULT '',
+			status VARCHAR(20) NOT NULL DEFAULT 'unconfigured',
+			credentials LONGTEXT NULL,
+			updated_at DATETIME NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY service (service)
 		) {$charset_collate};";
 
 		foreach ( $statements as $sql ) {

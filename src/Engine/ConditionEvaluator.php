@@ -30,7 +30,8 @@ use CartQuill\Persistence\EnrollmentRecord;
  *   generic `require_context` gate tests the enrollment's captured context, so
  *   recipes can gate a step on a value: `{type:'require_context', key:'phone'}`
  *   requires a phone; `{type:'require_context', key:'cart_value', gt:50}`
- *   requires a value above a threshold. Later slices add channel-specific gates.
+ *   requires a value above a threshold. `first_time_customer` gates on the
+ *   buyer's order count (their first order). Later slices add more gates.
  *
  * A step with no conditions always proceeds. Unknown condition types are
  * ignored (proceed) rather than silently dropping the customer from the flow.
@@ -42,7 +43,7 @@ final class ConditionEvaluator {
 	public const EXIT    = 'exit';
 
 	/** Skip-unless-satisfied gate types. */
-	private const GATES = array( 'require_context' );
+	private const GATES = array( 'require_context', 'first_time_customer' );
 
 	public function __construct( private readonly CustomerActivity $activity ) {}
 
@@ -86,6 +87,12 @@ final class ConditionEvaluator {
 				return null !== $value && (float) $value > (float) $condition['gt'];
 			}
 			return ! empty( $value );
+		}
+
+		if ( 'first_time_customer' === $type ) {
+			// The triggering order is included in the count, so one order means
+			// this is the customer's first (matching the welcome trigger's rule).
+			return $this->activity->order_count( $enrollment->customer_email ) <= 1;
 		}
 
 		return true;

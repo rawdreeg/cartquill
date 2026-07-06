@@ -109,4 +109,26 @@ final class ConditionEvaluatorTest extends TestCase {
 			'an above-threshold value proceeds'
 		);
 	}
+
+	public function test_first_time_customer_gate_proceeds_on_a_first_order(): void {
+		$this->activity->record_order( 'buyer@example.com', 1_700_000_000 ); // their only order
+		$step = new FlowStep( 0, '', '', array( array( 'type' => 'first_time_customer' ) ), 'slack_post' );
+
+		$this->assertSame(
+			ConditionEvaluator::PROCEED,
+			$this->evaluator->decide( $step, $this->enrollment() )
+		);
+	}
+
+	public function test_first_time_customer_gate_skips_a_returning_customer(): void {
+		$this->activity->record_order( 'buyer@example.com', 1_699_000_000 );
+		$this->activity->record_order( 'buyer@example.com', 1_700_000_000 ); // second order
+		$step = new FlowStep( 0, '', '', array( array( 'type' => 'first_time_customer' ) ), 'slack_post' );
+
+		$this->assertSame(
+			ConditionEvaluator::SKIP,
+			$this->evaluator->decide( $step, $this->enrollment() ),
+			'a customer with more than one order is not first-time'
+		);
+	}
 }
