@@ -67,10 +67,10 @@ final class HttpSheetsClient implements SheetsClient {
 			return SheetsResult::failed( sprintf( 'Sheets API responded %d.', $code ) );
 		}
 
-		$body  = json_decode( (string) \wp_remote_retrieve_body( $response ), true );
-		$range = is_array( $body ) ? (string) ( $body['updates']['updatedRange'] ?? '' ) : '';
+		$body          = json_decode( (string) \wp_remote_retrieve_body( $response ), true );
+		$updated_range = is_array( $body ) ? (string) ( $body['updates']['updatedRange'] ?? '' ) : '';
 
-		return SheetsResult::ok( '' !== $range ? $range : null );
+		return SheetsResult::ok( '' !== $updated_range ? $updated_range : null );
 	}
 
 	/**

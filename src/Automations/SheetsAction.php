@@ -32,6 +32,7 @@ final class SheetsAction implements ActionInterface {
 
 	public const TYPE    = 'sheets_append';
 	public const SERVICE = 'sheets';
+	public const SENDER  = 'google_sheets';
 
 	/** Default columns logged when a step provides none. */
 	private const DEFAULT_COLUMNS = array( '{{ order_id }}', '{{ customer_email }}', '{{ order_total }}' );
@@ -47,7 +48,7 @@ final class SheetsAction implements ActionInterface {
 	}
 
 	public function sender_key(): string {
-		return 'google_sheets';
+		return self::SENDER;
 	}
 
 	public function is_customer_facing(): bool {
