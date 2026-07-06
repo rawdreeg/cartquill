@@ -43,6 +43,23 @@ final class EncryptedCredentialsTest extends TestCase {
 		$this->assertStringNotContainsString( 'webhook_url', $encoded );
 	}
 
+	public function test_a_service_account_private_key_never_leaks_into_the_stored_value(): void {
+		// The Google Sheets connection stores a service-account JSON whose
+		// private_key is the sensitive material — it must never be persisted plainly.
+		$service_account = '{"client_email":"bot@proj.iam.gserviceaccount.com","private_key":"-----BEGIN PRIVATE KEY-----\nMIIBVERYSECRETKEY\n-----END PRIVATE KEY-----\n"}';
+
+		$encoded = $this->cipher->encode( array( 'service_account' => $service_account ) );
+
+		$this->assertNotNull( $encoded );
+		$this->assertStringNotContainsString( 'MIIBVERYSECRETKEY', $encoded, 'the private key never appears in the stored value' );
+		$this->assertStringNotContainsString( 'BEGIN PRIVATE KEY', $encoded );
+		$this->assertSame(
+			$service_account,
+			$this->cipher->decode( $encoded )['service_account'],
+			'and it round-trips intact for use'
+		);
+	}
+
 	public function test_round_trips_the_credential_map(): void {
 		$credentials = array(
 			'webhook_url' => 'https://hooks.slack.com/services/secret',
