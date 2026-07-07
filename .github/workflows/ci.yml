@@ -52,11 +52,14 @@ jobs:
 
       - name: Assert free/paid separation and a production autoloader
         run: |
-          for path in src/Ai src/Deliverability src/Automations src/Admin/AiGeneratePage.php src/Admin/DeliverabilityPage.php tests composer.json CLAUDE.md; do
+          for path in src/Ai src/Deliverability src/Automations src/Admin/AiGeneratePage.php src/Admin/DeliverabilityPage.php tests composer.json CLAUDE.md .claude; do
             if [ -e "build/cartquill/$path" ]; then
               echo "::error::'$path' leaked into the free build"; exit 1
             fi
           done
+          if find build/cartquill -name '.DS_Store' | grep -q .; then
+            echo "::error::.DS_Store leaked into the free build"; exit 1
+          fi
           test -f build/cartquill/vendor/autoload.php || { echo "::error::built package is missing vendor/autoload.php"; exit 1; }
 
       - name: Upload package artifact

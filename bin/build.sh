@@ -31,6 +31,9 @@ while IFS= read -r pattern || [ -n "$pattern" ]; do
 	rm -rf "${STAGE:?}/${pattern#/}"
 done < "$ROOT/.distignore"
 
+echo "==> Scrubbing nested OS junk"
+find "$STAGE" -name '.DS_Store' -delete
+
 echo "==> Installing production dependencies"
 composer install --no-dev --optimize-autoloader --no-interaction --working-dir="$STAGE"
 
