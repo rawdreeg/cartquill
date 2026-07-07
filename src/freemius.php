@@ -39,10 +39,17 @@ if ( ! function_exists( 'cartquill_fs' ) ) {
 		// the bootstrap stays a no-op.
 		$sdk_start = ( defined( 'CARTQUILL_PATH' ) ? CARTQUILL_PATH : \plugin_dir_path( __DIR__ ) ) . 'freemius/start.php';
 
-		// TODO(owner): paste the Product ID + Public Key from the Freemius dashboard, e.g.
-		//   define( 'CARTQUILL_FS_ID', 1234 );
-		//   define( 'CARTQUILL_FS_PUBLIC_KEY', 'pk_xxxxxxxxxxxxxxxxxxxxxxxxx' );
-		// (define them in wp-config.php or the main plugin file; NEVER a secret_key here).
+		// CartQuill product identifiers from the Freemius dashboard. Both are PUBLIC and
+		// are meant to ship inside the distributed plugin. Wrapped in defined() so a site
+		// can override them from wp-config.php. NEVER define a secret_key here — Freemius
+		// holds it server-side and it must be stripped from every distributed build.
+		if ( ! defined( 'CARTQUILL_FS_ID' ) ) {
+			define( 'CARTQUILL_FS_ID', 33952 );
+		}
+		if ( ! defined( 'CARTQUILL_FS_PUBLIC_KEY' ) ) {
+			define( 'CARTQUILL_FS_PUBLIC_KEY', 'pk_cae3e8510b486523ff362ce76e657' );
+		}
+
 		if ( ! is_readable( $sdk_start ) || ! defined( 'CARTQUILL_FS_ID' ) || ! defined( 'CARTQUILL_FS_PUBLIC_KEY' ) ) {
 			$cartquill_fs = null;
 			return $cartquill_fs;

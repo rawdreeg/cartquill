@@ -106,13 +106,18 @@ final class FreemiusBridge {
 	 * SDK is absent or the site cannot use premium code. All SDK access is confined
 	 * to this closure so the bridge's tested paths never touch Freemius.
 	 *
+	 * The returned slug is normalized (trimmed + lower-cased) and is expected to be
+	 * one of the {@see Plans} tier slugs — the Freemius plans MUST use the unique
+	 * names 'starter'/'growth'/'agency' (matching the dashboard) for their grants to
+	 * resolve; an unrecognized slug simply grants nothing beyond the local license.
+	 *
 	 * @return callable(): string
 	 */
 	private static function default_provider(): callable {
 		return static function (): string {
 			try {
 				if ( function_exists( 'cartquill_fs' ) && \cartquill_fs()->can_use_premium_code() ) {
-					return (string) \cartquill_fs()->get_plan_name();
+					return strtolower( trim( (string) \cartquill_fs()->get_plan_name() ) );
 				}
 			} catch ( \Throwable $e ) {
 				// Freemius not ready — fall through to "no opinion".
