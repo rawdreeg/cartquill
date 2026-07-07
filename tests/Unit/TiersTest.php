@@ -123,4 +123,18 @@ final class TiersTest extends TestCase {
 
 		$this->assertSame( 2000, $meter->limit(), 'the action cap is the tier entitlement' );
 	}
+
+	public function test_meter_cap_tracks_the_tier_through_the_option_license(): void {
+		// End-to-end: the option-backed license derives the cap from the held tier's
+		// entitlements, and the meter reads it — no manual limits wiring.
+		Monkey\setUp();
+		Functions\when( 'get_option' )->justReturn( array( Plans::AGENCY => 'KEY-1' ) );
+		Functions\when( 'apply_filters' )->returnArg( 2 );
+
+		$meter = new UsageMeter( new InMemoryUsageStore(), new OptionLicense(), new FixedClock( 1_700_000_000 ) );
+
+		$this->assertSame( 150000, $meter->limit() );
+
+		Monkey\tearDown();
+	}
 }

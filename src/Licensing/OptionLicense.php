@@ -69,7 +69,11 @@ final class OptionLicense implements License {
 		$plan     = $this->plan();
 		$defaults = '' !== $plan
 			? Plans::entitlements( $plan )
-			: array( 'actions' => 1000000, 'workflows' => 0, 'conditional_logic' => 1 );
+			: array(
+				'actions'           => 1000000,
+				'workflows'         => 0,
+				'conditional_logic' => 1,
+			);
 
 		/**
 		 * Filter the held plan's numeric limits (action cap, workflow cap,

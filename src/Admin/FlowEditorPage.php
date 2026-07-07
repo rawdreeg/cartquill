@@ -77,27 +77,45 @@ final class FlowEditorPage {
 				'steps'  => $steps,
 			);
 
-			$candidate = $this->editor->apply( $flow, $input );
+			$gated = $this->gate_save( $flow, $this->editor->apply( $flow, $input ) );
+			$this->flows->save( $gated['record'] );
 
-			// Gate only the transition *into* active (not a re-save of an already
-			// active flow, e.g. adding a step). Deny it if the held plan disallows
-			// it, keeping the rest of the edits.
-			$activating = $candidate->is_active() && ! $flow->is_active();
-			$blocked    = $activating ? $this->plan_gate->activation_error( $candidate ) : '';
-			if ( '' !== $blocked ) {
-				$candidate = $candidate->with_status( $flow->status );
-			}
-
-			$this->flows->save( $candidate );
-
-			if ( '' !== $blocked ) {
-				\wp_safe_redirect( \admin_url( 'admin.php?page=' . self::SLUG . '&flow=' . $id . '&cartquill_plan_blocked=' . rawurlencode( $blocked ) ) );
+			if ( '' !== $gated['blocked'] ) {
+				\wp_safe_redirect( \admin_url( 'admin.php?page=' . self::SLUG . '&flow=' . $id . '&cartquill_plan_blocked=' . rawurlencode( $gated['blocked'] ) ) );
 				exit;
 			}
 		}
 
 		\wp_safe_redirect( \admin_url( 'admin.php?page=' . self::SLUG . '&flow=' . $id . '&updated=1' ) );
 		exit;
+	}
+
+	/**
+	 * Apply the plan gate to a pending save. Returns the record to persist and the
+	 * block reason ('' when the save is allowed as-is).
+	 *
+	 * A flow the held plan may not run active is kept out of the active status:
+	 * reverted to its prior status, or paused if it was already active. This gates
+	 * conditional logic on every save (not just the first activation), so a flow
+	 * cannot be activated plain and then have a disallowed condition added while
+	 * still running. The edits themselves are always preserved.
+	 *
+	 * @return array{record: FlowRecord, blocked: string}
+	 */
+	public function gate_save( FlowRecord $current, FlowRecord $candidate ): array {
+		$blocked = $candidate->is_active() ? $this->plan_gate->activation_error( $candidate ) : '';
+		if ( '' === $blocked ) {
+			return array(
+				'record'  => $candidate,
+				'blocked' => '',
+			);
+		}
+
+		$safe_status = $current->is_active() ? FlowRecord::STATUS_PAUSED : $current->status;
+		return array(
+			'record'  => $candidate->with_status( $safe_status ),
+			'blocked' => $blocked,
+		);
 	}
 
 	/**
