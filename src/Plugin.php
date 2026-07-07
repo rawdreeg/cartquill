@@ -28,6 +28,12 @@ use CartQuill\Licensing\FreemiusBridge;
 use CartQuill\Licensing\OptionLicense;
 use CartQuill\Licensing\PlanGate;
 use CartQuill\Security\InstallKey;
+use CartQuill\Security\SodiumCrypto;
+use CartQuill\Builder\CatalogFactory;
+use CartQuill\Builder\FlowSerializer;
+use CartQuill\Persistence\EncryptedCredentials;
+use CartQuill\Persistence\WpdbConnectionStore;
+use CartQuill\Rest\FlowBuilderController;
 use CartQuill\Sender\SenderRegistry;
 use CartQuill\Attribution\Attributor;
 use CartQuill\Compliance\PersonalData;
@@ -211,6 +217,18 @@ final class Plugin {
 
 		( new AttributionTrigger( new Attributor( $messages, $attributions ) ) )->register();
 		( new ReportingPage( $flows, $messages, $attributions, $license ) )->register();
+
+		// Builder REST read API (cartquill/v1): the catalog + stored flows the React
+		// builder loads. Built at rest_api_init so the catalog (which folds in add-on
+		// contributions via CatalogFactory) is only assembled for REST requests, after
+		// the add-ons registered on load_addons() above.
+		$connections = new WpdbConnectionStore( new EncryptedCredentials( new SodiumCrypto( InstallKey::get() ) ) );
+		\add_action(
+			'rest_api_init',
+			static function () use ( $flows, $license, $connections ): void {
+				( new FlowBuilderController( $flows, CatalogFactory::create( $license, $connections ), new FlowSerializer() ) )->register_routes();
+			}
+		);
 
 		( new AbandonedCartTracker( $captures, $clock ) )->register();
 
