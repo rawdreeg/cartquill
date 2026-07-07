@@ -16,6 +16,7 @@ use CartQuill\Automations\AutomationsAddon;
 use CartQuill\Automations\HttpMailchimpClient;
 use CartQuill\Automations\HttpSheetsClient;
 use CartQuill\Automations\HttpSlackClient;
+use CartQuill\Automations\HttpTwilioClient;
 use CartQuill\Licensing\OptionLicense;
 use CartQuill\Persistence\EncryptedCredentials;
 use CartQuill\Persistence\WpdbConnectionStore;
@@ -31,5 +32,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	new OptionLicense(),
 	new HttpSlackClient(),
 	new HttpSheetsClient(),
-	new HttpMailchimpClient()
+	new HttpMailchimpClient(),
+	new HttpTwilioClient()
 ) )->register();

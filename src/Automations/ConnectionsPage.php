@@ -64,6 +64,8 @@ final class ConnectionsPage {
 			$this->save_sheets();
 		} elseif ( MailchimpAction::SERVICE === $service ) {
 			$this->save_mailchimp();
+		} elseif ( SmsAction::SERVICE === $service ) {
+			$this->save_twilio();
 		}
 
 		$this->redirect_back( 'saved' );
@@ -132,6 +134,26 @@ final class ConnectionsPage {
 	private function derive_prefix( string $key ): string {
 		$pos = strrpos( $key, '-' );
 		return false !== $pos ? substr( $key, $pos + 1 ) : '';
+	}
+
+	private function save_twilio(): void {
+		$existing    = $this->connections->find( SmsAction::SERVICE );
+		$credentials = null !== $existing ? $existing->credentials : array();
+
+		if ( isset( $_POST['twilio_account_sid'] ) ) {
+			$credentials['account_sid'] = \sanitize_text_field( \wp_unslash( $_POST['twilio_account_sid'] ) );
+		}
+		if ( isset( $_POST['twilio_from_number'] ) ) {
+			$credentials['from_number'] = \sanitize_text_field( \wp_unslash( $_POST['twilio_from_number'] ) );
+		}
+		$token = isset( $_POST['twilio_auth_token'] ) ? \sanitize_text_field( \wp_unslash( $_POST['twilio_auth_token'] ) ) : '';
+		if ( '' !== $token && self::MASK !== $token ) {
+			$credentials['auth_token'] = $token;
+		}
+
+		$this->connections->save(
+			new ConnectionRecord( $existing?->id, SmsAction::SERVICE, ConnectionRecord::STATUS_CONNECTED, $credentials )
+		);
 	}
 
 	public function handle_test(): void {
@@ -222,6 +244,7 @@ final class ConnectionsPage {
 			$this->render_slack_card();
 			$this->render_sheets_card();
 			$this->render_mailchimp_card();
+			$this->render_twilio_card();
 			?>
 		</div>
 		<?php
@@ -329,6 +352,42 @@ final class ConnectionsPage {
 			<?php \submit_button( \__( 'Save Mailchimp connection', 'cartquill' ) ); ?>
 		</form>
 		<?php $this->render_test_button( MailchimpAction::SERVICE, $configured ); ?>
+		<?php
+	}
+
+	private function render_twilio_card(): void {
+		$connection = $this->connections->find( SmsAction::SERVICE );
+		$has_token  = null !== $connection && '' !== (string) $connection->credential( 'auth_token', '' );
+		?>
+		<hr />
+		<h2><?php echo \esc_html__( 'Twilio SMS', 'cartquill' ); ?></h2>
+		<p class="description"><?php echo \esc_html__( 'Text customers from your own Twilio account. Point a Twilio Messaging webhook at the URL below to honour STOP/START replies:', 'cartquill' ); ?>
+			<br /><code><?php echo \esc_html( \add_query_arg( SmsWebhookEndpoint::PARAM, 'twilio', \home_url( '/' ) ) ); ?></code></p>
+		<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
+			<?php \wp_nonce_field( 'cartquill_save_connection' ); ?>
+			<input type="hidden" name="action" value="cartquill_save_connection" />
+			<input type="hidden" name="service" value="<?php echo \esc_attr( SmsAction::SERVICE ); ?>" />
+			<table class="form-table">
+				<tr>
+					<th scope="row"><label for="cq-tw-sid"><?php echo \esc_html__( 'Account SID', 'cartquill' ); ?></label></th>
+					<td><input type="text" id="cq-tw-sid" name="twilio_account_sid" class="regular-text"
+						value="<?php echo null !== $connection ? \esc_attr( (string) $connection->credential( 'account_sid', '' ) ) : ''; ?>"
+						placeholder="AC..." /></td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="cq-tw-token"><?php echo \esc_html__( 'Auth token', 'cartquill' ); ?></label></th>
+					<td><input type="text" id="cq-tw-token" name="twilio_auth_token" class="regular-text" autocomplete="off"
+						value="<?php echo $has_token ? \esc_attr( self::MASK ) : ''; ?>" /></td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="cq-tw-from"><?php echo \esc_html__( 'From number', 'cartquill' ); ?></label></th>
+					<td><input type="text" id="cq-tw-from" name="twilio_from_number" class="regular-text"
+						value="<?php echo null !== $connection ? \esc_attr( (string) $connection->credential( 'from_number', '' ) ) : ''; ?>"
+						placeholder="+15551234567" /></td>
+				</tr>
+			</table>
+			<?php \submit_button( \__( 'Save Twilio connection', 'cartquill' ) ); ?>
+		</form>
 		<?php
 	}
 

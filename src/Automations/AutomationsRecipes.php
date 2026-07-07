@@ -93,6 +93,32 @@ final class AutomationsRecipes {
 	}
 
 	/**
+	 * Recipe 3 (Shipping update): when an order ships, text the customer their
+	 * tracking link — but only if a phone number is on file.
+	 *
+	 * @param string $status Initial status (defaults to draft).
+	 */
+	public static function shipping_update( string $status = FlowRecord::STATUS_DRAFT ): FlowRecord {
+		return new FlowRecord(
+			id: null,
+			name: 'Shipping update SMS',
+			type: OrderShippedTrigger::TYPE,
+			status: $status,
+			source: FlowRecord::SOURCE_TEMPLATE,
+			steps: array(
+				new FlowStep(
+					delay: 0,
+					subject: '',
+					body: '',
+					conditions: array( array( 'type' => 'has_phone' ) ),
+					action: SmsAction::TYPE,
+					config: array( 'text' => 'Your order from {{ store_name }} has shipped! Track it here: {{ tracking_url }}' ),
+				),
+			),
+		);
+	}
+
+	/**
 	 * Recipe 1 (Cart recovery), completed: the Mailchimp-enhanced abandoned-cart
 	 * flow. It replaces the core email-only template when the add-on is active.
 	 * A high-value cart (over the threshold) gets a recovery email — sent through

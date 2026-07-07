@@ -22,9 +22,11 @@ use CartQuill\Licensing\ArrayLicense;
 use CartQuill\Licensing\Plans;
 use CartQuill\Persistence\ConnectionRecord;
 use CartQuill\Persistence\InMemoryConnectionStore;
+use CartQuill\Automations\SmsAction;
 use CartQuill\Tests\Fake\StubMailchimpClient;
 use CartQuill\Tests\Fake\StubSheetsClient;
 use CartQuill\Tests\Fake\StubSlackClient;
+use CartQuill\Tests\Fake\StubTwilioClient;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 
@@ -45,7 +47,7 @@ final class AutomationsAddonTest extends TestCase {
 	}
 
 	private function addon( InMemoryConnectionStore $store, ArrayLicense $license ): AutomationsAddon {
-		return new AutomationsAddon( $store, $license, new StubSlackClient(), new StubSheetsClient(), new StubMailchimpClient() );
+		return new AutomationsAddon( $store, $license, new StubSlackClient(), new StubSheetsClient(), new StubMailchimpClient(), new StubTwilioClient() );
 	}
 
 	private function register( InMemoryConnectionStore $store, ArrayLicense $license ): ActionRegistry {
@@ -109,6 +111,17 @@ final class AutomationsAddonTest extends TestCase {
 		$registry = $this->register( $store, new ArrayLicense( array( Plans::AUTOMATIONS ) ) );
 
 		$this->assertTrue( $registry->has( MailchimpAction::TYPE ) );
+	}
+
+	public function test_registers_sms_when_connected(): void {
+		$store = new InMemoryConnectionStore();
+		$store->save(
+			new ConnectionRecord( null, 'twilio', ConnectionRecord::STATUS_CONNECTED, array( 'account_sid' => 'AC', 'auth_token' => 't', 'from_number' => '+1' ) )
+		);
+
+		$registry = $this->register( $store, new ArrayLicense( array( Plans::AUTOMATIONS ) ) );
+
+		$this->assertTrue( $registry->has( SmsAction::TYPE ) );
 	}
 
 	public function test_recipes_are_contributed_only_when_licensed(): void {
