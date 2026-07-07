@@ -24,6 +24,7 @@ use CartQuill\Action\ActionRegistry;
 use CartQuill\Admin\UsageNotice;
 use CartQuill\Metering\UsageMeter;
 use CartQuill\Metering\WpdbUsageStore;
+use CartQuill\Licensing\FreemiusBridge;
 use CartQuill\Licensing\OptionLicense;
 use CartQuill\Licensing\PlanGate;
 use CartQuill\Security\InstallKey;
@@ -118,6 +119,15 @@ final class Plugin {
 		// Licensing + sender registry. Core ships wp_mail as the default sender.
 		$license = new OptionLicense();
 		( new LicensePage( $license ) )->register();
+
+		// Freemius owns plan status in production. The bridge drives the licensing
+		// filters (cartquill_plan_active / _limits / _plan) from the customer's
+		// subscription tier, while OptionLicense stays the constructed gate and the
+		// manual/dev fallback. Both the SDK bootstrap and the bridge's provider are
+		// no-ops until the Freemius SDK and identifiers are present, so the free
+		// build behaves exactly as before.
+		self::boot_freemius();
+		( new FreemiusBridge() )->register();
 
 		// Usage metering: caps executed actions per month, fail-closed. The cap
 		// reads from the license limits seam (real per-tier numbers arrive with
@@ -252,6 +262,18 @@ final class Plugin {
 			if ( is_readable( $bootstrap ) ) {
 				require_once $bootstrap;
 			}
+		}
+	}
+
+	/**
+	 * Load the Freemius SDK bootstrap and initialize the shared instance. A strict
+	 * no-op until the SDK is vendored and the product identifiers are defined (see
+	 * src/freemius.php), so this is safe to call on every install.
+	 */
+	private static function boot_freemius(): void {
+		require_once CARTQUILL_PATH . 'src/freemius.php';
+		if ( function_exists( 'cartquill_fs' ) ) {
+			\cartquill_fs();
 		}
 	}
 
