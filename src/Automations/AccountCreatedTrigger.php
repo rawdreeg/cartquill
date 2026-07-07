@@ -55,7 +55,7 @@ final class AccountCreatedTrigger {
 	 * source via the `cartquill_marketing_opt_in` filter.
 	 */
 	private function marketing_opt_in( int $customer_id ): bool {
-		$checked = isset( $_POST['marketing_opt_in'] ) && '' !== (string) \wp_unslash( $_POST['marketing_opt_in'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$checked = isset( $_POST['marketing_opt_in'] ) && '' !== \sanitize_text_field( \wp_unslash( $_POST['marketing_opt_in'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		/**
 		 * Filter the captured marketing opt-in for a new customer.

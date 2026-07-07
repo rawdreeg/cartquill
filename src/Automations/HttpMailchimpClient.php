@@ -29,7 +29,9 @@ final class HttpMailchimpClient implements MailchimpClient {
 			return MailchimpResult::failed( 'Mailchimp connection is incomplete.' );
 		}
 
-		$hash = md5( strtolower( trim( $email ) ) );
+		// Mailchimp addresses a member by the MD5 hash of the lowercased email —
+		// its documented subscriber-hash convention, not a security use of md5.
+		$hash = md5( strtolower( trim( $email ) ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_md5
 		$base = sprintf( 'https://%s.api.mailchimp.com/3.0/lists/%s/members/%s', $server_prefix, rawurlencode( $audience_id ), $hash );
 		$auth = 'Basic ' . base64_encode( 'anystring:' . $api_key );
 

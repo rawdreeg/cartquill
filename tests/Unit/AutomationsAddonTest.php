@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace CartQuill\Tests\Unit;
 
+use Brain\Monkey;
+use Brain\Monkey\Functions;
 use CartQuill\Action\ActionRegistry;
 use CartQuill\Automations\AccountCreatedTrigger;
 use CartQuill\Automations\AutomationsAddon;
@@ -23,9 +25,12 @@ use CartQuill\Persistence\InMemoryConnectionStore;
 use CartQuill\Tests\Fake\StubMailchimpClient;
 use CartQuill\Tests\Fake\StubSheetsClient;
 use CartQuill\Tests\Fake\StubSlackClient;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 
 final class AutomationsAddonTest extends TestCase {
+
+	use MockeryPHPUnitIntegration;
 
 	private function store_with( ?ConnectionRecord $slack ): InMemoryConnectionStore {
 		$store = new InMemoryConnectionStore();
@@ -128,5 +133,18 @@ final class AutomationsAddonTest extends TestCase {
 		}
 		$this->assertCount( 1, $byType[ DefaultFlows::TYPE_ABANDONED_CART ], 'no duplicate abandoned-cart template' );
 		$this->assertSame( 'Cart recovery + Mailchimp', $byType[ DefaultFlows::TYPE_ABANDONED_CART ][0]->name, 'the core template is replaced with the enhanced one' );
+	}
+
+	public function test_register_surfaces_wires_the_admin_page_and_triggers_without_error(): void {
+		// register_surfaces() constructs the connections page + triggers; this guards
+		// against a mismatched constructor (e.g. a missing injected client).
+		Monkey\setUp();
+		Functions\when( 'add_action' )->justReturn( true );
+
+		$addon = $this->addon( $this->store_with( $this->connected() ), new ArrayLicense( array( Plans::AUTOMATIONS ) ) );
+		$addon->register_surfaces();
+
+		$this->assertTrue( true, 'the admin surfaces wired up without a fatal' );
+		Monkey\tearDown();
 	}
 }

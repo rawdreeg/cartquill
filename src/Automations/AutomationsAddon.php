@@ -90,7 +90,7 @@ final class AutomationsAddon {
 			return;
 		}
 
-		( new ConnectionsPage( $this->connections, $this->client, $this->sheets ) )->register();
+		( new ConnectionsPage( $this->connections, $this->client, $this->sheets, $this->mailchimp ) )->register();
 
 		$type_enroller = new FlowTypeEnroller(
 			new WpdbFlowRepository(),

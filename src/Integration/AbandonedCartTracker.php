@@ -71,7 +71,7 @@ final class AbandonedCartTracker {
 				return 0.0;
 			}
 			return (float) $wc->cart->get_total( 'edit' );
-		} catch ( \Throwable $e ) {
+		} catch ( \Exception $e ) {
 			return 0.0;
 		}
 	}

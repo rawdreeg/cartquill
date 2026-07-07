@@ -32,7 +32,6 @@ final class MailchimpAction implements ActionInterface {
 
 	public const TYPE    = 'mailchimp_sync';
 	public const SERVICE = 'mailchimp';
-	public const SENDER  = 'mailchimp';
 
 	public function __construct(
 		private readonly ConnectionStore $connections,
@@ -44,7 +43,7 @@ final class MailchimpAction implements ActionInterface {
 	}
 
 	public function sender_key(): string {
-		return self::SENDER;
+		return self::SERVICE;
 	}
 
 	public function is_customer_facing(): bool {
