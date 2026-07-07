@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use CartQuill\Flow\FlowEditor;
+use CartQuill\Licensing\PlanGate;
 use CartQuill\Persistence\FlowRecord;
 use CartQuill\Persistence\FlowRepository;
 
@@ -22,6 +23,11 @@ use CartQuill\Persistence\FlowRepository;
  * flow's name, status and per-step fields; on save it hands the posted data to
  * FlowEditor (the tested transformation) and persists. The engine reads the
  * flow fresh on each step, so edits take effect on the next send.
+ *
+ * Activation is gated by the held plan: the {@see PlanGate} may deny setting a
+ * flow active (over the workflow cap, or using conditional logic the tier does
+ * not include). A denied activation keeps the other edits but leaves the flow in
+ * its prior status.
  */
 final class FlowEditorPage {
 
@@ -31,6 +37,7 @@ final class FlowEditorPage {
 	public function __construct(
 		private readonly FlowRepository $flows,
 		private readonly FlowEditor $editor,
+		private readonly PlanGate $plan_gate,
 	) {}
 
 	public function register(): void {
@@ -69,11 +76,41 @@ final class FlowEditorPage {
 				'status' => isset( $_POST['status'] ) ? \sanitize_text_field( \wp_unslash( $_POST['status'] ) ) : $flow->status,
 				'steps'  => $steps,
 			);
-			$this->flows->save( $this->editor->apply( $flow, $input ) );
+
+			$candidate = $this->editor->apply( $flow, $input );
+
+			// Gate only the transition *into* active (not a re-save of an already
+			// active flow, e.g. adding a step). Deny it if the held plan disallows
+			// it, keeping the rest of the edits.
+			$activating = $candidate->is_active() && ! $flow->is_active();
+			$blocked    = $activating ? $this->plan_gate->activation_error( $candidate ) : '';
+			if ( '' !== $blocked ) {
+				$candidate = $candidate->with_status( $flow->status );
+			}
+
+			$this->flows->save( $candidate );
+
+			if ( '' !== $blocked ) {
+				\wp_safe_redirect( \admin_url( 'admin.php?page=' . self::SLUG . '&flow=' . $id . '&cartquill_plan_blocked=' . rawurlencode( $blocked ) ) );
+				exit;
+			}
 		}
 
 		\wp_safe_redirect( \admin_url( 'admin.php?page=' . self::SLUG . '&flow=' . $id . '&updated=1' ) );
 		exit;
+	}
+
+	/**
+	 * The admin message explaining why an activation was denied by the held plan.
+	 */
+	private function blocked_message( string $reason ): string {
+		if ( PlanGate::REASON_CONDITIONAL_LOGIC === $reason ) {
+			return \__( 'This flow uses conditional logic, which your plan does not include. Upgrade to activate it; your edits were saved.', 'cartquill' );
+		}
+		if ( PlanGate::REASON_WORKFLOW_CAP === $reason ) {
+			return \__( 'You have reached your plan\'s active-workflow limit. Pause another flow or upgrade to activate this one; your edits were saved.', 'cartquill' );
+		}
+		return \__( 'This flow could not be activated on your current plan; your edits were saved.', 'cartquill' );
 	}
 
 	private function has_exit_condition( \CartQuill\Flow\FlowStep $step ): bool {
@@ -119,6 +156,9 @@ final class FlowEditorPage {
 			<h1><?php echo \esc_html__( 'Edit flow', 'cartquill' ); ?></h1>
 			<?php if ( isset( $_GET['updated'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
 				<div class="notice notice-success"><p><?php echo \esc_html__( 'Flow saved.', 'cartquill' ); ?></p></div>
+			<?php endif; ?>
+			<?php if ( isset( $_GET['cartquill_plan_blocked'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+				<div class="notice notice-error"><p><?php echo \esc_html( $this->blocked_message( \sanitize_key( \wp_unslash( $_GET['cartquill_plan_blocked'] ) ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?></p></div>
 			<?php endif; ?>
 			<?php if ( isset( $_GET['cartquill_ai_rewritten'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
 				<div class="notice notice-success"><p><?php echo \esc_html__( 'Step rewritten. Review the draft below before activating.', 'cartquill' ); ?></p></div>

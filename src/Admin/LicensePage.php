@@ -34,6 +34,13 @@ final class LicensePage {
 		Plans::PRO           => 'Pro bundle (AI + Deliverability)',
 	);
 
+	/** Subscription tiers for the automation product (scaffold: Freemius owns these in production). */
+	private const TIER_LABELS = array(
+		Plans::STARTER => 'Starter',
+		Plans::GROWTH  => 'Growth',
+		Plans::AGENCY  => 'Agency',
+	);
+
 	public function __construct( private readonly OptionLicense $license ) {}
 
 	public function register(): void {
@@ -57,7 +64,8 @@ final class LicensePage {
 			\wp_die( \esc_html__( 'Not allowed.', 'cartquill' ) );
 		}
 
-		foreach ( array_keys( self::LABELS ) as $plan ) {
+		$plans = array_merge( array_keys( self::LABELS ), array_keys( self::TIER_LABELS ) );
+		foreach ( $plans as $plan ) {
 			if ( ! isset( $_POST['keys'][ $plan ] ) ) {
 				continue;
 			}
@@ -102,6 +110,41 @@ final class LicensePage {
 						</tr>
 					<?php endforeach; ?>
 				</table>
+
+				<h2><?php echo \esc_html__( 'Subscription plan', 'cartquill' ); ?></h2>
+				<p class="description">
+					<?php echo \esc_html__( 'The automation product plan. All five integrations ship on every tier; plans differ on the monthly action cap, active-workflow cap, and conditional logic.', 'cartquill' ); ?>
+				</p>
+				<table class="form-table">
+					<?php foreach ( self::TIER_LABELS as $tier => $label ) : ?>
+						<tr>
+							<th scope="row"><?php echo \esc_html( $label ); ?></th>
+							<td>
+								<input type="text" class="regular-text" name="keys[<?php echo \esc_attr( $tier ); ?>]"
+									autocomplete="off"
+									value="<?php echo '' !== $this->license->key_for( $tier ) ? \esc_attr( self::MASK ) : ''; ?>"
+									placeholder="<?php echo \esc_attr__( 'Enter license key', 'cartquill' ); ?>" />
+								<?php if ( $this->license->plan() === $tier ) : ?>
+									<span style="color:#008a20">&#10003; <?php echo \esc_html__( 'Current plan', 'cartquill' ); ?></span>
+								<?php endif; ?>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</table>
+
+				<?php $limits = $this->license->limits(); ?>
+				<p class="description">
+					<?php
+					printf(
+						/* translators: 1: monthly action cap, 2: active-workflow cap, 3: on/off */
+						\esc_html__( 'Current caps — actions/month: %1$s, active workflows: %2$s, conditional logic: %3$s.', 'cartquill' ),
+						\esc_html( \number_format_i18n( (int) ( $limits['actions'] ?? 0 ) ) ),
+						0 === (int) ( $limits['workflows'] ?? 0 ) ? \esc_html__( 'unlimited', 'cartquill' ) : \esc_html( \number_format_i18n( (int) $limits['workflows'] ) ),
+						empty( $limits['conditional_logic'] ) ? \esc_html__( 'off', 'cartquill' ) : \esc_html__( 'on', 'cartquill' )
+					);
+					?>
+				</p>
+
 				<?php \submit_button( \__( 'Save license keys', 'cartquill' ) ); ?>
 			</form>
 		</div>

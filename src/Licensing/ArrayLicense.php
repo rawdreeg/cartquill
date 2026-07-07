@@ -39,6 +39,10 @@ final class ArrayLicense implements License {
 		return false;
 	}
 
+	public function plan(): string {
+		return Plans::highest_tier( $this->plans );
+	}
+
 	public function limits(): array {
 		return $this->limits;
 	}

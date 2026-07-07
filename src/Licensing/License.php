@@ -28,9 +28,18 @@ interface License {
 	public function is_active( string $capability ): bool;
 
 	/**
-	 * The held plan's numeric limits, keyed by resource. At minimum `actions`
-	 * (the monthly action cap the meter enforces); the tiers slice (#69) also
-	 * adds `workflows`. Values are the plan's entitlements.
+	 * The held subscription tier (a Plans::TIERS value), or '' when none is held.
+	 * A display/branching accessor; the *enforceable* numbers live in limits(),
+	 * which is the single seam the meter and plan gate read so a filter override
+	 * reaches every check.
+	 */
+	public function plan(): string;
+
+	/**
+	 * The held plan's numeric limits, keyed by resource: `actions` (the monthly
+	 * action cap the meter enforces), `workflows` (the active-flow cap; 0 =
+	 * unlimited), and `conditional_logic` (0/1). Values are the tier's
+	 * entitlements, overridable via the `cartquill_plan_limits` filter.
 	 *
 	 * @return array<string, int>
 	 */

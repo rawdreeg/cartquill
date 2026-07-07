@@ -56,6 +56,10 @@ final class FlowRecord {
 		return new self( $id, $this->name, $this->type, $this->status, $this->source, $this->steps, $this->created_at );
 	}
 
+	public function with_status( string $status ): self {
+		return new self( $this->id, $this->name, $this->type, $status, $this->source, $this->steps, $this->created_at );
+	}
+
 	public function to_definition(): FlowDefinition {
 		return new FlowDefinition( $this->id ?? 0, $this->name, $this->type, $this->steps );
 	}

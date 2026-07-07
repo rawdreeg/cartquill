@@ -49,21 +49,33 @@ final class OptionLicense implements License {
 		return (bool) \apply_filters( 'cartquill_plan_active', $active, $capability );
 	}
 
+	public function plan(): string {
+		return Plans::highest_tier( $this->held_plans() );
+	}
+
 	/**
-	 * The held plan's numeric limits. SCAFFOLD: a generous default so metering
-	 * does not bite before the tiers slice (#69) wires the real per-tier numbers;
-	 * the `cartquill_plan_limits` filter is the seam where Freemius/#69 overrides
-	 * it, mirroring the `cartquill_plan_active` seam used by is_active().
+	 * The held plan's numeric limits, derived from the held subscription tier's
+	 * entitlements. A store on no tier (the free core, or an à la carte add-on) is
+	 * uncapped so metering never throttles it.
+	 *
+	 * SCAFFOLD: the tier is read from the local key store; in production Freemius
+	 * owns the plan. The `cartquill_plan_limits` filter is the seam where Freemius
+	 * overrides the numbers, mirroring the `cartquill_plan_active` seam is_active()
+	 * uses.
 	 *
 	 * @return array<string, int>
 	 */
 	public function limits(): array {
-		$defaults = array( 'actions' => 1000000 );
+		$plan     = $this->plan();
+		$defaults = '' !== $plan
+			? Plans::entitlements( $plan )
+			: array( 'actions' => 1000000, 'workflows' => 0, 'conditional_logic' => 1 );
 
 		/**
-		 * Filter the held plan's numeric limits (e.g. the monthly action cap).
+		 * Filter the held plan's numeric limits (action cap, workflow cap,
+		 * conditional-logic flag).
 		 *
-		 * @param array<string, int> $defaults The scaffold defaults.
+		 * @param array<string, int> $defaults The tier's entitlements (or the uncapped default).
 		 * @param list<string>       $plans    Plans the store holds.
 		 */
 		$limits = (array) \apply_filters( 'cartquill_plan_limits', $defaults, $this->held_plans() );
