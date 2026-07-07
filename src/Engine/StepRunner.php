@@ -18,6 +18,8 @@ use CartQuill\Action\ActionRegistry;
 use CartQuill\Action\EmailAction;
 use CartQuill\Compliance\SuppressionList;
 use CartQuill\Flow\FlowDefinition;
+use CartQuill\Metering\Meter;
+use CartQuill\Metering\NullMeter;
 use CartQuill\Flow\FlowStep;
 use CartQuill\Model\SendResult;
 use CartQuill\Persistence\EnrollmentRecord;
@@ -61,6 +63,7 @@ final class StepRunner {
 	private const RETRY_CAP  = 3600;
 
 	private readonly ActionRegistry $actions;
+	private readonly Meter $meter;
 
 	public function __construct(
 		private readonly FlowRepository $flows,
@@ -73,8 +76,10 @@ final class StepRunner {
 		private readonly Scheduler $scheduler,
 		private readonly Clock $clock,
 		?ActionRegistry $actions = null,
+		?Meter $meter = null,
 	) {
 		$this->actions = $actions ?? new ActionRegistry();
+		$this->meter   = $meter ?? new NullMeter();
 
 		// Core always provides the email action (the default channel), built from
 		// the injected composer + active sender, so the email path is unchanged
@@ -158,6 +163,14 @@ final class StepRunner {
 			return;
 		}
 
+		// Enforce the monthly action cap before executing (fail-closed): an
+		// over-cap step defers to the next period rather than consuming a billed
+		// action or dropping the enrolled customer.
+		if ( $this->meter->would_exceed() ) {
+			$this->defer_to_next_period( $enrollment, $step_index );
+			return;
+		}
+
 		if ( null !== $existing ) {
 			$claimed = $existing; // retry this step's own queued row
 		} else {
@@ -193,6 +206,7 @@ final class StepRunner {
 			$this->messages->save(
 				$claimed->with_result( MessageRecord::STATUS_SENT, $result->external_id, $this->clock->now_mysql() )
 			);
+			$this->meter->increment(); // count exactly one executed action, any channel
 			$this->advance( $enrollment, $step_index, $definition );
 			return;
 		}
@@ -272,6 +286,37 @@ final class StepRunner {
 			return;
 		}
 		\do_action( 'cartquill_step_send_failed', $enrollment_id, $step_index, $attempts, $exhausted, $error );
+	}
+
+	/**
+	 * Defer an over-cap step to the start of the next billing period. The step is
+	 * neither claimed nor executed (no billed action), the enrollment keeps its
+	 * place, and the cap-reached hook fires for admin surfacing.
+	 */
+	private function defer_to_next_period( EnrollmentRecord $enrollment, int $step_index ): void {
+		$run_at = $this->next_period_start();
+		$this->enrollments->save(
+			$enrollment->with_progress( $step_index, gmdate( 'Y-m-d H:i:s', $run_at ) )
+		);
+		$this->scheduler->schedule( $run_at, (int) $enrollment->id, $step_index );
+
+		if ( function_exists( 'do_action' ) ) {
+			\do_action( 'cartquill_action_cap_reached', (int) $enrollment->id, $step_index );
+		}
+	}
+
+	/**
+	 * Unix timestamp for the start of the next UTC month (when the cap resets).
+	 */
+	private function next_period_start(): int {
+		$now   = $this->clock->now();
+		$year  = (int) gmdate( 'Y', $now );
+		$month = (int) gmdate( 'n', $now ) + 1;
+		if ( $month > 12 ) {
+			$month = 1;
+			++$year;
+		}
+		return (int) gmmktime( 0, 0, 0, $month, 1, $year );
 	}
 
 	/**

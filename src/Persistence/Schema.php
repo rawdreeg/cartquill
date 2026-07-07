@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Schema {
 
 	/** Bumped whenever the DDL changes so {@see Migrator} re-applies dbDelta on update. */
-	public const VERSION = '11';
+	public const VERSION = '12';
 
 	public const OPTION_DB_VERSION = 'cartquill_db_version';
 
@@ -61,6 +61,14 @@ final class Schema {
 	public static function connections_table(): string {
 		global $wpdb;
 		return $wpdb->prefix . 'cartquill_connections';
+	}
+
+	/**
+	 * Per-month executed-action counts for usage metering (one row per period).
+	 */
+	public static function usage_table(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'cartquill_usage';
 	}
 
 	/**
@@ -193,6 +201,18 @@ final class Schema {
 			updated_at DATETIME NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY service (service)
+		) {$charset_collate};";
+
+		// One row per month; the unique period key makes the increment an O(1)
+		// upsert (no scan over the messages table to count usage).
+		$usage = self::usage_table();
+		$statements[] = "CREATE TABLE {$usage} (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			period CHAR(7) NOT NULL DEFAULT '',
+			action_count BIGINT UNSIGNED NOT NULL DEFAULT 0,
+			updated_at DATETIME NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY period (period)
 		) {$charset_collate};";
 
 		foreach ( $statements as $sql ) {

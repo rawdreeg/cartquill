@@ -50,6 +50,28 @@ final class OptionLicense implements License {
 	}
 
 	/**
+	 * The held plan's numeric limits. SCAFFOLD: a generous default so metering
+	 * does not bite before the tiers slice (#69) wires the real per-tier numbers;
+	 * the `cartquill_plan_limits` filter is the seam where Freemius/#69 overrides
+	 * it, mirroring the `cartquill_plan_active` seam used by is_active().
+	 *
+	 * @return array<string, int>
+	 */
+	public function limits(): array {
+		$defaults = array( 'actions' => 1000000 );
+
+		/**
+		 * Filter the held plan's numeric limits (e.g. the monthly action cap).
+		 *
+		 * @param array<string, int> $defaults The scaffold defaults.
+		 * @param list<string>       $plans    Plans the store holds.
+		 */
+		$limits = (array) \apply_filters( 'cartquill_plan_limits', $defaults, $this->held_plans() );
+
+		return array_map( 'intval', $limits );
+	}
+
+	/**
 	 * Plans the store currently holds a (non-empty) key for.
 	 *
 	 * @return list<string>
