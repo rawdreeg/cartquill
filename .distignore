@@ -19,6 +19,12 @@ CLAUDE.md
 build
 dist
 
+# OS / editor / agent cruft that must never ship. (Nested .DS_Store files are
+# scrubbed recursively in bin/build.sh, since a literal path only strips the
+# top-level one.)
+.DS_Store
+.claude
+
 # Paid add-ons are distributed separately (Freemius); the free WordPress.org
 # build omits their code and the admin screens that only they instantiate.
 src/Ai
