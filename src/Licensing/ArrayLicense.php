@@ -18,11 +18,16 @@ final class ArrayLicense implements License {
 	/** @var list<string> Held plans (e.g. ['pro'] or ['ai']). */
 	private array $plans;
 
+	/** @var array<string, int> */
+	private array $limits;
+
 	/**
-	 * @param list<string> $plans
+	 * @param list<string>        $plans
+	 * @param array<string, int>  $limits
 	 */
-	public function __construct( array $plans = array() ) {
-		$this->plans = $plans;
+	public function __construct( array $plans = array(), array $limits = array() ) {
+		$this->plans  = $plans;
+		$this->limits = $limits;
 	}
 
 	public function is_active( string $capability ): bool {
@@ -32,5 +37,9 @@ final class ArrayLicense implements License {
 			}
 		}
 		return false;
+	}
+
+	public function limits(): array {
+		return $this->limits;
 	}
 }

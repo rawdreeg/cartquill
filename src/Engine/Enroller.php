@@ -13,6 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
+use CartQuill\Metering\Meter;
+use CartQuill\Metering\NullMeter;
 use CartQuill\Persistence\EnrollmentRecord;
 use CartQuill\Persistence\EnrollmentRepository;
 use CartQuill\Persistence\FlowRecord;
@@ -26,11 +28,16 @@ use CartQuill\Support\Clock;
  */
 final class Enroller {
 
+	private readonly Meter $meter;
+
 	public function __construct(
 		private readonly EnrollmentRepository $enrollments,
 		private readonly Scheduler $scheduler,
 		private readonly Clock $clock,
-	) {}
+		?Meter $meter = null,
+	) {
+		$this->meter = $meter ?? new NullMeter();
+	}
 
 	/**
 	 * @param string               $source  Consent/trigger source recorded on the enrollment.
@@ -47,6 +54,12 @@ final class Enroller {
 		}
 
 		if ( null !== $this->enrollments->find_active( $flow->id, $email ) ) {
+			return null;
+		}
+
+		// Block new enrollments once the monthly action cap is reached — no point
+		// starting a run that can only defer.
+		if ( $this->meter->would_exceed() ) {
 			return null;
 		}
 

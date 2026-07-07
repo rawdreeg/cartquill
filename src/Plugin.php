@@ -21,6 +21,9 @@ use CartQuill\Admin\OnboardingPage;
 use CartQuill\Admin\ReportingPage;
 use CartQuill\Admin\SettingsPage;
 use CartQuill\Action\ActionRegistry;
+use CartQuill\Admin\UsageNotice;
+use CartQuill\Metering\UsageMeter;
+use CartQuill\Metering\WpdbUsageStore;
 use CartQuill\Licensing\OptionLicense;
 use CartQuill\Security\InstallKey;
 use CartQuill\Sender\SenderRegistry;
@@ -115,6 +118,12 @@ final class Plugin {
 		$license = new OptionLicense();
 		( new LicensePage( $license ) )->register();
 
+		// Usage metering: caps executed actions per month, fail-closed. The cap
+		// reads from the license limits seam (real per-tier numbers arrive with
+		// the tiers slice); an unconfigured cap is treated as unlimited.
+		$meter = new UsageMeter( new WpdbUsageStore(), $license, $clock );
+		( new UsageNotice( $meter ) )->register();
+
 		// Paid add-ons ship separately (Freemius) and self-register on the
 		// hooks fired below. This is a no-op in the free build, where their
 		// directories are absent.
@@ -165,6 +174,7 @@ final class Plugin {
 			$scheduler,
 			$clock,
 			$actions,
+			$meter,
 		);
 
 		// Action Scheduler drives every delayed step through this hook.
@@ -177,7 +187,7 @@ final class Plugin {
 			2
 		);
 
-		$enroller      = new Enroller( $enrollments, $scheduler, $clock );
+		$enroller      = new Enroller( $enrollments, $scheduler, $clock, $meter );
 		$type_enroller = new FlowTypeEnroller( $flows, $enroller );
 
 		( new PostPurchaseTrigger( $type_enroller ) )->register();

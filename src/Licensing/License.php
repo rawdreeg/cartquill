@@ -26,4 +26,13 @@ interface License {
 	 * license activates every add-on capability.
 	 */
 	public function is_active( string $capability ): bool;
+
+	/**
+	 * The held plan's numeric limits, keyed by resource. At minimum `actions`
+	 * (the monthly action cap the meter enforces); the tiers slice (#69) also
+	 * adds `workflows`. Values are the plan's entitlements.
+	 *
+	 * @return array<string, int>
+	 */
+	public function limits(): array;
 }
