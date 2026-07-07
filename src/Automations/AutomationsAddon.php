@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use CartQuill\Action\ActionRegistry;
+use CartQuill\Compliance\WpdbSuppressionList;
 use CartQuill\Engine\Enroller;
 use CartQuill\Engine\FlowTypeEnroller;
 use CartQuill\Flow\DefaultFlows;
@@ -47,6 +48,7 @@ final class AutomationsAddon {
 		private readonly SlackClient $client,
 		private readonly SheetsClient $sheets,
 		private readonly MailchimpClient $mailchimp,
+		private readonly TwilioClient $twilio,
 	) {}
 
 	public function register(): void {
@@ -76,6 +78,9 @@ final class AutomationsAddon {
 		if ( $this->is_connected( MailchimpAction::SERVICE ) ) {
 			$actions->register( new MailchimpAction( $this->connections, $this->mailchimp ) );
 		}
+		if ( $this->is_connected( SmsAction::SERVICE ) ) {
+			$actions->register( new SmsAction( $this->connections, $this->twilio, new Renderer() ) );
+		}
 	}
 
 	private function is_connected( string $service ): bool {
@@ -98,6 +103,16 @@ final class AutomationsAddon {
 		);
 		( new OrderPaidTrigger( $type_enroller ) )->register();
 		( new AccountCreatedTrigger( $type_enroller ) )->register();
+		( new OrderShippedTrigger( $type_enroller ) )->register();
+
+		// Inbound Twilio STOP/START webhook, once a Twilio connection exists.
+		$twilio = $this->connections->find( SmsAction::SERVICE );
+		if ( null !== $twilio && '' !== (string) $twilio->credential( 'auth_token', '' ) ) {
+			( new SmsWebhookEndpoint(
+				new TwilioWebhookVerifier( (string) $twilio->credential( 'auth_token', '' ) ),
+				new WpdbSuppressionList()
+			) )->register();
+		}
 	}
 
 	/**
@@ -127,6 +142,7 @@ final class AutomationsAddon {
 
 		$templates[] = AutomationsRecipes::order_alert();
 		$templates[] = AutomationsRecipes::account_welcome();
+		$templates[] = AutomationsRecipes::shipping_update();
 
 		return $templates;
 	}

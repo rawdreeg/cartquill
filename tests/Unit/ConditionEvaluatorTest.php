@@ -151,6 +151,25 @@ final class ConditionEvaluatorTest extends TestCase {
 		);
 	}
 
+	public function test_has_phone_gate(): void {
+		$step = new FlowStep( 0, '', '', array( array( 'type' => 'has_phone' ) ), 'sms_send' );
+
+		$this->assertSame(
+			ConditionEvaluator::PROCEED,
+			$this->evaluator->decide( $step, $this->enrollment( array( 'phone' => '+15551112222' ) ) )
+		);
+		$this->assertSame(
+			ConditionEvaluator::SKIP,
+			$this->evaluator->decide( $step, $this->enrollment( array( 'phone' => '' ) ) ),
+			'an empty phone skips'
+		);
+		$this->assertSame(
+			ConditionEvaluator::SKIP,
+			$this->evaluator->decide( $step, $this->enrollment() ),
+			'no phone in context skips'
+		);
+	}
+
 	public function test_cart_value_gt_gate(): void {
 		$step = new FlowStep( 0, 'Come back', 'body', array( array( 'type' => 'cart_value_gt', 'value' => 50 ) ) );
 
