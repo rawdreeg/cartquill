@@ -25,6 +25,7 @@ use CartQuill\Admin\UsageNotice;
 use CartQuill\Metering\UsageMeter;
 use CartQuill\Metering\WpdbUsageStore;
 use CartQuill\Licensing\OptionLicense;
+use CartQuill\Licensing\PlanGate;
 use CartQuill\Security\InstallKey;
 use CartQuill\Sender\SenderRegistry;
 use CartQuill\Attribution\Attributor;
@@ -196,7 +197,7 @@ final class Plugin {
 		( new OnboardingPage( new Onboarding(), $settings ) )->register();
 
 		( new FlowLibraryPage( $library, new FlowInstaller( $library, $flows ), $flows ) )->register();
-		( new FlowEditorPage( $flows, new FlowEditor() ) )->register();
+		( new FlowEditorPage( $flows, new FlowEditor(), new PlanGate( $license, $flows ) ) )->register();
 
 		( new AttributionTrigger( new Attributor( $messages, $attributions ) ) )->register();
 		( new ReportingPage( $flows, $messages, $attributions, $license ) )->register();
