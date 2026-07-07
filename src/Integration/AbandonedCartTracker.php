@@ -45,14 +45,35 @@ final class AbandonedCartTracker {
 	}
 
 	/**
-	 * Capture a valid email as a pending cart.
+	 * Capture a valid email as a pending cart, along with the current cart total
+	 * (for value-based recovery gating).
 	 */
 	public function capture( string $email ): void {
 		$email = trim( $email );
 		if ( '' === $email || ! \is_email( $email ) ) {
 			return;
 		}
-		$this->captures->capture( strtolower( $email ), $this->clock->now_mysql() );
+		$this->captures->capture( strtolower( $email ), $this->clock->now_mysql(), $this->cart_total() );
+	}
+
+	/**
+	 * The current WooCommerce cart total, or 0 when no cart is available. Any
+	 * access failure degrades to 0 (the capture is still worth recording; a
+	 * missing total just means value-based gating treats it as below threshold).
+	 */
+	private function cart_total(): float {
+		if ( ! function_exists( 'WC' ) ) {
+			return 0.0;
+		}
+		try {
+			$wc = \WC();
+			if ( ! $wc || ! isset( $wc->cart ) || ! $wc->cart ) {
+				return 0.0;
+			}
+			return (float) $wc->cart->get_total( 'edit' );
+		} catch ( \Exception $e ) {
+			return 0.0;
+		}
 	}
 
 	public function on_add_to_cart(): void {

@@ -61,8 +61,13 @@ final class AbandonedCartScanner {
 		$enrolled = 0;
 
 		foreach ( $this->captures->due( $cutoff ) as $email ) {
+			// Carry the cart total into the enrollment so value-based recovery
+			// gating (e.g. cart_value_gt) can read it.
+			$capture = $this->captures->find( $email );
+			$context = array( 'cart_value' => null !== $capture ? $capture->cart_value : 0.0 );
+
 			foreach ( $flows as $flow ) {
-				if ( null !== $this->enroller->enroll( $flow, $email, 'abandoned_cart' ) ) {
+				if ( null !== $this->enroller->enroll( $flow, $email, 'abandoned_cart', $context ) ) {
 					++$enrolled;
 				}
 			}

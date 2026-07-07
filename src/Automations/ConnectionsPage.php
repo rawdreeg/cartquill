@@ -34,6 +34,7 @@ final class ConnectionsPage {
 		private readonly ConnectionStore $connections,
 		private readonly SlackClient $slack,
 		private readonly SheetsClient $sheets,
+		private readonly MailchimpClient $mailchimp,
 	) {}
 
 	public function register(): void {
@@ -61,6 +62,8 @@ final class ConnectionsPage {
 			$this->save_slack();
 		} elseif ( SheetsAction::SERVICE === $service ) {
 			$this->save_sheets();
+		} elseif ( MailchimpAction::SERVICE === $service ) {
+			$this->save_mailchimp();
 		}
 
 		$this->redirect_back( 'saved' );
@@ -104,14 +107,42 @@ final class ConnectionsPage {
 		);
 	}
 
+	private function save_mailchimp(): void {
+		$existing    = $this->connections->find( MailchimpAction::SERVICE );
+		$credentials = null !== $existing ? $existing->credentials : array();
+
+		$key = isset( $_POST['mailchimp_api_key'] ) ? \sanitize_text_field( \wp_unslash( $_POST['mailchimp_api_key'] ) ) : '';
+		if ( '' !== $key && self::MASK !== $key ) {
+			$credentials['api_key']       = $key;
+			$credentials['server_prefix'] = $this->derive_prefix( $key );
+		}
+		if ( isset( $_POST['mailchimp_audience_id'] ) ) {
+			$credentials['audience_id'] = \sanitize_text_field( \wp_unslash( $_POST['mailchimp_audience_id'] ) );
+		}
+
+		$this->connections->save(
+			new ConnectionRecord( $existing?->id, MailchimpAction::SERVICE, ConnectionRecord::STATUS_CONNECTED, $credentials )
+		);
+	}
+
+	/**
+	 * The Mailchimp data-center prefix is the suffix of the API key (e.g. "us21"
+	 * in "abc...-us21").
+	 */
+	private function derive_prefix( string $key ): string {
+		$pos = strrpos( $key, '-' );
+		return false !== $pos ? substr( $key, $pos + 1 ) : '';
+	}
+
 	public function handle_test(): void {
 		$this->authorize( 'cartquill_test_connection' );
 
 		$service = isset( $_POST['service'] ) ? \sanitize_key( \wp_unslash( $_POST['service'] ) ) : '';
 		$ok      = match ( $service ) {
-			SlackAction::SERVICE  => $this->test_slack(),
-			SheetsAction::SERVICE => $this->test_sheets(),
-			default               => false,
+			SlackAction::SERVICE     => $this->test_slack(),
+			SheetsAction::SERVICE    => $this->test_sheets(),
+			MailchimpAction::SERVICE => $this->test_mailchimp(),
+			default                  => false,
 		};
 
 		$this->redirect_back( $ok ? 'test_ok' : 'test_error' );
@@ -154,6 +185,27 @@ final class ConnectionsPage {
 		return $result->ok;
 	}
 
+	private function test_mailchimp(): bool {
+		$connection = $this->connections->find( MailchimpAction::SERVICE );
+		if ( null === $connection ) {
+			return false;
+		}
+
+		$credentials = array(
+			'api_key'       => (string) $connection->credential( 'api_key', '' ),
+			'server_prefix' => (string) $connection->credential( 'server_prefix', '' ),
+			'audience_id'   => (string) $connection->credential( 'audience_id', '' ),
+		);
+		if ( '' === $credentials['api_key'] || '' === $credentials['server_prefix'] || '' === $credentials['audience_id'] ) {
+			return false;
+		}
+
+		$result = $this->mailchimp->sync( $credentials, (string) \get_option( 'admin_email' ), 'cartquill-test' );
+		$this->connections->save( $connection->with_status( $result->ok ? ConnectionRecord::STATUS_CONNECTED : ConnectionRecord::STATUS_ERROR ) );
+
+		return $result->ok;
+	}
+
 	public function render(): void {
 		if ( ! \current_user_can( 'manage_options' ) ) {
 			return;
@@ -169,6 +221,7 @@ final class ConnectionsPage {
 			<?php
 			$this->render_slack_card();
 			$this->render_sheets_card();
+			$this->render_mailchimp_card();
 			?>
 		</div>
 		<?php
@@ -239,6 +292,43 @@ final class ConnectionsPage {
 			<?php \submit_button( \__( 'Save Google Sheets connection', 'cartquill' ) ); ?>
 		</form>
 		<?php $this->render_test_button( SheetsAction::SERVICE, $configured ); ?>
+		<?php
+	}
+
+	private function render_mailchimp_card(): void {
+		$connection = $this->connections->find( MailchimpAction::SERVICE );
+		$configured = null !== $connection && $connection->is_configured();
+		$has_key    = null !== $connection && '' !== (string) $connection->credential( 'api_key', '' );
+		?>
+		<hr />
+		<h2><?php echo \esc_html__( 'Mailchimp', 'cartquill' ); ?>
+			<?php echo $configured ? '<span class="description">' . \esc_html( $this->status_label( (string) $connection->status ) ) . '</span>' : ''; ?>
+		</h2>
+		<p class="description"><?php echo \esc_html__( 'CartQuill syncs contacts and tags into your Mailchimp audience — it does not send your email through Mailchimp. Your recovery and welcome emails still send from your own store.', 'cartquill' ); ?></p>
+		<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
+			<?php \wp_nonce_field( 'cartquill_save_connection' ); ?>
+			<input type="hidden" name="action" value="cartquill_save_connection" />
+			<input type="hidden" name="service" value="<?php echo \esc_attr( MailchimpAction::SERVICE ); ?>" />
+			<table class="form-table">
+				<tr>
+					<th scope="row"><label for="cq-mc-key"><?php echo \esc_html__( 'API key', 'cartquill' ); ?></label></th>
+					<td>
+						<input type="text" id="cq-mc-key" name="mailchimp_api_key" class="regular-text" autocomplete="off"
+							value="<?php echo $has_key ? \esc_attr( self::MASK ) : ''; ?>"
+							placeholder="abc123...-us21" />
+						<p class="description"><?php echo \esc_html__( 'The data-center suffix (e.g. us21) is read from the key automatically.', 'cartquill' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="cq-mc-audience"><?php echo \esc_html__( 'Audience ID', 'cartquill' ); ?></label></th>
+					<td><input type="text" id="cq-mc-audience" name="mailchimp_audience_id" class="regular-text"
+						value="<?php echo null !== $connection ? \esc_attr( (string) $connection->credential( 'audience_id', '' ) ) : ''; ?>"
+						placeholder="a1b2c3d4e5" /></td>
+				</tr>
+			</table>
+			<?php \submit_button( \__( 'Save Mailchimp connection', 'cartquill' ) ); ?>
+		</form>
+		<?php $this->render_test_button( MailchimpAction::SERVICE, $configured ); ?>
 		<?php
 	}
 

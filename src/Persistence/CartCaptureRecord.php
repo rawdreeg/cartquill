@@ -29,9 +29,10 @@ final class CartCaptureRecord {
 		public readonly string $customer_email,
 		public readonly string $status = self::STATUS_PENDING,
 		public readonly ?string $updated_at = null,
+		public readonly float $cart_value = 0.0,
 	) {}
 
 	public function with_id( int $id ): self {
-		return new self( $id, $this->customer_email, $this->status, $this->updated_at );
+		return new self( $id, $this->customer_email, $this->status, $this->updated_at, $this->cart_value );
 	}
 }

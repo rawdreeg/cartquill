@@ -104,4 +104,18 @@ final class AbandonedCartScannerTest extends TestCase {
 		$this->assertSame( 0, $this->scanner->scan( self::THRESHOLD ) );
 		$this->assertCount( 1, $this->enrollments->all() );
 	}
+
+	public function test_cart_value_is_carried_into_the_enrollment_context(): void {
+		$this->active_cart_flow();
+		$this->captures->capture( 'buyer@example.com', $this->clock->now_mysql(), 75.0 );
+		$this->clock->advance( self::THRESHOLD );
+
+		$this->scanner->scan( self::THRESHOLD );
+
+		$this->assertSame(
+			75.0,
+			$this->enrollments->all()[0]->context['cart_value'],
+			'the captured cart total is available for value-based recovery gating'
+		);
+	}
 }

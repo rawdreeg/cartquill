@@ -13,6 +13,7 @@
 declare(strict_types=1);
 
 use CartQuill\Automations\AutomationsAddon;
+use CartQuill\Automations\HttpMailchimpClient;
 use CartQuill\Automations\HttpSheetsClient;
 use CartQuill\Automations\HttpSlackClient;
 use CartQuill\Licensing\OptionLicense;
@@ -29,5 +30,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	new WpdbConnectionStore( new EncryptedCredentials( new SodiumCrypto( InstallKey::get() ) ) ),
 	new OptionLicense(),
 	new HttpSlackClient(),
-	new HttpSheetsClient()
+	new HttpSheetsClient(),
+	new HttpMailchimpClient()
 ) )->register();

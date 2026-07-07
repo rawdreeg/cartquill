@@ -16,11 +16,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 use CartQuill\Action\ActionRegistry;
 use CartQuill\Engine\Enroller;
 use CartQuill\Engine\FlowTypeEnroller;
+use CartQuill\Flow\DefaultFlows;
 use CartQuill\Flow\Renderer;
 use CartQuill\Licensing\License;
 use CartQuill\Licensing\Plans;
 use CartQuill\Persistence\ConnectionRecord;
 use CartQuill\Persistence\ConnectionStore;
+use CartQuill\Persistence\FlowRecord;
 use CartQuill\Persistence\WpdbEnrollmentRepository;
 use CartQuill\Persistence\WpdbFlowRepository;
 use CartQuill\Scheduling\ActionSchedulerScheduler;
@@ -44,6 +46,7 @@ final class AutomationsAddon {
 		private readonly License $license,
 		private readonly SlackClient $client,
 		private readonly SheetsClient $sheets,
+		private readonly MailchimpClient $mailchimp,
 	) {}
 
 	public function register(): void {
@@ -70,6 +73,9 @@ final class AutomationsAddon {
 		if ( $this->is_connected( SheetsAction::SERVICE ) ) {
 			$actions->register( new SheetsAction( $this->connections, $this->sheets, new Renderer() ) );
 		}
+		if ( $this->is_connected( MailchimpAction::SERVICE ) ) {
+			$actions->register( new MailchimpAction( $this->connections, $this->mailchimp ) );
+		}
 	}
 
 	private function is_connected( string $service ): bool {
@@ -84,14 +90,14 @@ final class AutomationsAddon {
 			return;
 		}
 
-		( new ConnectionsPage( $this->connections, $this->client, $this->sheets ) )->register();
+		( new ConnectionsPage( $this->connections, $this->client, $this->sheets, $this->mailchimp ) )->register();
 
-		$enroller = new Enroller(
-			new WpdbEnrollmentRepository(),
-			new ActionSchedulerScheduler(),
-			new SystemClock()
+		$type_enroller = new FlowTypeEnroller(
+			new WpdbFlowRepository(),
+			new Enroller( new WpdbEnrollmentRepository(), new ActionSchedulerScheduler(), new SystemClock() )
 		);
-		( new OrderPaidTrigger( new FlowTypeEnroller( new WpdbFlowRepository(), $enroller ) ) )->register();
+		( new OrderPaidTrigger( $type_enroller ) )->register();
+		( new AccountCreatedTrigger( $type_enroller ) )->register();
 	}
 
 	/**
@@ -105,8 +111,23 @@ final class AutomationsAddon {
 		if ( ! $this->license->is_active( Plans::AUTOMATIONS ) ) {
 			return (array) $templates;
 		}
-		$templates   = (array) $templates;
+
+		// Enhance the core abandoned-cart template in place with the Mailchimp
+		// sync + value gate (same type, so the scanner still enrolls it and there
+		// is no duplicate to install), then add the multi-tool recipes.
+		$templates = array_map(
+			static function ( $template ) {
+				if ( $template instanceof FlowRecord && DefaultFlows::TYPE_ABANDONED_CART === $template->type ) {
+					return AutomationsRecipes::cart_recovery();
+				}
+				return $template;
+			},
+			(array) $templates
+		);
+
 		$templates[] = AutomationsRecipes::order_alert();
+		$templates[] = AutomationsRecipes::account_welcome();
+
 		return $templates;
 	}
 }
