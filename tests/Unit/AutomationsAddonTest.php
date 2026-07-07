@@ -10,13 +10,17 @@ declare(strict_types=1);
 namespace CartQuill\Tests\Unit;
 
 use CartQuill\Action\ActionRegistry;
+use CartQuill\Automations\AccountCreatedTrigger;
 use CartQuill\Automations\AutomationsAddon;
+use CartQuill\Automations\MailchimpAction;
 use CartQuill\Automations\SheetsAction;
 use CartQuill\Automations\SlackAction;
+use CartQuill\Flow\DefaultFlows;
 use CartQuill\Licensing\ArrayLicense;
 use CartQuill\Licensing\Plans;
 use CartQuill\Persistence\ConnectionRecord;
 use CartQuill\Persistence\InMemoryConnectionStore;
+use CartQuill\Tests\Fake\StubMailchimpClient;
 use CartQuill\Tests\Fake\StubSheetsClient;
 use CartQuill\Tests\Fake\StubSlackClient;
 use PHPUnit\Framework\TestCase;
@@ -36,7 +40,7 @@ final class AutomationsAddonTest extends TestCase {
 	}
 
 	private function addon( InMemoryConnectionStore $store, ArrayLicense $license ): AutomationsAddon {
-		return new AutomationsAddon( $store, $license, new StubSlackClient(), new StubSheetsClient() );
+		return new AutomationsAddon( $store, $license, new StubSlackClient(), new StubSheetsClient(), new StubMailchimpClient() );
 	}
 
 	private function register( InMemoryConnectionStore $store, ArrayLicense $license ): ActionRegistry {
@@ -91,13 +95,38 @@ final class AutomationsAddonTest extends TestCase {
 		$this->assertFalse( $registry->has( SheetsAction::TYPE ) );
 	}
 
+	public function test_registers_mailchimp_when_connected(): void {
+		$store = new InMemoryConnectionStore();
+		$store->save(
+			new ConnectionRecord( null, 'mailchimp', ConnectionRecord::STATUS_CONNECTED, array( 'api_key' => 'k', 'server_prefix' => 'us1', 'audience_id' => 'a' ) )
+		);
+
+		$registry = $this->register( $store, new ArrayLicense( array( Plans::AUTOMATIONS ) ) );
+
+		$this->assertTrue( $registry->has( MailchimpAction::TYPE ) );
+	}
+
 	public function test_recipes_are_contributed_only_when_licensed(): void {
 		$licensed   = $this->addon( $this->store_with( $this->connected() ), new ArrayLicense( array( Plans::AUTOMATIONS ) ) );
 		$unlicensed = $this->addon( $this->store_with( $this->connected() ), new ArrayLicense() );
 
 		$types = array_map( static fn ( $t ) => $t->type, $licensed->register_recipes( array() ) );
 		$this->assertContains( 'order_alert', $types );
+		$this->assertContains( AccountCreatedTrigger::TYPE, $types, 'the welcome recipe is contributed' );
 
 		$this->assertSame( array(), $unlicensed->register_recipes( array() ), 'no recipes without a license' );
+	}
+
+	public function test_enhances_the_core_abandoned_cart_template_in_place(): void {
+		$licensed = $this->addon( $this->store_with( $this->connected() ), new ArrayLicense( array( Plans::AUTOMATIONS ) ) );
+
+		$out = $licensed->register_recipes( array( DefaultFlows::abandoned_cart() ) );
+
+		$byType = array();
+		foreach ( $out as $flow ) {
+			$byType[ $flow->type ][] = $flow;
+		}
+		$this->assertCount( 1, $byType[ DefaultFlows::TYPE_ABANDONED_CART ], 'no duplicate abandoned-cart template' );
+		$this->assertSame( 'Cart recovery + Mailchimp', $byType[ DefaultFlows::TYPE_ABANDONED_CART ][0]->name, 'the core template is replaced with the enhanced one' );
 	}
 }

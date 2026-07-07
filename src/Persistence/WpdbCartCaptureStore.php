@@ -15,18 +15,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class WpdbCartCaptureStore implements CartCaptureStore {
 
-	public function capture( string $email, string $updated_at ): void {
+	public function capture( string $email, string $updated_at, float $cart_value = 0.0 ): void {
 		global $wpdb;
 		$table = Schema::cart_captures_table();
 
-		// Upsert on the unique customer_email; capturing re-opens the row as pending.
+		// Upsert on the unique customer_email; capturing re-opens the row as pending
+		// and refreshes the cart total.
 		$wpdb->query(
 			$wpdb->prepare(
-				"INSERT INTO {$table} (customer_email, status, updated_at) VALUES (%s, %s, %s)
-				ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = VALUES(updated_at)", // phpcs:ignore WordPress.DB.PreparedSQL
+				"INSERT INTO {$table} (customer_email, status, updated_at, cart_value) VALUES (%s, %s, %s, %f)
+				ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = VALUES(updated_at), cart_value = VALUES(cart_value)", // phpcs:ignore WordPress.DB.PreparedSQL
 				$this->normalize( $email ),
 				CartCaptureRecord::STATUS_PENDING,
-				$updated_at
+				$updated_at,
+				$cart_value
 			)
 		);
 	}
@@ -72,6 +74,7 @@ final class WpdbCartCaptureStore implements CartCaptureStore {
 			customer_email: (string) $row['customer_email'],
 			status: (string) $row['status'],
 			updated_at: null !== $row['updated_at'] ? (string) $row['updated_at'] : null,
+			cart_value: isset( $row['cart_value'] ) ? (float) $row['cart_value'] : 0.0,
 		);
 	}
 

@@ -20,10 +20,10 @@ final class InMemoryCartCaptureStore implements CartCaptureStore {
 
 	private int $next_id = 1;
 
-	public function capture( string $email, string $updated_at ): void {
+	public function capture( string $email, string $updated_at, float $cart_value = 0.0 ): void {
 		$key                   = $this->normalize( $email );
 		$id                    = $this->records[ $key ]->id ?? $this->next_id++;
-		$this->records[ $key ] = new CartCaptureRecord( $id, $key, CartCaptureRecord::STATUS_PENDING, $updated_at );
+		$this->records[ $key ] = new CartCaptureRecord( $id, $key, CartCaptureRecord::STATUS_PENDING, $updated_at, $cart_value );
 	}
 
 	public function recover( string $email ): void {
@@ -59,7 +59,7 @@ final class InMemoryCartCaptureStore implements CartCaptureStore {
 		$key = $this->normalize( $email );
 		if ( isset( $this->records[ $key ] ) ) {
 			$record                = $this->records[ $key ];
-			$this->records[ $key ] = new CartCaptureRecord( $record->id, $key, $status, $record->updated_at );
+			$this->records[ $key ] = new CartCaptureRecord( $record->id, $key, $status, $record->updated_at, $record->cart_value );
 		}
 	}
 

@@ -19,9 +19,10 @@ interface CartCaptureStore {
 	 * Record (or refresh) a pending capture for this email at $updated_at.
 	 *
 	 * Called whenever a customer shows cart activity with a known email. A
-	 * previously recovered/enrolled capture is re-opened as pending.
+	 * previously recovered/enrolled capture is re-opened as pending. $cart_value
+	 * is the cart total at capture time, used for value-based recovery gating.
 	 */
-	public function capture( string $email, string $updated_at ): void;
+	public function capture( string $email, string $updated_at, float $cart_value = 0.0 ): void;
 
 	/**
 	 * Mark a capture recovered (the customer ordered) so it is never enrolled.
