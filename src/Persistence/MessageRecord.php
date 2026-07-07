@@ -36,15 +36,16 @@ final class MessageRecord {
 	public const STATUS_COMPLAINED = 'complained';
 
 	public const CHANNEL_EMAIL = 'email';
+	public const CHANNEL_SMS   = 'sms_send';
 
 	/**
 	 * Channels that represent a customer touch — counted for last-touch
 	 * attribution and engagement stats. Internal action rows (Slack, Sheets,
-	 * Mailchimp) are excluded. Later slices extend this (e.g. sms_send).
+	 * Mailchimp) are excluded.
 	 *
 	 * @var list<string>
 	 */
-	public const CUSTOMER_CHANNELS = array( self::CHANNEL_EMAIL );
+	public const CUSTOMER_CHANNELS = array( self::CHANNEL_EMAIL, self::CHANNEL_SMS );
 
 	/**
 	 * @param int|null    $id           Row id (null until persisted).

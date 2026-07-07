@@ -43,7 +43,7 @@ final class ConditionEvaluator {
 	public const EXIT    = 'exit';
 
 	/** Skip-unless-satisfied gate types. */
-	private const GATES = array( 'require_context', 'first_time_customer', 'marketing_opt_in', 'cart_value_gt' );
+	private const GATES = array( 'require_context', 'first_time_customer', 'marketing_opt_in', 'cart_value_gt', 'has_phone' );
 
 	public function __construct( private readonly CustomerActivity $activity ) {}
 
@@ -102,6 +102,10 @@ final class ConditionEvaluator {
 		if ( 'cart_value_gt' === $type ) {
 			$threshold = (float) ( $condition['value'] ?? 0 );
 			return (float) ( $enrollment->context['cart_value'] ?? 0 ) > $threshold;
+		}
+
+		if ( 'has_phone' === $type ) {
+			return '' !== trim( (string) ( $enrollment->context['phone'] ?? '' ) );
 		}
 
 		return true;
