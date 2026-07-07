@@ -113,9 +113,14 @@ final class TiersTest extends TestCase {
 	public function test_plan_limits_filter_overrides_the_scaffold(): void {
 		Monkey\setUp();
 		Functions\when( 'get_option' )->justReturn( array( Plans::STARTER => 'KEY-1' ) );
-		// Freemius (or a site owner) overrides the scaffold numbers entirely.
-		Functions\when( 'apply_filters' )->justReturn(
-			array( 'actions' => 9999, 'workflows' => 42, 'conditional_logic' => 1 )
+		// Freemius (or a site owner) overrides the scaffold numbers entirely; the
+		// plan() seam still passes the computed tier through untouched.
+		Functions\when( 'apply_filters' )->alias(
+			static function ( string $tag, $value ) {
+				return 'cartquill_plan_limits' === $tag
+					? array( 'actions' => 9999, 'workflows' => 42, 'conditional_logic' => 1 )
+					: $value;
+			}
 		);
 
 		$limits = ( new OptionLicense() )->limits();

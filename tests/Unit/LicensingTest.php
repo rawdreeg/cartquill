@@ -69,4 +69,17 @@ final class LicensingTest extends TestCase {
 
 		Monkey\tearDown();
 	}
+
+	public function test_option_license_lets_a_backend_drive_the_displayed_plan(): void {
+		Monkey\setUp();
+		Functions\when( 'get_option' )->justReturn( array() ); // no key persisted locally
+		// The `cartquill_plan` seam lets Freemius drive the tier without a stored key.
+		Functions\when( 'apply_filters' )->alias(
+			static fn( string $tag, $value ) => 'cartquill_plan' === $tag ? Plans::GROWTH : $value
+		);
+
+		$this->assertSame( Plans::GROWTH, ( new OptionLicense() )->plan() );
+
+		Monkey\tearDown();
+	}
 }
