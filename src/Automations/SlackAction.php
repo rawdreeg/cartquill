@@ -15,6 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use CartQuill\Action\ActionContext;
 use CartQuill\Action\ActionInterface;
+use CartQuill\Builder\ConfigFields;
+use CartQuill\Builder\DescribesConfig;
 use CartQuill\Flow\Renderer;
 use CartQuill\Model\SendResult;
 use CartQuill\Persistence\ConnectionStore;
@@ -27,7 +29,9 @@ use CartQuill\Persistence\ConnectionStore;
  * order total, …). A missing connection or a failed post returns a failed
  * result, which the engine retries and then dead-letters.
  */
-final class SlackAction implements ActionInterface {
+final class SlackAction implements ActionInterface, DescribesConfig {
+
+	use ConfigFields;
 
 	public const TYPE    = 'slack_post';
 	public const SERVICE = 'slack';
@@ -37,6 +41,18 @@ final class SlackAction implements ActionInterface {
 		private readonly SlackClient $client,
 		private readonly Renderer $renderer,
 	) {}
+
+	/**
+	 * The channel + message template this action reads from the step config.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	public static function config_fields(): array {
+		return array(
+			self::config_field( 'channel', 'Channel', 'text', array( 'help' => 'e.g. #orders' ) ),
+			self::config_field( 'text', 'Message', 'textarea', array( 'default' => 'New order from {{ customer_email }}', 'merge' => true ) ),
+		);
+	}
 
 	public function type(): string {
 		return self::TYPE;

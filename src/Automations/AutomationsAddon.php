@@ -14,6 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use CartQuill\Action\ActionRegistry;
+use CartQuill\Builder\ActionDescriptor;
+use CartQuill\Builder\BuilderCatalog;
+use CartQuill\Builder\TriggerDescriptor;
 use CartQuill\Compliance\WpdbSuppressionList;
 use CartQuill\Engine\Enroller;
 use CartQuill\Engine\FlowTypeEnroller;
@@ -55,6 +58,57 @@ final class AutomationsAddon {
 		\add_action( 'cartquill_register_actions', array( $this, 'register_actions' ), 10, 2 );
 		\add_action( 'cartquill_register_addons', array( $this, 'register_surfaces' ) );
 		\add_filter( 'cartquill_flow_templates', array( $this, 'register_recipes' ) );
+
+		// Contribute this add-on's actions + triggers to the flow builder's catalog.
+		// Registered unconditionally (not license-gated) so a paid-but-unlicensed store
+		// still sees them as locked "upgrade" cards; the catalog computes availability
+		// from the license + connection status.
+		\add_filter( BuilderCatalog::FILTER_ACTIONS, array( $this, 'builder_action_descriptors' ) );
+		\add_filter( BuilderCatalog::FILTER_TRIGGERS, array( $this, 'builder_triggers' ) );
+	}
+
+	/**
+	 * Replace the core static fallback descriptors for this add-on's actions with
+	 * authoritative ones sourced from the live action classes, so a licensed store
+	 * edits the exact config keys each action reads at runtime.
+	 *
+	 * @param list<ActionDescriptor> $descriptors The catalog's descriptors so far.
+	 *
+	 * @return list<ActionDescriptor>
+	 */
+	public function builder_action_descriptors( array $descriptors ): array {
+		$authoritative = array(
+			SlackAction::TYPE     => new ActionDescriptor( SlackAction::TYPE, 'Post to Slack', SlackAction::SERVICE, Plans::AUTOMATIONS, false, SlackAction::config_fields() ),
+			SheetsAction::TYPE    => new ActionDescriptor( SheetsAction::TYPE, 'Append to Google Sheet', SheetsAction::SERVICE, Plans::AUTOMATIONS, false, SheetsAction::config_fields() ),
+			MailchimpAction::TYPE => new ActionDescriptor( MailchimpAction::TYPE, 'Sync to Mailchimp', MailchimpAction::SERVICE, Plans::AUTOMATIONS, false, MailchimpAction::config_fields() ),
+			SmsAction::TYPE       => new ActionDescriptor( SmsAction::TYPE, 'Send SMS', SmsAction::SERVICE, Plans::AUTOMATIONS, true, SmsAction::config_fields() ),
+		);
+
+		return array_map(
+			static fn( ActionDescriptor $descriptor ) => $authoritative[ $descriptor->type ] ?? $descriptor,
+			$descriptors
+		);
+	}
+
+	/**
+	 * Contribute this add-on's triggers, with the context keys each captures into the
+	 * enrollment (offered to the builder's merge-tag picker and value gates). The
+	 * types + context come from the trigger classes themselves, so the catalog cannot
+	 * drift from what the triggers actually capture.
+	 *
+	 * @param list<TriggerDescriptor> $triggers The catalog's triggers so far.
+	 *
+	 * @return list<TriggerDescriptor>
+	 */
+	public function builder_triggers( array $triggers ): array {
+		return array_merge(
+			$triggers,
+			array(
+				new TriggerDescriptor( OrderPaidTrigger::TYPE, 'New paid order', 'An order was paid.', array( 'order_id', 'order_total' ), Plans::AUTOMATIONS ),
+				new TriggerDescriptor( AccountCreatedTrigger::TYPE, 'New account created', 'A customer account was created.', array( 'marketing_opt_in' ), Plans::AUTOMATIONS ),
+				new TriggerDescriptor( OrderShippedTrigger::TYPE, 'Order shipped', 'An order was marked shipped or completed.', array( 'phone', 'tracking_url' ), Plans::AUTOMATIONS ),
+			)
+		);
 	}
 
 	/**
