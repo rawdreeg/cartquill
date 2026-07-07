@@ -14,14 +14,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * CartQuill sells add-ons à la carte plus a Pro bundle. The Pro bundle grants
- * every add-on, so gating logic asks about a capability (ai / deliverability /
- * automations) and the license expands the bundle for it.
+ * CartQuill is sold on the Starter/Growth/Agency subscription tiers the marketing
+ * site advertises, and the paid add-ons fold into those tiers rather than being
+ * sold à la carte. Gating logic asks about a capability (ai / deliverability /
+ * automations) and the held plan expands into the capabilities it grants.
  *
- * The automation product itself is sold on the Starter/Growth/Agency subscription
- * tiers the marketing site advertises. A tier is a *held plan* like any other, and
- * holding one grants the automations capability (every tier ships the five
- * integrations); the tiers differ only in their numeric {@see self::entitlements()}
+ * A tier is a *held plan* like any other. The tiers form a capability ladder:
+ * every tier ships the five integrations (the automations capability), Growth adds
+ * AI generation, and Agency adds Deliverability on top; the legacy Pro bundle still
+ * grants every add-on. Tiers also differ in their numeric {@see self::entitlements()}
  * — the monthly action cap, the active-workflow cap, and whether conditional logic
  * is unlocked.
  */
@@ -73,9 +74,11 @@ final class Plans {
 	}
 
 	/**
-	 * The capabilities a held plan grants. Pro unlocks every add-on; a subscription
-	 * tier unlocks the automations capability (its integrations); any other plan
-	 * grants only itself.
+	 * The capabilities a held plan grants. The paid add-ons fold into the
+	 * subscription tiers rather than being sold à la carte, so the tiers form a
+	 * capability ladder: every tier unlocks the automations capability (its
+	 * integrations), Growth adds AI generation, and Agency adds Deliverability on
+	 * top. Pro still unlocks every add-on; any other plan grants only itself.
 	 *
 	 * @return list<string>
 	 */
@@ -83,8 +86,13 @@ final class Plans {
 		if ( self::PRO === $plan ) {
 			return array( self::AI, self::DELIVERABILITY, self::AUTOMATIONS, self::PRO );
 		}
-		if ( in_array( $plan, self::TIERS, true ) ) {
-			return array( $plan, self::AUTOMATIONS );
+		switch ( $plan ) {
+			case self::STARTER:
+				return array( self::STARTER, self::AUTOMATIONS );
+			case self::GROWTH:
+				return array( self::GROWTH, self::AUTOMATIONS, self::AI );
+			case self::AGENCY:
+				return array( self::AGENCY, self::AUTOMATIONS, self::AI, self::DELIVERABILITY );
 		}
 		return array( $plan );
 	}

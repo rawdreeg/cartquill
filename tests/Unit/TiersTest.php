@@ -50,15 +50,28 @@ final class TiersTest extends TestCase {
 		$this->assertSame( '', Plans::highest_tier( array( Plans::AI ) ), 'add-ons are not tiers' );
 	}
 
-	public function test_holding_a_tier_grants_the_automations_capability(): void {
+	public function test_tiers_form_a_capability_ladder(): void {
 		// Every tier ships the five integrations, so any tier unlocks automations.
 		$this->assertContains( Plans::AUTOMATIONS, Plans::grants( Plans::STARTER ) );
 		$this->assertContains( Plans::STARTER, Plans::grants( Plans::STARTER ) );
-		$this->assertTrue( ( new ArrayLicense( array( Plans::STARTER ) ) )->is_active( Plans::AUTOMATIONS ) );
 
-		// A tier does not unlock the AI or Deliverability add-ons.
-		$this->assertFalse( ( new ArrayLicense( array( Plans::GROWTH ) ) )->is_active( Plans::AI ) );
-		$this->assertFalse( ( new ArrayLicense( array( Plans::GROWTH ) ) )->is_active( Plans::DELIVERABILITY ) );
+		// Starter unlocks automations only — the paid add-ons stay locked.
+		$starter = new ArrayLicense( array( Plans::STARTER ) );
+		$this->assertTrue( $starter->is_active( Plans::AUTOMATIONS ) );
+		$this->assertFalse( $starter->is_active( Plans::AI ) );
+		$this->assertFalse( $starter->is_active( Plans::DELIVERABILITY ) );
+
+		// Growth folds in AI generation, but not Deliverability.
+		$growth = new ArrayLicense( array( Plans::GROWTH ) );
+		$this->assertTrue( $growth->is_active( Plans::AUTOMATIONS ) );
+		$this->assertTrue( $growth->is_active( Plans::AI ) );
+		$this->assertFalse( $growth->is_active( Plans::DELIVERABILITY ) );
+
+		// Agency folds in both AI and Deliverability.
+		$agency = new ArrayLicense( array( Plans::AGENCY ) );
+		$this->assertTrue( $agency->is_active( Plans::AUTOMATIONS ) );
+		$this->assertTrue( $agency->is_active( Plans::AI ) );
+		$this->assertTrue( $agency->is_active( Plans::DELIVERABILITY ) );
 	}
 
 	public function test_array_license_reports_its_held_tier(): void {
@@ -100,9 +113,14 @@ final class TiersTest extends TestCase {
 	public function test_plan_limits_filter_overrides_the_scaffold(): void {
 		Monkey\setUp();
 		Functions\when( 'get_option' )->justReturn( array( Plans::STARTER => 'KEY-1' ) );
-		// Freemius (or a site owner) overrides the scaffold numbers entirely.
-		Functions\when( 'apply_filters' )->justReturn(
-			array( 'actions' => 9999, 'workflows' => 42, 'conditional_logic' => 1 )
+		// Freemius (or a site owner) overrides the scaffold numbers entirely; the
+		// plan() seam still passes the computed tier through untouched.
+		Functions\when( 'apply_filters' )->alias(
+			static function ( string $tag, $value ) {
+				return 'cartquill_plan_limits' === $tag
+					? array( 'actions' => 9999, 'workflows' => 42, 'conditional_logic' => 1 )
+					: $value;
+			}
 		);
 
 		$limits = ( new OptionLicense() )->limits();

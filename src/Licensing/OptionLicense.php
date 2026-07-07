@@ -50,7 +50,14 @@ final class OptionLicense implements License {
 	}
 
 	public function plan(): string {
-		return Plans::highest_tier( $this->held_plans() );
+		/**
+		 * Let a real licensing backend (Freemius) drive the displayed tier without
+		 * persisting a license key to the option. Mirrors the `cartquill_plan_active`
+		 * and `cartquill_plan_limits` seams; the FreemiusBridge hooks it.
+		 *
+		 * @param string $plan The tier derived from the local key store.
+		 */
+		return (string) \apply_filters( 'cartquill_plan', Plans::highest_tier( $this->held_plans() ) );
 	}
 
 	/**
