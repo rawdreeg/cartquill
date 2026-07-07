@@ -78,13 +78,19 @@ final class SmsWebhookEndpoint {
 	}
 
 	/**
+	 * Twilio signs the raw POST values, so the signature must be recomputed over
+	 * them unmodified — sanitizing first (trimming whitespace, stripping markup)
+	 * would break verification for legitimate messages. The values are only ever
+	 * HMAC-verified, then normalized (phone) or keyword-matched (body); none is
+	 * echoed. Mirrors the Resend endpoint HMACing the raw request body.
+	 *
 	 * @return array<string, string>
 	 */
 	private function read_params(): array {
 		$params = array();
 		foreach ( $_POST as $key => $value ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			if ( is_scalar( $value ) ) {
-				$params[ (string) $key ] = \sanitize_text_field( \wp_unslash( (string) $value ) );
+				$params[ (string) $key ] = (string) \wp_unslash( $value ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			}
 		}
 		return $params;
