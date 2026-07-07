@@ -22,19 +22,19 @@ The **free core**:
 * Last-touch revenue attribution: every flow shows the order revenue it drove, inside a configurable attribution window.
 * Compliance built in: a one-click unsubscribe link on every email (RFC 8058), a global suppression list checked before every send, consent-source recording, and WordPress privacy export/erase integration.
 
-Three **paid add-ons** extend the core (each unlocked with its own license key):
+A **paid subscription** — Starter, Growth, or Agency — unlocks CartQuill's premium capabilities. There is no separate per-feature license key: one subscription unlocks everything its tier includes, and higher tiers unlock more.
 
-* **AI Flow Generation** — draft a whole flow, or rewrite a single step, from a short prompt. Generated copy always opens in the editor for your review; nothing is ever sent to customers automatically.
-* **Deliverability** — connect *your own* Resend account to send at scale, run a guided sending-domain authentication wizard, and ingest delivery/bounce/complaint webhooks that feed inbox reporting and auto-suppression.
-* **Automations** — turn a WooCommerce event into a no-code multi-tool "recipe": *when* it fires, *if* a condition holds, *do* one or more actions across Slack, Google Sheets, Mailchimp, and Twilio SMS (plus email). Each tool connects *your own* account. Usage is metered by actions per month across the Starter, Growth, and Agency plans.
+* **Automations** (all paid tiers) — turn a WooCommerce event into a no-code multi-tool "recipe": *when* it fires, *if* a condition holds, *do* one or more actions across Slack, Google Sheets, Mailchimp, and Twilio SMS (plus email). Each tool connects *your own* account. Usage is metered by actions per month, with a higher cap on each tier.
+* **AI Flow Generation** (Growth and up) — draft a whole flow, or rewrite a single step, from a short prompt. Generated copy always opens in the editor for your review; nothing is ever sent to customers automatically.
+* **Deliverability** (Agency) — connect *your own* Resend account to send at scale, run a guided sending-domain authentication wizard, and ingest delivery/bounce/complaint webhooks that feed inbox reporting and auto-suppression.
 
-A few honest notes on the Automations add-on:
+A few honest notes on the paid tiers:
 
 * **Mailchimp is audience sync, not sending.** The Mailchimp action upserts and tags a subscriber in *your* audience; CartQuill still sends every email through its own sender. Your customer email is never routed through, or resold via, Mailchimp.
 * **Conditional logic** (data-driven branching, e.g. "only if cart value is over $50") is a Growth-and-up feature. Timed delays are available on every plan.
 * **Coming soon:** the Agency plan's multi-store management, white-label workflows, and team roles & audit log are on the roadmap and not yet built; the Agency plan today ships as a higher monthly action cap.
 
-CartQuill never operates or resells sending infrastructure. Every paid add-on connects an account you already own.
+CartQuill never operates or resells sending infrastructure — the Deliverability and Automations integrations connect accounts you already own.
 
 == External services ==
 
