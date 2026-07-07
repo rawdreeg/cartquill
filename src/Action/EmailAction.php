@@ -13,6 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
+use CartQuill\Builder\ConfigFields;
+use CartQuill\Builder\DescribesConfig;
 use CartQuill\Engine\MessageComposer;
 use CartQuill\Model\SendResult;
 use CartQuill\Sender\SenderInterface;
@@ -26,7 +28,9 @@ use CartQuill\Sender\SenderInterface;
  * It is customer-facing (suppression is checked before it runs) and records the
  * active sender's key so ESP webhooks can correlate lifecycle events back to it.
  */
-final class EmailAction implements ActionInterface {
+final class EmailAction implements ActionInterface, DescribesConfig {
+
+	use ConfigFields;
 
 	public const TYPE = 'email';
 
@@ -34,6 +38,19 @@ final class EmailAction implements ActionInterface {
 		private readonly MessageComposer $composer,
 		private readonly SenderInterface $sender,
 	) {}
+
+	/**
+	 * The subject + body the builder edits, matching the keys the step pipeline
+	 * composes from (a step's top-level subject/body, mirrored into config).
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	public static function config_fields(): array {
+		return array(
+			self::config_field( 'subject', 'Subject', 'text', array( 'required' => true, 'help' => 'The email subject line.', 'merge' => true ) ),
+			self::config_field( 'body', 'Body', 'html', array( 'required' => true, 'help' => 'The email body; HTML is allowed.', 'merge' => true ) ),
+		);
+	}
 
 	public function type(): string {
 		return self::TYPE;
