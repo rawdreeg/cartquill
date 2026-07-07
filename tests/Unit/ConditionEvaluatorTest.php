@@ -131,4 +131,42 @@ final class ConditionEvaluatorTest extends TestCase {
 			'a customer with more than one order is not first-time'
 		);
 	}
+
+	public function test_marketing_opt_in_gate(): void {
+		$step = new FlowStep( 0, '', '', array( array( 'type' => 'marketing_opt_in' ) ), 'mailchimp_sync' );
+
+		$this->assertSame(
+			ConditionEvaluator::PROCEED,
+			$this->evaluator->decide( $step, $this->enrollment( array( 'marketing_opt_in' => true ) ) )
+		);
+		$this->assertSame(
+			ConditionEvaluator::SKIP,
+			$this->evaluator->decide( $step, $this->enrollment( array( 'marketing_opt_in' => false ) ) ),
+			'a non-opted-in customer is skipped'
+		);
+		$this->assertSame(
+			ConditionEvaluator::SKIP,
+			$this->evaluator->decide( $step, $this->enrollment() ),
+			'no opt-in in context also skips'
+		);
+	}
+
+	public function test_cart_value_gt_gate(): void {
+		$step = new FlowStep( 0, 'Come back', 'body', array( array( 'type' => 'cart_value_gt', 'value' => 50 ) ) );
+
+		$this->assertSame(
+			ConditionEvaluator::PROCEED,
+			$this->evaluator->decide( $step, $this->enrollment( array( 'cart_value' => 75.0 ) ) )
+		);
+		$this->assertSame(
+			ConditionEvaluator::SKIP,
+			$this->evaluator->decide( $step, $this->enrollment( array( 'cart_value' => 40.0 ) ) ),
+			'a cart at or below the threshold skips the recovery step'
+		);
+		$this->assertSame(
+			ConditionEvaluator::SKIP,
+			$this->evaluator->decide( $step, $this->enrollment( array( 'cart_value' => 50.0 ) ) ),
+			'exactly the threshold is not greater-than'
+		);
+	}
 }

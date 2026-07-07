@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Schema {
 
 	/** Bumped whenever the DDL changes so {@see Migrator} re-applies dbDelta on update. */
-	public const VERSION = '10';
+	public const VERSION = '11';
 
 	public const OPTION_DB_VERSION = 'cartquill_db_version';
 
@@ -176,6 +176,7 @@ final class Schema {
 			customer_email VARCHAR(191) NOT NULL DEFAULT '',
 			status VARCHAR(20) NOT NULL DEFAULT 'pending',
 			updated_at DATETIME NULL,
+			cart_value DECIMAL(18,4) NOT NULL DEFAULT 0,
 			PRIMARY KEY  (id),
 			UNIQUE KEY customer_email (customer_email),
 			KEY status (status)

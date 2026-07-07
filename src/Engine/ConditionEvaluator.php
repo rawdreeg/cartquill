@@ -43,7 +43,7 @@ final class ConditionEvaluator {
 	public const EXIT    = 'exit';
 
 	/** Skip-unless-satisfied gate types. */
-	private const GATES = array( 'require_context', 'first_time_customer' );
+	private const GATES = array( 'require_context', 'first_time_customer', 'marketing_opt_in', 'cart_value_gt' );
 
 	public function __construct( private readonly CustomerActivity $activity ) {}
 
@@ -93,6 +93,15 @@ final class ConditionEvaluator {
 			// The triggering order is included in the count, so one order means
 			// this is the customer's first (matching the welcome trigger's rule).
 			return $this->activity->order_count( $enrollment->customer_email ) <= 1;
+		}
+
+		if ( 'marketing_opt_in' === $type ) {
+			return ! empty( $enrollment->context['marketing_opt_in'] );
+		}
+
+		if ( 'cart_value_gt' === $type ) {
+			$threshold = (float) ( $condition['value'] ?? 0 );
+			return (float) ( $enrollment->context['cart_value'] ?? 0 ) > $threshold;
 		}
 
 		return true;
