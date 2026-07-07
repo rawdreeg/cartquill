@@ -15,6 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use CartQuill\Action\ActionContext;
 use CartQuill\Action\ActionInterface;
+use CartQuill\Builder\ConfigFields;
+use CartQuill\Builder\DescribesConfig;
 use CartQuill\Model\SendResult;
 use CartQuill\Persistence\ConnectionStore;
 
@@ -28,7 +30,9 @@ use CartQuill\Persistence\ConnectionStore;
  * or a failed sync returns a failed result, which the engine retries and then
  * dead-letters.
  */
-final class MailchimpAction implements ActionInterface {
+final class MailchimpAction implements ActionInterface, DescribesConfig {
+
+	use ConfigFields;
 
 	public const TYPE    = 'mailchimp_sync';
 	public const SERVICE = 'mailchimp';
@@ -37,6 +41,17 @@ final class MailchimpAction implements ActionInterface {
 		private readonly ConnectionStore $connections,
 		private readonly MailchimpClient $client,
 	) {}
+
+	/**
+	 * The audience tag this action reads from the step config.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	public static function config_fields(): array {
+		return array(
+			self::config_field( 'tag', 'Tag', 'text', array( 'help' => 'The Mailchimp tag to add (drives their journey).' ) ),
+		);
+	}
 
 	public function type(): string {
 		return self::TYPE;

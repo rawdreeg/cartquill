@@ -15,6 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use CartQuill\Action\ActionContext;
 use CartQuill\Action\ActionInterface;
+use CartQuill\Builder\ConfigFields;
+use CartQuill\Builder\DescribesConfig;
 use CartQuill\Flow\Renderer;
 use CartQuill\Model\SendResult;
 use CartQuill\Persistence\ConnectionStore;
@@ -28,7 +30,9 @@ use CartQuill\Persistence\ConnectionStore;
  * (phone, tracking url, ...). A missing connection or a failed send returns a
  * failed result, which the engine retries and then dead-letters.
  */
-final class SmsAction implements ActionInterface {
+final class SmsAction implements ActionInterface, DescribesConfig {
+
+	use ConfigFields;
 
 	public const TYPE    = 'sms_send';
 	public const SERVICE = 'twilio';
@@ -38,6 +42,17 @@ final class SmsAction implements ActionInterface {
 		private readonly TwilioClient $client,
 		private readonly Renderer $renderer,
 	) {}
+
+	/**
+	 * The message template this action reads from the step config.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	public static function config_fields(): array {
+		return array(
+			self::config_field( 'text', 'Message', 'textarea', array( 'default' => 'Your order from {{ store_name }} has shipped.', 'merge' => true, 'required' => true ) ),
+		);
+	}
 
 	public function type(): string {
 		return self::TYPE;

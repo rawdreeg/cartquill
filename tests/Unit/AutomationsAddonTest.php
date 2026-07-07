@@ -12,6 +12,9 @@ namespace CartQuill\Tests\Unit;
 use Brain\Monkey;
 use Brain\Monkey\Functions;
 use CartQuill\Action\ActionRegistry;
+use CartQuill\Action\EmailAction;
+use CartQuill\Builder\CoreActionDescriptors;
+use CartQuill\Builder\CoreTriggers;
 use CartQuill\Automations\AccountCreatedTrigger;
 use CartQuill\Automations\AutomationsAddon;
 use CartQuill\Automations\MailchimpAction;
@@ -159,5 +162,38 @@ final class AutomationsAddonTest extends TestCase {
 
 		$this->assertTrue( true, 'the admin surfaces wired up without a fatal' );
 		Monkey\tearDown();
+	}
+
+	public function test_contributes_authoritative_builder_action_descriptors(): void {
+		$addon = $this->addon( new InMemoryConnectionStore(), new ArrayLicense( array( Plans::AUTOMATIONS ) ) );
+
+		$out = array();
+		foreach ( $addon->builder_action_descriptors( CoreActionDescriptors::all() ) as $descriptor ) {
+			$out[ $descriptor->type ] = $descriptor;
+		}
+
+		// The paid actions carry the fields their own classes declare...
+		$this->assertSame( SlackAction::config_fields(), $out['slack_post']->fields );
+		$this->assertSame( SmsAction::config_fields(), $out['sms_send']->fields );
+		$this->assertSame( 'twilio', $out['sms_send']->service );
+		// ...and the core email descriptor is left untouched.
+		$this->assertSame( EmailAction::config_fields(), $out['email']->fields );
+	}
+
+	public function test_contributes_triggers_with_the_context_each_captures(): void {
+		$addon = $this->addon( new InMemoryConnectionStore(), new ArrayLicense() );
+
+		$out = array();
+		foreach ( $addon->builder_triggers( CoreTriggers::all() ) as $trigger ) {
+			$out[ $trigger->type ] = $trigger;
+		}
+
+		// The shipping trigger captures phone + tracking_url — not order_id (guards
+		// the catalog against drifting from what OrderShippedTrigger actually captures).
+		$this->assertSame( array( 'phone', 'tracking_url' ), $out['shipping_update']->context_keys );
+		$this->assertContains( 'marketing_opt_in', $out['account_welcome']->context_keys );
+		$this->assertContains( 'order_total', $out['order_alert']->context_keys );
+		// Core triggers passed through untouched.
+		$this->assertArrayHasKey( 'abandoned_cart', $out );
 	}
 }

@@ -15,6 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use CartQuill\Action\ActionContext;
 use CartQuill\Action\ActionInterface;
+use CartQuill\Builder\ConfigFields;
+use CartQuill\Builder\DescribesConfig;
 use CartQuill\Flow\Renderer;
 use CartQuill\Model\SendResult;
 use CartQuill\Persistence\ConnectionStore;
@@ -28,7 +30,9 @@ use CartQuill\Persistence\ConnectionStore;
  * missing connection or a failed append returns a failed result, which the
  * engine retries and then dead-letters.
  */
-final class SheetsAction implements ActionInterface {
+final class SheetsAction implements ActionInterface, DescribesConfig {
+
+	use ConfigFields;
 
 	public const TYPE    = 'sheets_append';
 	public const SERVICE = 'sheets';
@@ -42,6 +46,17 @@ final class SheetsAction implements ActionInterface {
 		private readonly SheetsClient $client,
 		private readonly Renderer $renderer,
 	) {}
+
+	/**
+	 * The row column templates this action reads from the step config.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	public static function config_fields(): array {
+		return array(
+			self::config_field( 'columns', 'Row columns', 'list', array( 'help' => 'One template per cell, e.g. {{ order_id }}', 'merge' => true ) ),
+		);
+	}
 
 	public function type(): string {
 		return self::TYPE;
