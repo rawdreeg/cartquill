@@ -42,8 +42,13 @@ final class ConditionEvaluator {
 	public const SKIP    = 'skip';
 	public const EXIT    = 'exit';
 
-	/** Skip-unless-satisfied gate types. */
-	private const GATES = array( 'require_context', 'first_time_customer', 'marketing_opt_in', 'cart_value_gt', 'has_phone' );
+	/**
+	 * Skip-unless-satisfied gate types — the data-driven branching conditions. This
+	 * is the "conditional logic" the plan gate meters (see {@see \CartQuill\Licensing\PlanGate}):
+	 * the exit-on-conversion guard and plain delays are core drip primitives and are
+	 * deliberately excluded.
+	 */
+	public const GATES = array( 'require_context', 'first_time_customer', 'marketing_opt_in', 'cart_value_gt', 'has_phone' );
 
 	public function __construct( private readonly CustomerActivity $activity ) {}
 
