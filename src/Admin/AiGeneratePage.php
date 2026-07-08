@@ -102,7 +102,7 @@ final class AiGeneratePage {
 		}
 		$error = isset( $_GET['cartquill_ai_error'] ) ? \sanitize_text_field( \wp_unslash( $_GET['cartquill_ai_error'] ) ) : '';
 		?>
-		<div class="wrap">
+		<div class="wrap cartquill-admin">
 			<h1><?php echo \esc_html__( 'Generate a flow with AI', 'cartquill' ); ?></h1>
 			<?php if ( '' !== $error ) : ?>
 				<div class="notice notice-error"><p><?php echo \esc_html( $this->error_message( $error ) ); ?></p></div>

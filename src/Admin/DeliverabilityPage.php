@@ -131,7 +131,7 @@ final class DeliverabilityPage {
 		}
 		$notice = isset( $_GET['cartquill_notice'] ) ? \sanitize_text_field( \wp_unslash( $_GET['cartquill_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		?>
-		<div class="wrap">
+		<div class="wrap cartquill-admin">
 			<h1><?php echo \esc_html__( 'Deliverability', 'cartquill' ); ?></h1>
 			<?php $this->render_notice( $notice ); ?>
 
