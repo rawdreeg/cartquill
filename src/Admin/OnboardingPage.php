@@ -108,7 +108,7 @@ final class OnboardingPage {
 			return;
 		}
 		?>
-		<div class="wrap">
+		<div class="wrap cartquill-admin">
 			<h1><?php echo \esc_html__( 'Welcome to CartQuill', 'cartquill' ); ?></h1>
 			<p><?php echo \esc_html__( 'Two quick things and you are ready to send your first flow.', 'cartquill' ); ?></p>
 

@@ -69,7 +69,7 @@ final class ReportingPage {
 		$total          = $report->total_revenue( $rows );
 		$days           = max( 1, (int) round( AttributionTrigger::window() / DAY_IN_SECONDS ) );
 		?>
-		<div class="wrap">
+		<div class="wrap cartquill-admin">
 			<h1><?php echo \esc_html__( 'CartQuill Reporting', 'cartquill' ); ?></h1>
 
 			<p class="description">
