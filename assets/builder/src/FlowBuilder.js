@@ -3,6 +3,7 @@ import { __ } from '@wordpress/i18n';
 import { AddStepMenu } from './AddStepMenu';
 import { StepList } from './StepList';
 import { isErrorResponse } from './api';
+import { contextKeysFor } from './mergeTags';
 import { buildPayload, flowReducer, initialFlowState } from './reducer';
 
 /*
@@ -196,6 +197,7 @@ export function FlowBuilder( { api, flowId } ) {
 			<StepList
 				steps={ state.steps }
 				catalog={ catalog }
+				mergeTags={ contextKeysFor( catalog, state.type ) }
 				dispatch={ dispatch }
 			/>
 

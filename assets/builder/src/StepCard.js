@@ -9,7 +9,14 @@ import { StepEditor } from './StepEditor';
  * count) that expands into the full StepEditor, plus a delete control. The stable `_key`
  * the reducer assigns is the sortable id, so a row keeps its identity across reorders.
  */
-export function StepCard( { step, index, catalog, actionLabel, dispatch } ) {
+export function StepCard( {
+	step,
+	index,
+	catalog,
+	mergeTags,
+	actionLabel,
+	dispatch,
+} ) {
 	const [ open, setOpen ] = useState( false );
 	const {
 		attributes,
@@ -86,6 +93,7 @@ export function StepCard( { step, index, catalog, actionLabel, dispatch } ) {
 					step={ step }
 					index={ index }
 					catalog={ catalog }
+					mergeTags={ mergeTags }
 					dispatch={ dispatch }
 				/>
 			) }
