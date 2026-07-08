@@ -77,6 +77,8 @@ final class FlowLibraryPage {
 		if ( ! \current_user_can( 'manage_options' ) ) {
 			return;
 		}
+		$installed = $this->flows->all();
+		$by_type   = $this->latest_by_type( $installed );
 		?>
 		<div class="wrap">
 			<h1><?php echo \esc_html__( 'CartQuill Flows', 'cartquill' ); ?></h1>
@@ -90,7 +92,6 @@ final class FlowLibraryPage {
 					<th></th>
 				</tr></thead>
 				<tbody>
-				<?php $installed = $this->flows->all(); ?>
 				<?php if ( array() === $installed ) : ?>
 					<tr><td colspan="4"><?php echo \esc_html__( 'No flows installed yet — install one from the library below.', 'cartquill' ); ?></td></tr>
 				<?php endif; ?>
@@ -123,17 +124,47 @@ final class FlowLibraryPage {
 								</li>
 							<?php endforeach; ?>
 						</ol>
-						<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
-							<?php \wp_nonce_field( 'cartquill_install_flow' ); ?>
-							<input type="hidden" name="action" value="cartquill_install_flow" />
-							<input type="hidden" name="type" value="<?php echo \esc_attr( $template->type ); ?>" />
-							<button type="submit" class="button button-primary"><?php echo \esc_html__( 'Install', 'cartquill' ); ?></button>
-						</form>
+						<?php $existing = $by_type[ $template->type ] ?? null; ?>
+						<?php if ( null !== $existing ) : ?>
+							<p>
+								<strong style="color:#008a20">&#10003; <?php echo \esc_html__( 'Installed', 'cartquill' ); ?></strong>
+								<em>(<?php echo \esc_html( $existing->status ); ?>)</em>
+							</p>
+							<?php $this->status_button( $existing ); ?>
+							<a class="button" href="<?php echo \esc_url( \admin_url( 'admin.php?page=' . FlowBuilderPage::SLUG . '&flow=' . (int) $existing->id ) ); ?>">
+								<?php echo \esc_html__( 'Edit flow', 'cartquill' ); ?>
+							</a>
+						<?php else : ?>
+							<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
+								<?php \wp_nonce_field( 'cartquill_install_flow' ); ?>
+								<input type="hidden" name="action" value="cartquill_install_flow" />
+								<input type="hidden" name="type" value="<?php echo \esc_attr( $template->type ); ?>" />
+								<button type="submit" class="button button-primary"><?php echo \esc_html__( 'Install', 'cartquill' ); ?></button>
+							</form>
+						<?php endif; ?>
 					</div>
 				<?php endforeach; ?>
 			</div>
 		</div>
 		<?php
+	}
+
+	/**
+	 * The most recently installed flow per template type, so each library card
+	 * can offer manage actions instead of a duplicate Install.
+	 *
+	 * @param list<FlowRecord> $installed
+	 * @return array<string, FlowRecord>
+	 */
+	private function latest_by_type( array $installed ): array {
+		$by_type = array();
+		foreach ( $installed as $flow ) {
+			$current = $by_type[ $flow->type ] ?? null;
+			if ( null === $current || (int) $flow->id >= (int) $current->id ) {
+				$by_type[ $flow->type ] = $flow;
+			}
+		}
+		return $by_type;
 	}
 
 	private function status_button( FlowRecord $flow ): void {
