@@ -29,6 +29,7 @@ final class FlowRecord {
 
 	public const SOURCE_TEMPLATE = 'template';
 	public const SOURCE_AI       = 'ai';
+	public const SOURCE_BUILDER  = 'builder';
 
 	/**
 	 * @param int|null       $id     Row id (null until persisted).

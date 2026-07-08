@@ -15,8 +15,10 @@ use CartQuill\Builder\BuilderCatalog;
 use CartQuill\Builder\CoreActionDescriptors;
 use CartQuill\Builder\CoreTriggers;
 use CartQuill\Builder\FlowSerializer;
+use CartQuill\Builder\FlowValidator;
 use CartQuill\Flow\FlowStep;
 use CartQuill\Licensing\ArrayLicense;
+use CartQuill\Licensing\PlanGate;
 use CartQuill\Persistence\FlowRecord;
 use CartQuill\Persistence\InMemoryConnectionStore;
 use CartQuill\Persistence\InMemoryFlowRepository;
@@ -31,6 +33,7 @@ final class FlowBuilderControllerTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		Monkey\setUp();
+		Functions\when( '__' )->returnArg();
 	}
 
 	protected function tearDown(): void {
@@ -38,9 +41,19 @@ final class FlowBuilderControllerTest extends TestCase {
 		parent::tearDown();
 	}
 
-	private function controller( InMemoryFlowRepository $flows ): FlowBuilderController {
-		$catalog = new BuilderCatalog( new ArrayLicense(), new InMemoryConnectionStore(), CoreActionDescriptors::all(), CoreTriggers::all() );
-		return new FlowBuilderController( $flows, $catalog, new FlowSerializer() );
+	private function controller( InMemoryFlowRepository $flows, ?ArrayLicense $license = null ): FlowBuilderController {
+		$license = $license ?? new ArrayLicense();
+		$catalog = new BuilderCatalog( $license, new InMemoryConnectionStore(), CoreActionDescriptors::all(), CoreTriggers::all() );
+		return new FlowBuilderController( $flows, $catalog, new FlowSerializer(), new FlowValidator( $catalog ), new PlanGate( $license, $flows ) );
+	}
+
+	private function email_payload( string $name, string $status ): array {
+		return array(
+			'name'   => $name,
+			'type'   => 'welcome',
+			'status' => $status,
+			'steps'  => array( array( 'delay' => 0, 'action' => 'email', 'config' => array( 'subject' => 'Hi', 'body' => 'Body' ), 'conditions' => array() ) ),
+		);
 	}
 
 	private function seeded(): InMemoryFlowRepository {
@@ -79,7 +92,7 @@ final class FlowBuilderControllerTest extends TestCase {
 		$this->assertNull( $this->controller( new InMemoryFlowRepository() )->flow_data( 999 ) );
 	}
 
-	public function test_registers_three_get_routes_under_the_namespace(): void {
+	public function test_registers_read_and_write_routes_under_the_namespace(): void {
 		$routes = array();
 		Functions\when( 'register_rest_route' )->alias(
 			static function ( $namespace, $route, $args ) use ( &$routes ) {
@@ -90,17 +103,114 @@ final class FlowBuilderControllerTest extends TestCase {
 
 		$this->controller( new InMemoryFlowRepository() )->register_routes();
 
-		$this->assertCount( 3, $routes );
+		// GET /catalog, GET /flows, POST /flows, GET /flows/{id}, PUT /flows/{id}.
+		$this->assertCount( 5, $routes );
+		$methods = array();
 		foreach ( $routes as $route ) {
 			$this->assertSame( FlowBuilderController::NAMESPACE, $route[0] );
-			$this->assertSame( 'GET', $route[2]['methods'] );
 			$this->assertIsCallable( $route[2]['permission_callback'] );
+			$methods[] = $route[2]['methods'];
 		}
+		sort( $methods );
+		$this->assertSame( array( 'GET', 'GET', 'GET', 'POST', 'PUT' ), $methods );
 	}
 
 	public function test_permission_requires_manage_options(): void {
 		Functions\when( 'current_user_can' )->alias( static fn( $cap ) => 'manage_options' === $cap );
 
 		$this->assertTrue( $this->controller( new InMemoryFlowRepository() )->can_manage() );
+	}
+
+	public function test_create_flow_persists_and_returns_it(): void {
+		$flows  = new InMemoryFlowRepository();
+		$result = $this->controller( $flows )->create_flow( $this->email_payload( 'Welcome', 'active' ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame( 'Welcome', $result['flow']['name'] );
+		$this->assertSame( '', $result['plan_blocked'] );
+		$this->assertNotNull( $result['flow']['id'] );
+		$this->assertCount( 1, $flows->all(), 'the flow was persisted' );
+		$this->assertSame( FlowRecord::SOURCE_BUILDER, $flows->find( $result['flow']['id'] )->source );
+	}
+
+	public function test_create_flow_rejects_an_invalid_payload_without_saving(): void {
+		$flows  = new InMemoryFlowRepository();
+		$result = $this->controller( $flows )->create_flow( array( 'name' => '', 'type' => 'welcome', 'status' => 'draft', 'steps' => array() ) );
+
+		$this->assertSame( 400, $result['status'] );
+		$this->assertNotEmpty( $result['errors'] );
+		$this->assertCount( 0, $flows->all(), 'nothing is saved on a validation error' );
+	}
+
+	public function test_update_flow_saves_changes(): void {
+		$flows = new InMemoryFlowRepository();
+		$saved = $flows->save( new FlowRecord( null, 'Old', 'welcome', FlowRecord::STATUS_DRAFT, FlowRecord::SOURCE_TEMPLATE, array() ) );
+
+		$result = $this->controller( $flows )->update_flow( $saved->id, $this->email_payload( 'New name', 'draft' ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame( 'New name', $flows->find( $saved->id )->name );
+		$this->assertSame( FlowRecord::SOURCE_TEMPLATE, $flows->find( $saved->id )->source, 'the source is preserved on update' );
+	}
+
+	public function test_update_flow_is_404_for_an_unknown_id(): void {
+		$result = $this->controller( new InMemoryFlowRepository() )->update_flow( 999, $this->email_payload( 'X', 'draft' ) );
+
+		$this->assertSame( 404, $result['status'] );
+	}
+
+	public function test_update_preserves_the_original_created_at(): void {
+		$flows = new InMemoryFlowRepository();
+		$saved = $flows->save( new FlowRecord( null, 'Old', 'welcome', FlowRecord::STATUS_DRAFT, FlowRecord::SOURCE_BUILDER, array(), '2020-01-02 03:04:05' ) );
+
+		$this->controller( $flows )->update_flow( $saved->id, $this->email_payload( 'New', 'draft' ) );
+
+		$this->assertSame( '2020-01-02 03:04:05', $flows->find( $saved->id )->created_at, 'the creation timestamp survives an edit' );
+	}
+
+	public function test_sanitize_payload_applies_field_type_aware_sanitizers(): void {
+		Functions\when( 'sanitize_text_field' )->alias( static fn( $s ) => 'T:' . $s );
+		Functions\when( 'sanitize_textarea_field' )->alias( static fn( $s ) => 'A:' . $s );
+		Functions\when( 'wp_kses_post' )->alias( static fn( $s ) => 'K:' . $s );
+
+		$payload = array(
+			'name'   => 'Hi',
+			'type'   => 'welcome',
+			'status' => 'draft',
+			'steps'  => array(
+				array( 'action' => 'email', 'config' => array( 'subject' => 's', 'body' => '<b>b</b>' ), 'conditions' => array() ),
+				array( 'action' => 'slack_post', 'config' => array( 'channel' => '#o', 'text' => "l1\nl2" ), 'conditions' => array() ),
+			),
+		);
+
+		$clean = $this->controller( new InMemoryFlowRepository() )->sanitize_payload( $payload );
+
+		$this->assertSame( 'T:Hi', $clean['name'] );
+		$this->assertSame( 'T:s', $clean['steps'][0]['config']['subject'], 'text field' );
+		$this->assertSame( 'K:<b>b</b>', $clean['steps'][0]['config']['body'], 'email body is HTML → wp_kses_post' );
+		$this->assertSame( 'T:#o', $clean['steps'][1]['config']['channel'], 'text field' );
+		$this->assertSame( "A:l1\nl2", $clean['steps'][1]['config']['text'], 'textarea preserves newlines' );
+	}
+
+	public function test_activating_conditional_logic_without_the_entitlement_is_kept_out_of_active(): void {
+		// A free license lacks the conditional-logic entitlement.
+		$flows   = new InMemoryFlowRepository();
+		$payload = array(
+			'name'   => 'Gated',
+			'type'   => 'welcome',
+			'status' => 'active',
+			'steps'  => array( array(
+				'delay'      => 0,
+				'action'     => 'email',
+				'config'     => array( 'subject' => 'Hi', 'body' => 'Body' ),
+				'conditions' => array( array( 'type' => 'cart_value_gt', 'value' => 50 ) ),
+			) ),
+		);
+
+		$result = $this->controller( $flows )->create_flow( $payload );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame( PlanGate::REASON_CONDITIONAL_LOGIC, $result['plan_blocked'] );
+		$this->assertSame( FlowRecord::STATUS_DRAFT, $result['flow']['status'], 'kept out of active, edits preserved' );
 	}
 }
