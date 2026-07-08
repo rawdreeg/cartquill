@@ -31,6 +31,7 @@ use CartQuill\Security\InstallKey;
 use CartQuill\Security\SodiumCrypto;
 use CartQuill\Builder\CatalogFactory;
 use CartQuill\Builder\FlowSerializer;
+use CartQuill\Builder\FlowValidator;
 use CartQuill\Persistence\EncryptedCredentials;
 use CartQuill\Persistence\WpdbConnectionStore;
 use CartQuill\Rest\FlowBuilderController;
@@ -226,7 +227,14 @@ final class Plugin {
 		\add_action(
 			'rest_api_init',
 			static function () use ( $flows, $license, $connections ): void {
-				( new FlowBuilderController( $flows, CatalogFactory::create( $license, $connections ), new FlowSerializer() ) )->register_routes();
+				$catalog = CatalogFactory::create( $license, $connections );
+				( new FlowBuilderController(
+					$flows,
+					$catalog,
+					new FlowSerializer(),
+					new FlowValidator( $catalog ),
+					new PlanGate( $license, $flows )
+				) )->register_routes();
 			}
 		);
 
