@@ -29,7 +29,7 @@ function planBlockedMessage( reason ) {
 	return __( 'The flow was saved but not activated.', 'cartquill' );
 }
 
-export function FlowBuilder( { api, flowId } ) {
+export function FlowBuilder( { api, flowId, features = {} } ) {
 	const [ catalog, setCatalog ] = useState( null );
 	const [ phase, setPhase ] = useState( 'loading' );
 	const [ state, dispatch ] = useReducer( flowReducer, null, () =>
@@ -198,6 +198,8 @@ export function FlowBuilder( { api, flowId } ) {
 				steps={ state.steps }
 				catalog={ catalog }
 				mergeTags={ contextKeysFor( catalog, state.type ) }
+				api={ api }
+				aiRewrite={ !! features.aiRewrite }
 				dispatch={ dispatch }
 			/>
 
