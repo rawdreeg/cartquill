@@ -6,13 +6,16 @@ import {
 	linesToArray,
 	numberToText,
 } from './fields';
+import { insertIntoList, insertIntoText } from './mergeTags';
+import { MergeTagPicker } from './MergeTagPicker';
 
 /*
  * One descriptor-driven form control. It renders the right input for an action field
  * or a condition param straight from its catalog descriptor — text, textarea/html,
  * number, a fixed-option select, or a newline-per-item list (the Sheets row columns) —
  * and reports edits through onChange. Because the shape is uniform, a new channel needs
- * no bespoke form. Merge-tag insertion (5c) layers on top of the text-like controls.
+ * no bespoke form. A field that `supports_merge_tags` also gets a MergeTagPicker fed by
+ * the flow's trigger context keys.
  *
  * The list and number controls keep a local text buffer so the displayed text can
  * differ from the stored value: the list stores a clean array (no empty entries) while
@@ -70,8 +73,22 @@ function NumberField( { id, value, onChange } ) {
 	);
 }
 
-export function FieldControl( { field, value, onChange, idPrefix = '' } ) {
+export function FieldControl( {
+	field,
+	value,
+	onChange,
+	idPrefix = '',
+	mergeTags = [],
+} ) {
 	const id = `${ idPrefix }-${ field.key }`;
+	const showMergeTags = field.supports_merge_tags && mergeTags.length > 0;
+	const insertTag = ( key ) => {
+		onChange(
+			'list' === controlType( field )
+				? insertIntoList( value, key )
+				: insertIntoText( value ?? '', key )
+		);
+	};
 
 	let control;
 	switch ( controlType( field ) ) {
@@ -129,6 +146,9 @@ export function FieldControl( { field, value, onChange, idPrefix = '' } ) {
 				) }
 			</label>
 			{ control }
+			{ showMergeTags && (
+				<MergeTagPicker tags={ mergeTags } onInsert={ insertTag } />
+			) }
 			{ field.help && (
 				<p className="cartquill-builder__help">{ field.help }</p>
 			) }
