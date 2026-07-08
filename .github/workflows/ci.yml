@@ -93,6 +93,7 @@ jobs:
           fi
           test -f build/cartquill/vendor/autoload.php || { echo "::error::built package is missing vendor/autoload.php"; exit 1; }
           test -f build/cartquill/assets/builder/build/index.js || { echo "::error::built package is missing the compiled flow builder bundle"; exit 1; }
+          test -f build/cartquill/assets/builder/build/style-index.css || { echo "::error::built package is missing the compiled flow builder stylesheet"; exit 1; }
 
       - name: Build premium package
         run: bash bin/build.sh premium

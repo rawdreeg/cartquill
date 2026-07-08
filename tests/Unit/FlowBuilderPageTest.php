@@ -42,6 +42,8 @@ final class FlowBuilderPageTest extends TestCase {
 
 	public function test_enqueue_registers_the_bundle_and_localizes_rest_config(): void {
 		$enqueued  = array();
+		$styles    = array();
+		$rtl       = array();
 		$localized = array();
 
 		Functions\when( '__' )->returnArg();
@@ -56,6 +58,16 @@ final class FlowBuilderPageTest extends TestCase {
 				$enqueued = $args;
 			}
 		);
+		Functions\when( 'wp_enqueue_style' )->alias(
+			static function ( ...$args ) use ( &$styles ) {
+				$styles = $args;
+			}
+		);
+		Functions\when( 'wp_style_add_data' )->alias(
+			static function ( ...$args ) use ( &$rtl ) {
+				$rtl = $args;
+			}
+		);
 		Functions\when( 'wp_localize_script' )->alias(
 			static function ( $handle, $name, $data ) use ( &$localized ) {
 				$localized = compact( 'handle', 'name', 'data' );
@@ -67,6 +79,10 @@ final class FlowBuilderPageTest extends TestCase {
 		$this->assertSame( 'cartquill-flow-builder', $enqueued[0], 'the script handle' );
 		$this->assertStringContainsString( 'assets/builder/build/index.js', $enqueued[1], 'the compiled bundle' );
 		$this->assertSame( array(), $enqueued[2], 'no built manifest in a source checkout → empty deps' );
+
+		$this->assertSame( 'cartquill-flow-builder-style', $styles[0], 'the style handle' );
+		$this->assertStringContainsString( 'assets/builder/build/style-index.css', $styles[1], 'the compiled stylesheet' );
+		$this->assertSame( array( 'cartquill-flow-builder-style', 'rtl', 'replace' ), $rtl, 'the -rtl variant is wired' );
 
 		$this->assertSame( 'cartquillBuilder', $localized['name'] );
 		$this->assertSame( 'https://example.test/wp-json/', $localized['data']['root'] );

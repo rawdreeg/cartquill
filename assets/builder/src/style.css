@@ -1,0 +1,423 @@
+/**
+ * Flow builder styles.
+ *
+ * The builder mounts inside .wrap.cartquill-admin, so it inherits the admin
+ * brand tokens; they are re-declared here as fallbacks so the builder still
+ * looks right on its own. Everything is scoped under .cartquill-builder.
+ */
+
+.cartquill-builder {
+	--cq-brand: #4d65f1;
+	--cq-brand-dark: #3a4fd8;
+	--cq-brand-tint: #eef0fe;
+	--cq-ink: #1e1e2f;
+	--cq-muted: #646970;
+	--cq-border: #dcdcde;
+	--cq-surface: #fff;
+	--cq-inset: #f6f7f9;
+	--cq-green: #008a20;
+	--cq-amber: #996800;
+	--cq-radius: 10px;
+
+	max-width: 780px;
+	margin-top: 8px;
+	color: var(--cq-ink);
+}
+
+/* ---- Header: flow name + status ---- */
+
+.cartquill-builder__header {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 20px;
+	padding: 20px;
+	margin-bottom: 20px;
+	background: var(--cq-surface);
+	border: 1px solid var(--cq-border);
+	border-radius: var(--cq-radius);
+	box-shadow: 0 1px 2px rgba(30, 30, 47, 0.05);
+}
+
+.cartquill-builder__header .cartquill-builder__field:first-child {
+	flex: 1 1 320px;
+}
+
+.cartquill-builder__field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 16px;
+}
+
+.cartquill-builder__field:last-child {
+	margin-bottom: 0;
+}
+
+.cartquill-builder__field label {
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.cartquill-builder__field input[type="text"],
+.cartquill-builder__field input[type="number"],
+.cartquill-builder__field textarea,
+.cartquill-builder__field select,
+.cartquill-builder__header input,
+.cartquill-builder__header select {
+	width: 100%;
+	max-width: 100%;
+	border: 1px solid var(--cq-border);
+	border-radius: 6px;
+	padding: 7px 10px;
+	font-size: 14px;
+	background: var(--cq-surface);
+}
+
+.cartquill-builder__field textarea {
+	min-height: 96px;
+	resize: vertical;
+	font-family: inherit;
+}
+
+.cartquill-builder__field input:focus,
+.cartquill-builder__field textarea:focus,
+.cartquill-builder__field select:focus,
+.cartquill-builder__header input:focus,
+.cartquill-builder__header select:focus {
+	border-color: var(--cq-brand);
+	box-shadow: 0 0 0 1px var(--cq-brand);
+	outline: 2px solid transparent;
+}
+
+.cartquill-builder__required {
+	color: #d63638;
+}
+
+.cartquill-builder__help {
+	margin: 0;
+	font-size: 12px;
+	color: var(--cq-muted);
+}
+
+.cartquill-builder__merge-picker {
+	max-width: 220px;
+	font-size: 12px;
+}
+
+/* ---- Step list: a linear, connected sequence ---- */
+
+.cartquill-builder__steps {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.cartquill-builder__step {
+	position: relative;
+	margin: 0 0 16px;
+	background: var(--cq-surface);
+	border: 1px solid var(--cq-border);
+	border-radius: var(--cq-radius);
+	box-shadow: 0 1px 2px rgba(30, 30, 47, 0.05);
+	transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.cartquill-builder__step:hover {
+	box-shadow: 0 4px 14px rgba(30, 30, 47, 0.09);
+}
+
+/* The connector line that makes the list read as an ordered flow. */
+.cartquill-builder__step + .cartquill-builder__step::before {
+	content: "";
+	position: absolute;
+	top: -16px;
+	left: 39px;
+	width: 2px;
+	height: 16px;
+	background: var(--cq-border);
+}
+
+.cartquill-builder__step-head {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 16px;
+}
+
+.cartquill-builder__drag-handle {
+	flex: 0 0 auto;
+	border: 0;
+	background: transparent;
+	color: #b5b8bd;
+	font-size: 18px;
+	line-height: 1;
+	cursor: grab;
+	padding: 4px;
+	border-radius: 4px;
+}
+
+.cartquill-builder__drag-handle:hover {
+	color: var(--cq-brand);
+	background: var(--cq-brand-tint);
+}
+
+.cartquill-builder__drag-handle:active {
+	cursor: grabbing;
+}
+
+.cartquill-builder__step-index {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	background: var(--cq-brand);
+	color: #fff;
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.cartquill-builder__step-toggle {
+	flex: 1 1 auto;
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	border: 0;
+	background: transparent;
+	text-align: left;
+	cursor: pointer;
+	padding: 4px 0;
+	font-size: 14px;
+	color: var(--cq-ink);
+}
+
+.cartquill-builder__step-toggle:hover .cartquill-builder__step-action {
+	color: var(--cq-brand);
+}
+
+.cartquill-builder__step-action {
+	font-weight: 600;
+}
+
+.cartquill-builder__step-delay,
+.cartquill-builder__step-gates {
+	font-size: 12px;
+	color: var(--cq-muted);
+	background: var(--cq-inset);
+	border-radius: 999px;
+	padding: 1px 8px;
+}
+
+.cartquill-builder__step-head .button-link-delete {
+	flex: 0 0 auto;
+	color: #b32d2e;
+	text-decoration: none;
+}
+
+.cartquill-builder__step-head .button-link-delete:hover {
+	color: #d63638;
+	text-decoration: underline;
+}
+
+/* ---- Expanded step editor ---- */
+
+.cartquill-builder__editor {
+	padding: 4px 20px 20px 54px;
+	border-top: 1px solid var(--cq-border);
+	margin-top: 2px;
+}
+
+.cartquill-builder__editor > .cartquill-builder__field:first-child {
+	padding-top: 16px;
+}
+
+/* ---- AI rewrite ---- */
+
+.cartquill-builder__ai {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 8px;
+	padding: 14px;
+	margin: 8px 0 16px;
+	background: var(--cq-brand-tint);
+	border: 1px solid #d7ddfb;
+	border-radius: 8px;
+}
+
+.cartquill-builder__ai label {
+	flex: 1 1 100%;
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.cartquill-builder__ai input {
+	flex: 1 1 240px;
+	border: 1px solid var(--cq-border);
+	border-radius: 6px;
+	padding: 7px 10px;
+}
+
+.cartquill-builder__error {
+	color: #d63638;
+	font-size: 13px;
+	margin: 8px 0 0;
+}
+
+/* ---- Gates ---- */
+
+.cartquill-builder__gates {
+	margin-top: 12px;
+	padding: 16px;
+	background: var(--cq-inset);
+	border: 1px solid var(--cq-border);
+	border-radius: 8px;
+}
+
+.cartquill-builder__gates h4 {
+	margin: 0 0 10px;
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--cq-muted);
+}
+
+.cartquill-builder__muted {
+	color: var(--cq-muted);
+	font-size: 13px;
+	margin: 0 0 10px;
+}
+
+.cartquill-builder__gate-list {
+	list-style: none;
+	margin: 0 0 12px;
+	padding: 0;
+}
+
+.cartquill-builder__gate {
+	background: var(--cq-surface);
+	border: 1px solid var(--cq-border);
+	border-radius: 6px;
+	padding: 12px;
+	margin-bottom: 8px;
+}
+
+.cartquill-builder__gate-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	font-weight: 600;
+}
+
+.cartquill-builder__add-gate {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+/* ---- Add step ---- */
+
+.cartquill-builder__add {
+	margin: 4px 0 24px;
+}
+
+.cartquill-builder__add > .button {
+	border-style: dashed;
+	border-color: var(--cq-brand);
+	color: var(--cq-brand);
+	background: var(--cq-surface);
+	padding: 6px 16px;
+	height: auto;
+}
+
+.cartquill-builder__add > .button:hover {
+	background: var(--cq-brand-tint);
+	color: var(--cq-brand-dark);
+}
+
+.cartquill-builder__add-menu {
+	background: var(--cq-surface);
+	border: 1px solid var(--cq-border);
+	border-radius: var(--cq-radius);
+	box-shadow: 0 4px 14px rgba(30, 30, 47, 0.1);
+	padding: 12px;
+	max-width: 360px;
+}
+
+.cartquill-builder__add-menu ul {
+	list-style: none;
+	margin: 0 0 8px;
+	padding: 0;
+	display: grid;
+	gap: 8px;
+}
+
+.cartquill-builder__add-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+}
+
+.cartquill-builder__add-item .button {
+	flex: 0 0 auto;
+}
+
+.cartquill-builder__lock {
+	font-size: 12px;
+	color: var(--cq-amber);
+	background: #fcf9e8;
+	border-radius: 999px;
+	padding: 1px 8px;
+}
+
+/* ---- Empty state ---- */
+
+.cartquill-builder__empty {
+	padding: 28px;
+	text-align: center;
+	color: var(--cq-muted);
+	background: var(--cq-inset);
+	border: 1px dashed var(--cq-border);
+	border-radius: var(--cq-radius);
+}
+
+/* ---- Save bar ---- */
+
+.cartquill-builder__actions {
+	position: sticky;
+	bottom: 0;
+	display: flex;
+	justify-content: flex-end;
+	gap: 12px;
+	padding: 16px 0;
+	margin-top: 8px;
+	background: linear-gradient(
+		to top,
+		var(--cq-inset, #f0f0f1) 60%,
+		rgba(240, 240, 241, 0)
+	);
+}
+
+.cartquill-builder__actions .button-primary {
+	background: var(--cq-brand);
+	border-color: var(--cq-brand-dark);
+	padding: 4px 22px;
+	height: auto;
+	font-size: 14px;
+}
+
+.cartquill-builder__actions .button-primary:hover:not(:disabled) {
+	background: var(--cq-brand-dark);
+	border-color: var(--cq-brand-dark);
+}
+
+/* ---- Notices inside the builder ---- */
+
+.cartquill-builder > .notice {
+	margin: 0 0 16px;
+}
