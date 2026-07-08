@@ -18,4 +18,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', dirname( __DIR__ ) . '/' );
 }
 
+// A few classes reference WordPress time constants in default values evaluated at
+// class-load (e.g. AiAddon's rate-limit window), so the DB-free suite can autoload
+// them.
+if ( ! defined( 'DAY_IN_SECONDS' ) ) {
+	define( 'DAY_IN_SECONDS', 86400 );
+}
+
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
