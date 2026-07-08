@@ -1,0 +1,16 @@
+{
+  "name": "cartquill-builder",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Front-end build for the CartQuill flow builder.",
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "build": "wp-scripts build",
+    "start": "wp-scripts start",
+    "lint:js": "wp-scripts lint-js assets/builder/src",
+    "test:js": "wp-scripts test-unit-js"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^27.9.0"
+  }
+}

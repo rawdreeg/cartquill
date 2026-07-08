@@ -11,14 +11,20 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD="$ROOT/build"
 STAGE="$BUILD/cartquill"
 
-for tool in composer rsync zip; do
+for tool in composer rsync zip npm; do
 	command -v "$tool" >/dev/null 2>&1 || { echo "error: '$tool' is required" >&2; exit 1; }
 done
+
+echo "==> Building the flow builder front-end"
+npm --prefix "$ROOT" ci
+npm --prefix "$ROOT" run build
 
 echo "==> Staging into $STAGE"
 rm -rf "${BUILD:?}"
 mkdir -p "$STAGE"
-rsync -a --exclude='.git' --exclude='vendor' --exclude='build' --exclude='dist' "$ROOT/" "$STAGE/"
+# Anchor build/ and dist/ to the root so the nested compiled bundle
+# (assets/builder/build) still ships; exclude node_modules entirely.
+rsync -a --exclude='.git' --exclude='vendor' --exclude='node_modules' --exclude='/build' --exclude='/dist' "$ROOT/" "$STAGE/"
 
 echo "==> Removing non-shipping files listed in .distignore"
 while IFS= read -r pattern || [ -n "$pattern" ]; do
@@ -33,6 +39,9 @@ done < "$ROOT/.distignore"
 
 echo "==> Scrubbing nested OS junk"
 find "$STAGE" -name '.DS_Store' -delete
+
+echo "==> Scrubbing JS test files (source ships, tests do not)"
+find "$STAGE" -name '*.test.js' -delete
 
 echo "==> Installing production dependencies"
 composer install --no-dev --optimize-autoloader --no-interaction --working-dir="$STAGE"

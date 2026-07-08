@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
+use CartQuill\Admin\FlowBuilderPage;
 use CartQuill\Admin\FlowEditorPage;
 use CartQuill\Admin\FlowLibraryPage;
 use CartQuill\Admin\LicensePage;
@@ -215,6 +216,7 @@ final class Plugin {
 
 		( new FlowLibraryPage( $library, new FlowInstaller( $library, $flows ), $flows ) )->register();
 		( new FlowEditorPage( $flows, new FlowEditor(), new PlanGate( $license, $flows ) ) )->register();
+		( new FlowBuilderPage() )->register();
 
 		( new AttributionTrigger( new Attributor( $messages, $attributions ) ) )->register();
 		( new ReportingPage( $flows, $messages, $attributions, $license ) )->register();

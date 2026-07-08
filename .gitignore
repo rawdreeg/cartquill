@@ -6,6 +6,8 @@
 *.zip
 /dist/
 /build/
+# Compiled flow-builder bundle (built at package time, like vendor/).
+/assets/builder/build/
 
 # WordPress / PHP
 *.log
