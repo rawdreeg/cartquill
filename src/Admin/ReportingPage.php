@@ -67,10 +67,32 @@ final class ReportingPage {
 			$deliverability ? $this->messages->delivery_stats_by_flow() : array()
 		);
 		$total          = $report->total_revenue( $rows );
+		$totals         = $report->totals( $rows );
 		$days           = max( 1, (int) round( AttributionTrigger::window() / DAY_IN_SECONDS ) );
 		?>
 		<div class="wrap cartquill-admin">
 			<h1><?php echo \esc_html__( 'CartQuill Reporting', 'cartquill' ); ?></h1>
+
+			<div class="cartquill-stats">
+				<div class="cartquill-stat cartquill-stat--primary">
+					<div class="cartquill-stat__value"><?php echo \wp_kses_post( $this->money( $total ) ); ?></div>
+					<div class="cartquill-stat__label"><?php echo \esc_html__( 'Revenue attributed', 'cartquill' ); ?></div>
+				</div>
+				<div class="cartquill-stat">
+					<div class="cartquill-stat__value"><?php echo \esc_html( \number_format_i18n( $totals['sent'] ) ); ?></div>
+					<div class="cartquill-stat__label"><?php echo \esc_html__( 'Emails sent', 'cartquill' ); ?></div>
+				</div>
+				<div class="cartquill-stat">
+					<div class="cartquill-stat__value"><?php echo \esc_html( \number_format_i18n( $totals['opened'] ) ); ?></div>
+					<div class="cartquill-stat__label"><?php echo \esc_html__( 'Opens', 'cartquill' ); ?></div>
+					<div class="cartquill-stat__sub"><?php echo \esc_html( $this->rate( $totals['opened'], $totals['sent'] ) ); ?></div>
+				</div>
+				<div class="cartquill-stat">
+					<div class="cartquill-stat__value"><?php echo \esc_html( \number_format_i18n( $totals['clicked'] ) ); ?></div>
+					<div class="cartquill-stat__label"><?php echo \esc_html__( 'Clicks', 'cartquill' ); ?></div>
+					<div class="cartquill-stat__sub"><?php echo \esc_html( $this->rate( $totals['clicked'], $totals['sent'] ) ); ?></div>
+				</div>
+			</div>
 
 			<p class="description">
 				<?php
@@ -154,5 +176,20 @@ final class ReportingPage {
 			return \wc_price( $amount );
 		}
 		return \esc_html( number_format_i18n( $amount, 2 ) );
+	}
+
+	/**
+	 * A rate like "40% of sent" for the open/click stat cards; empty while
+	 * nothing has been sent, so a fresh store shows no misleading 0%.
+	 */
+	private function rate( int $part, int $whole ): string {
+		if ( $whole <= 0 ) {
+			return '';
+		}
+		return sprintf(
+			/* translators: %s: percentage of sent emails, e.g. "40%". */
+			\__( '%s of sent', 'cartquill' ),
+			\number_format_i18n( ( $part / $whole ) * 100, 1 ) . '%'
+		);
 	}
 }
