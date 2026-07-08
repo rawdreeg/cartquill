@@ -91,6 +91,39 @@ final class FlowReportTest extends TestCase {
 		$this->assertSame( 0, $rows[0]->complained );
 	}
 
+	public function test_totals_sums_every_metric_across_rows(): void {
+		$flows    = array( $this->flow( 1, 'Welcome' ), $this->flow( 2, 'Win-back' ) );
+		$stats    = array(
+			1 => array( 'sent' => 10, 'opened' => 4, 'clicked' => 2 ),
+			2 => array( 'sent' => 5, 'opened' => 1, 'clicked' => 0 ),
+		);
+		$revenue  = array( 1 => 150.0, 2 => 30.0 );
+		$delivery = array(
+			1 => array( 'delivered' => 9, 'bounced' => 1, 'complained' => 0 ),
+			2 => array( 'delivered' => 4, 'bounced' => 1, 'complained' => 1 ),
+		);
+
+		$report = new FlowReport();
+		$totals = $report->totals( $report->build( $flows, $stats, $revenue, $delivery ) );
+
+		$this->assertSame( 15, $totals['sent'] );
+		$this->assertSame( 5, $totals['opened'] );
+		$this->assertSame( 2, $totals['clicked'] );
+		$this->assertSame( 180.0, $totals['revenue'] );
+		$this->assertSame( 13, $totals['delivered'] );
+		$this->assertSame( 2, $totals['bounced'] );
+		$this->assertSame( 1, $totals['complained'] );
+	}
+
+	public function test_totals_are_zero_for_no_rows(): void {
+		$totals = ( new FlowReport() )->totals( array() );
+
+		$this->assertSame( 0, $totals['sent'] );
+		$this->assertSame( 0, $totals['opened'] );
+		$this->assertSame( 0, $totals['clicked'] );
+		$this->assertSame( 0.0, $totals['revenue'] );
+	}
+
 	private function record( InMemoryMessageRepository $repo, int $flow_id, string $status ): void {
 		static $enrollment = 0;
 		++$enrollment;
