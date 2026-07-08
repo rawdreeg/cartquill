@@ -73,6 +73,26 @@
 	font-weight: 600;
 }
 
+/* ---- Settings panel (a card around form-table screens) ---- */
+
+.cartquill-panel {
+	max-width: 760px;
+	margin: 16px 0 24px;
+	padding: 4px 24px 16px;
+	background: #fff;
+	border: 1px solid var(--cq-border);
+	border-radius: 10px;
+	box-shadow: 0 1px 2px rgba(30, 30, 47, 0.05);
+}
+
+.cartquill-panel > h2:first-child {
+	margin-top: 16px;
+}
+
+.cartquill-panel .form-table th {
+	padding-left: 0;
+}
+
 /* ---- Onboarding (first-run welcome) ---- */
 
 .cartquill-onboard__lead {

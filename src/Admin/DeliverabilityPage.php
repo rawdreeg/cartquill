@@ -140,6 +140,7 @@ final class DeliverabilityPage {
 			<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
 				<?php \wp_nonce_field( 'cartquill_save_esp' ); ?>
 				<input type="hidden" name="action" value="cartquill_save_esp" />
+				<div class="cartquill-panel">
 				<table class="form-table">
 					<tr>
 						<th scope="row"><label for="ff-esp-key"><?php echo \esc_html__( 'Resend API key', 'cartquill' ); ?></label></th>
@@ -165,6 +166,7 @@ final class DeliverabilityPage {
 						</td>
 					</tr>
 				</table>
+				</div>
 				<?php \submit_button( \__( 'Save connection', 'cartquill' ) ); ?>
 			</form>
 
