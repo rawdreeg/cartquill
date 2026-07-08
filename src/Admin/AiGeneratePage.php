@@ -132,6 +132,7 @@ final class AiGeneratePage {
 			<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
 				<?php \wp_nonce_field( 'cartquill_ai_generate' ); ?>
 				<input type="hidden" name="action" value="cartquill_ai_generate" />
+				<div class="cartquill-panel">
 				<table class="form-table">
 					<tr>
 						<th scope="row"><label for="cartquill-ai-type"><?php echo \esc_html__( 'Flow type', 'cartquill' ); ?></label></th>
@@ -156,6 +157,7 @@ final class AiGeneratePage {
 						</label>
 					</p>
 				<?php endif; ?>
+				</div>
 				<p class="submit"><button type="submit" class="button button-primary"><?php echo \esc_html__( 'Generate draft', 'cartquill' ); ?></button></p>
 			</form>
 		</div>

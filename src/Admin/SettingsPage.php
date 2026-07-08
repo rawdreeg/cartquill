@@ -80,6 +80,7 @@ final class SettingsPage {
 			<h1><?php echo \esc_html__( 'CartQuill Settings', 'cartquill' ); ?></h1>
 			<form action="options.php" method="post">
 				<?php \settings_fields( self::OPTION_GROUP ); ?>
+				<div class="cartquill-panel">
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row">
@@ -128,6 +129,7 @@ final class SettingsPage {
 						</td>
 					</tr>
 				</table>
+				</div>
 				<?php \submit_button(); ?>
 			</form>
 		</div>
