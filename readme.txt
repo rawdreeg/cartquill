@@ -16,7 +16,7 @@ CartQuill is a standalone WooCommerce automation plugin for store owners who wan
 
 The **free core**:
 
-* Install ready-made flows — welcome, post-purchase, abandoned cart, and win-back — from a built-in library, or build your own in a simple editor.
+* Install ready-made flows — welcome, post-purchase, abandoned cart, and win-back — from a built-in library, or build your own in a drag-and-drop step builder: an ordered list of step cards you reorder by dragging, each with its own copy, delay, and optional condition gates.
 * Send through WordPress' own `wp_mail()`. No third-party sending account required to get started.
 * Self-hosted open and click tracking (no external pixel service).
 * Last-touch revenue attribution: every flow shows the order revenue it drove, inside a configurable attribution window.
@@ -25,7 +25,7 @@ The **free core**:
 A **paid subscription** — Starter, Growth, or Agency — unlocks CartQuill's premium capabilities. There is no separate per-feature license key: one subscription unlocks everything its tier includes, and higher tiers unlock more.
 
 * **Automations** (all paid tiers) — turn a WooCommerce event into a no-code multi-tool "recipe": *when* it fires, *if* a condition holds, *do* one or more actions across Slack, Google Sheets, Mailchimp, and Twilio SMS (plus email). Each tool connects *your own* account. Usage is metered by actions per month, with a higher cap on each tier.
-* **AI Flow Generation** (Growth and up) — draft a whole flow, or rewrite a single step, from a short prompt. Generated copy always opens in the editor for your review; nothing is ever sent to customers automatically.
+* **AI Flow Generation** (Growth and up) — draft a whole flow, or rewrite a single step, from a short prompt. Generated copy always opens in the builder for your review; nothing is ever sent to customers automatically.
 * **Deliverability** (Agency) — connect *your own* Resend account to send at scale, run a guided sending-domain authentication wizard, and ingest delivery/bounce/complaint webhooks that feed inbox reporting and auto-suppression.
 
 A few honest notes on the paid tiers:
@@ -42,7 +42,7 @@ This plugin's paid add-ons can connect to the external services listed below. No
 
 = CartQuill AI service (AI Flow Generation add-on, paid vendor service) =
 
-When you use "Generate with AI" or "Rewrite with AI", the plugin sends a request to the CartQuill AI proxy at https://api.cartquill.com to draft or rewrite email copy. Each request includes: the flow type you selected; store context (your store name, the tone you type, your store currency, and a few of your top product names); the copy you ask to rewrite; and your AI add-on license key, sent as a Bearer token for authentication. Requests are made only when you click **Generate draft** or **Rewrite**. This is a paid vendor service operated by CartQuill; the copy is drafted server-side and returned to your editor for review. The first request is made only after you explicitly acknowledge this disclosure in the plugin.
+When you use "Generate with AI" or "Rewrite with AI", the plugin sends a request to the CartQuill AI proxy at https://api.cartquill.com to draft or rewrite email copy. Each request includes: the flow type you selected; store context (your store name, the tone you type, your store currency, and a few of your top product names); the copy you ask to rewrite; and your AI add-on license key, sent as a Bearer token for authentication. Requests are made only when you click **Generate draft** or **Rewrite**. This is a paid vendor service operated by CartQuill; the copy is drafted server-side and returned to the builder for review. The first request is made only after you explicitly acknowledge this disclosure in the plugin.
 
 * Terms of Service: https://api.cartquill.com/legal/ai-terms
 * Privacy Policy: https://api.cartquill.com/legal/ai-privacy
@@ -96,7 +96,7 @@ Not in the free core — it sends through your site's own `wp_mail()` and tracks
 
 = Does the AI feature email my customers automatically? =
 
-No. AI-generated and AI-rewritten copy always lands in the editor as a draft for you to review and activate. CartQuill never auto-sends generated copy.
+No. AI-generated and AI-rewritten copy always lands in the builder as a draft for you to review and activate. CartQuill never auto-sends generated copy.
 
 = Do you resell email sending? =
 
@@ -113,7 +113,11 @@ Attribution is last-touch: when an order is placed, CartQuill matches the buyer 
 == Changelog ==
 
 = 0.1.0 =
-* Initial release: flow library and editor, wp_mail sending, self-hosted open/click tracking, last-touch revenue attribution and reporting, one-click unsubscribe with global suppression, and WordPress privacy export/erase integration.
-* AI Flow Generation add-on: draft and rewrite flow copy for editor review.
+* Initial release: flow library and a drag-and-drop step builder, wp_mail sending, self-hosted open/click tracking, last-touch revenue attribution and reporting, one-click unsubscribe with global suppression, and WordPress privacy export/erase integration.
+* AI Flow Generation add-on: draft a whole flow or rewrite a step from a prompt, for review in the builder.
 * Deliverability add-on: bring-your-own Resend sending, domain-authentication wizard, and delivery/bounce/complaint webhook ingestion with auto-suppression and inbox reporting.
 * Automations add-on: no-code multi-tool recipes across Slack, Google Sheets, Mailchimp (audience sync), Twilio SMS, and email, with per-month action metering and Starter/Growth/Agency plans. Agency multi-store, white-label, and team roles are coming soon.
+
+== Development ==
+
+The step builder's JavaScript is compiled with [@wordpress/scripts](https://www.npmjs.com/package/@wordpress/scripts). The plugin ships both the compiled bundle (`assets/builder/build/`) and its complete, human-readable source (`assets/builder/src/`). To rebuild it from source: install Node dependencies with `npm install`, then run `npm run build` (or `npm run start` for a watching dev build). The source is also available in the project repository.

@@ -45,7 +45,7 @@ final class AiDisclosure {
 	 */
 	public function summary(): string {
 		return \__(
-			'Generating or rewriting copy sends the flow type, store context (store name, tone, currency, and a few top product names), any copy you ask to rewrite, and your AI license key to the CartQuill AI service at api.cartquill.com. This is a paid vendor service; drafts are returned to the editor for your review and are never sent to customers automatically.',
+			'Generating or rewriting copy sends the flow type, store context (store name, tone, currency, and a few top product names), any copy you ask to rewrite, and your AI license key to the CartQuill AI service at api.cartquill.com. This is a paid vendor service; drafts are returned to the builder for your review and are never sent to customers automatically.',
 			'cartquill'
 		);
 	}

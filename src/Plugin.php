@@ -14,7 +14,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use CartQuill\Admin\FlowBuilderPage;
-use CartQuill\Admin\FlowEditorPage;
 use CartQuill\Admin\FlowLibraryPage;
 use CartQuill\Admin\LicensePage;
 use CartQuill\Admin\Onboarding;
@@ -49,7 +48,6 @@ use CartQuill\Engine\FlowTypeEnroller;
 use CartQuill\Engine\MessageComposer;
 use CartQuill\Engine\StepRunner;
 use CartQuill\Engine\WooCustomerActivity;
-use CartQuill\Flow\FlowEditor;
 use CartQuill\Flow\FlowInstaller;
 use CartQuill\Flow\FlowLibrary;
 use CartQuill\Flow\Renderer;
@@ -215,7 +213,6 @@ final class Plugin {
 		( new OnboardingPage( new Onboarding(), $settings ) )->register();
 
 		( new FlowLibraryPage( $library, new FlowInstaller( $library, $flows ), $flows ) )->register();
-		( new FlowEditorPage( $flows, new FlowEditor(), new PlanGate( $license, $flows ) ) )->register();
 		( new FlowBuilderPage() )->register();
 
 		( new AttributionTrigger( new Attributor( $messages, $attributions ) ) )->register();
