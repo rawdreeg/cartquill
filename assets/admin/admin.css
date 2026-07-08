@@ -131,15 +131,8 @@
 	margin-top: 20px;
 }
 
-.cartquill-onboard__actions .button-primary {
-	background: var(--cq-brand);
-	border-color: var(--cq-brand-dark);
-}
-
-.cartquill-onboard__actions .button-primary:hover {
-	background: var(--cq-brand-dark);
-	border-color: var(--cq-brand-dark);
-}
+/* The primary button here inherits the brand styling from
+   .cartquill-admin .button-primary (this screen renders inside that wrap). */
 
 /* ---- Stat cards (reporting summary) ---- */
 
