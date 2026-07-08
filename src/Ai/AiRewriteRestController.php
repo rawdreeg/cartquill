@@ -72,7 +72,7 @@ final class AiRewriteRestController {
 		if ( '' === trim( $copy ) ) {
 			return array(
 				'status'  => 400,
-				'code'    => 'empty',
+				'code'    => 'cartquill_ai_empty',
 				'message' => \__( 'There is no copy to rewrite yet.', 'cartquill' ),
 			);
 		}
@@ -81,7 +81,7 @@ final class AiRewriteRestController {
 			if ( empty( $payload['acknowledge'] ) ) {
 				return array(
 					'status'     => 403,
-					'code'       => 'disclosure',
+					'code'       => 'cartquill_ai_disclosure',
 					'message'    => \__( 'Acknowledge the AI service disclosure to continue.', 'cartquill' ),
 					'disclosure' => array(
 						'summary'     => $this->disclosure->summary(),
@@ -97,7 +97,7 @@ final class AiRewriteRestController {
 		if ( null === $rewritten ) {
 			return array(
 				'status'  => 422,
-				'code'    => 'unavailable',
+				'code'    => 'cartquill_ai_unavailable',
 				'message' => \__( 'AI rewriting is unavailable right now — check your plan or try again shortly.', 'cartquill' ),
 			);
 		}
@@ -144,8 +144,10 @@ final class AiRewriteRestController {
 			$data['disclosure'] = $result['disclosure'];
 		}
 
+		// The result already carries the full wire code (e.g. cartquill_ai_disclosure) the
+		// builder matches on, so the JS-facing contract is asserted at the pure-method seam.
 		return new \WP_Error(
-			'cartquill_ai_' . ( $result['code'] ?? 'error' ),
+			(string) ( $result['code'] ?? 'cartquill_ai_error' ),
 			(string) ( $result['message'] ?? \__( 'AI rewriting failed.', 'cartquill' ) ),
 			$data
 		);

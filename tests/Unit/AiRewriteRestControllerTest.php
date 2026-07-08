@@ -76,7 +76,7 @@ final class AiRewriteRestControllerTest extends TestCase {
 		);
 
 		$this->assertSame( 400, $result['status'] );
-		$this->assertSame( 'empty', $result['code'] );
+		$this->assertSame( 'cartquill_ai_empty', $result['code'] );
 	}
 
 	public function test_requires_the_disclosure_before_rewriting(): void {
@@ -85,7 +85,7 @@ final class AiRewriteRestControllerTest extends TestCase {
 		);
 
 		$this->assertSame( 403, $result['status'] );
-		$this->assertSame( 'disclosure', $result['code'] );
+		$this->assertSame( 'cartquill_ai_disclosure', $result['code'] );
 		$this->assertArrayHasKey( 'disclosure', $result );
 		$this->assertSame(
 			AiDisclosure::TERMS_URL,
@@ -113,7 +113,7 @@ final class AiRewriteRestControllerTest extends TestCase {
 		);
 
 		$this->assertSame( 422, $result['status'] );
-		$this->assertSame( 'unavailable', $result['code'] );
+		$this->assertSame( 'cartquill_ai_unavailable', $result['code'] );
 	}
 
 	public function test_unavailable_when_the_proxy_fails(): void {
@@ -122,6 +122,6 @@ final class AiRewriteRestControllerTest extends TestCase {
 		);
 
 		$this->assertSame( 422, $result['status'] );
-		$this->assertSame( 'unavailable', $result['code'] );
+		$this->assertSame( 'cartquill_ai_unavailable', $result['code'] );
 	}
 }
