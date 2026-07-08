@@ -14,6 +14,8 @@ export function StepCard( {
 	index,
 	catalog,
 	mergeTags,
+	api,
+	aiRewrite,
 	actionLabel,
 	dispatch,
 } ) {
@@ -94,6 +96,8 @@ export function StepCard( {
 					index={ index }
 					catalog={ catalog }
 					mergeTags={ mergeTags }
+					api={ api }
+					aiRewrite={ aiRewrite }
 					dispatch={ dispatch }
 				/>
 			) }

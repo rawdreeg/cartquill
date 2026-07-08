@@ -66,15 +66,25 @@ final class FlowBuilderPage {
 			true
 		);
 		\wp_set_script_translations( self::HANDLE, 'cartquill' );
-		\wp_localize_script(
-			self::HANDLE,
-			'cartquillBuilder',
+
+		/**
+		 * The config handed to the builder app. Add-ons extend it (e.g. the AI add-on
+		 * advertises its rewrite feature) via the `features` map without the free core
+		 * ever referencing paid code.
+		 *
+		 * @param array<string, mixed> $config Builder bootstrap config.
+		 */
+		$config = \apply_filters(
+			'cartquill_builder_config',
 			array(
-				'root'   => \esc_url_raw( \rest_url() ),
-				'nonce'  => \wp_create_nonce( 'wp_rest' ),
-				'flowId' => $flow_id,
+				'root'     => \esc_url_raw( \rest_url() ),
+				'nonce'    => \wp_create_nonce( 'wp_rest' ),
+				'flowId'   => $flow_id,
+				'features' => array(),
 			)
 		);
+
+		\wp_localize_script( self::HANDLE, 'cartquillBuilder', $config );
 	}
 
 	/**
