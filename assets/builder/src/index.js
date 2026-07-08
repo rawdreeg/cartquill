@@ -13,6 +13,7 @@ if ( container ) {
 		<FlowBuilder
 			api={ createApi( config ) }
 			flowId={ config.flowId || 0 }
+			features={ config.features || {} }
 		/>
 	);
 }

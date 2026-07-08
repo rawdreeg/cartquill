@@ -65,5 +65,18 @@ final class AiAddon {
 
 		( new AiGeneratePage( $generator, $this->library, $disclosure, $limiter ) )->register();
 		( new AiRewriteController( $generator, $this->flows, $disclosure ) )->register();
+
+		// The builder's per-step rewrite: a REST endpoint plus a feature flag telling the
+		// React app the control is available. Both live behind the AI gate.
+		$rewrite = new AiRewriteRestController( $generator, $disclosure );
+		\add_action( 'rest_api_init', array( $rewrite, 'register_routes' ) );
+		\add_filter(
+			'cartquill_builder_config',
+			static function ( array $config ): array {
+				$config['features']              = (array) ( $config['features'] ?? array() );
+				$config['features']['aiRewrite'] = true;
+				return $config;
+			}
+		);
 	}
 }
