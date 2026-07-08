@@ -36,7 +36,9 @@ export function StepCard( { step, index, catalog, actionLabel, dispatch } ) {
 				<button
 					type="button"
 					className="cartquill-builder__drag-handle"
-					aria-label={ __( 'Reorder step', 'cartquill' ) }
+					aria-label={ `${ __( 'Reorder step', 'cartquill' ) } ${
+						index + 1
+					}` }
 					{ ...attributes }
 					{ ...listeners }
 				>
@@ -71,6 +73,9 @@ export function StepCard( { step, index, catalog, actionLabel, dispatch } ) {
 				<button
 					type="button"
 					className="button-link-delete"
+					aria-label={ `${ __( 'Delete step', 'cartquill' ) } ${
+						index + 1
+					}` }
 					onClick={ () => dispatch( { type: 'removeStep', index } ) }
 				>
 					{ __( 'Delete', 'cartquill' ) }

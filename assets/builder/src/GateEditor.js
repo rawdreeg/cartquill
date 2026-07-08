@@ -102,6 +102,7 @@ function AddGate( { index, conditions, dispatch } ) {
 	return (
 		<div className="cartquill-builder__add-gate">
 			<select
+				aria-label={ __( 'Add a gate', 'cartquill' ) }
 				value={ selected }
 				onChange={ ( event ) => setSelected( event.target.value ) }
 			>
