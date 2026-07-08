@@ -59,4 +59,33 @@ final class FlowReport {
 	public function total_revenue( array $rows ): float {
 		return array_reduce( $rows, static fn( float $c, FlowReportRow $r ) => $c + $r->revenue, 0.0 );
 	}
+
+	/**
+	 * Store-wide totals across every flow row — the summary the reporting
+	 * dashboard shows above the per-flow table.
+	 *
+	 * @param list<FlowReportRow> $rows
+	 * @return array{sent: int, opened: int, clicked: int, revenue: float, delivered: int, bounced: int, complained: int}
+	 */
+	public function totals( array $rows ): array {
+		$totals = array(
+			'sent'       => 0,
+			'opened'     => 0,
+			'clicked'    => 0,
+			'revenue'    => 0.0,
+			'delivered'  => 0,
+			'bounced'    => 0,
+			'complained' => 0,
+		);
+		foreach ( $rows as $row ) {
+			$totals['sent']       += $row->sent;
+			$totals['opened']     += $row->opened;
+			$totals['clicked']    += $row->clicked;
+			$totals['revenue']    += $row->revenue;
+			$totals['delivered']  += $row->delivered;
+			$totals['bounced']    += $row->bounced;
+			$totals['complained'] += $row->complained;
+		}
+		return $totals;
+	}
 }
