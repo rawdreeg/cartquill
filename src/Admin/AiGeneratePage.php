@@ -22,7 +22,7 @@ use CartQuill\Flow\FlowLibrary;
 
 /**
  * A store owner picks a flow type, gives a little store context, and the AI
- * add-on drafts a flow. On success it redirects into the editor (#9) so the copy
+ * add-on drafts a flow. On success it redirects into the builder so the copy
  * is reviewed before activation — generated flows are never auto-sent. Failure
  * modes (not licensed / rate-limited / proxy error) surface as an admin notice
  * rather than blocking the store.
@@ -79,8 +79,9 @@ final class AiGeneratePage {
 		$result = $this->generator->generate( $type, $context );
 
 		if ( $result->is_ok() && null !== $result->flow ) {
+			// The generated draft opens in the builder for review — never auto-sent.
 			\wp_safe_redirect(
-				\admin_url( 'admin.php?page=' . FlowEditorPage::SLUG . '&flow=' . (int) $result->flow->id . '&cartquill_ai=1' )
+				\admin_url( 'admin.php?page=' . FlowBuilderPage::SLUG . '&flow=' . (int) $result->flow->id )
 			);
 			exit;
 		}
@@ -106,7 +107,7 @@ final class AiGeneratePage {
 			<?php if ( '' !== $error ) : ?>
 				<div class="notice notice-error"><p><?php echo \esc_html( $this->error_message( $error ) ); ?></p></div>
 			<?php endif; ?>
-			<p><?php echo \esc_html__( 'Pick a flow type and we\'ll draft the emails for you. Nothing is sent — the draft opens in the editor for you to review and activate.', 'cartquill' ); ?></p>
+			<p><?php echo \esc_html__( 'Pick a flow type and we\'ll draft the emails for you. Nothing is sent — the draft opens in the builder for you to review and activate.', 'cartquill' ); ?></p>
 			<p class="description">
 				<?php
 				/* translators: %d: number of AI generations remaining. */

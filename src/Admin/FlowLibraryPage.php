@@ -101,7 +101,7 @@ final class FlowLibraryPage {
 						<td><?php echo \esc_html( (string) count( $flow->steps ) ); ?></td>
 						<td>
 							<?php $this->status_button( $flow ); ?>
-							<a class="button" href="<?php echo \esc_url( \admin_url( 'admin.php?page=' . FlowEditorPage::SLUG . '&flow=' . (int) $flow->id ) ); ?>">
+							<a class="button" href="<?php echo \esc_url( \admin_url( 'admin.php?page=' . FlowBuilderPage::SLUG . '&flow=' . (int) $flow->id ) ); ?>">
 								<?php echo \esc_html__( 'Edit', 'cartquill' ); ?>
 							</a>
 						</td>
