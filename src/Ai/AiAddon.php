@@ -64,10 +64,9 @@ final class AiAddon {
 		$disclosure = new AiDisclosure();
 
 		( new AiGeneratePage( $generator, $this->library, $disclosure, $limiter ) )->register();
-		( new AiRewriteController( $generator, $this->flows, $disclosure ) )->register();
 
-		// The builder's per-step rewrite: a REST endpoint plus a feature flag telling the
-		// React app the control is available. Both live behind the AI gate.
+		// Per-step rewrite lives in the builder now (a REST endpoint plus a feature flag
+		// telling the React app the control is available), not the retired classic editor.
 		$rewrite = new AiRewriteRestController( $generator, $disclosure );
 		\add_action( 'rest_api_init', array( $rewrite, 'register_routes' ) );
 		\add_filter(
