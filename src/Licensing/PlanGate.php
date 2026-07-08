@@ -77,6 +77,41 @@ final class PlanGate {
 	}
 
 	/**
+	 * Apply the gate to a pending save. Returns the record to persist and the block
+	 * reason ('' when the save is allowed as-is). A flow the held plan may not run
+	 * active is kept out of the active status — reverted to a safe status — while its
+	 * edits are always preserved. The shared rule behind both the admin editor's
+	 * save and the builder's REST save.
+	 *
+	 * @param FlowRecord      $candidate The record the caller wants to persist.
+	 * @param FlowRecord|null $current   The stored record being replaced, if any.
+	 *
+	 * @return array{record: FlowRecord, blocked: string}
+	 */
+	public function enforce( FlowRecord $candidate, ?FlowRecord $current = null ): array {
+		$blocked = $candidate->is_active() ? $this->activation_error( $candidate ) : '';
+		if ( '' === $blocked ) {
+			return array(
+				'record'  => $candidate,
+				'blocked' => '',
+			);
+		}
+
+		if ( null !== $current && $current->is_active() ) {
+			$safe_status = FlowRecord::STATUS_PAUSED;
+		} elseif ( null !== $current ) {
+			$safe_status = $current->status;
+		} else {
+			$safe_status = FlowRecord::STATUS_DRAFT;
+		}
+
+		return array(
+			'record'  => $candidate->with_status( $safe_status ),
+			'blocked' => $blocked,
+		);
+	}
+
+	/**
 	 * The number of currently-active flows other than $flow_id — so re-activating a
 	 * flow that is already active does not count against its own slot.
 	 */

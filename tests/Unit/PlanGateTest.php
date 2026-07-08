@@ -108,6 +108,33 @@ final class PlanGateTest extends TestCase {
 		$this->assertSame( '', $gate->activation_error( $this->flow( 9, FlowRecord::STATUS_PAUSED, $branching ) ) );
 	}
 
+	public function test_enforce_passes_through_an_allowed_flow_unchanged(): void {
+		$gate  = $this->gate( Plans::GROWTH, new InMemoryFlowRepository() );
+		$flow  = $this->flow( 1, FlowRecord::STATUS_ACTIVE, array( new FlowStep( 0, 'Hi', 'b', array( array( 'type' => 'cart_value_gt', 'value' => 50 ) ) ) ) );
+
+		$result = $gate->enforce( $flow, $flow );
+
+		$this->assertSame( '', $result['blocked'] );
+		$this->assertSame( FlowRecord::STATUS_ACTIVE, $result['record']->status );
+	}
+
+	public function test_enforce_reverts_a_blocked_activation_to_a_safe_status(): void {
+		$branching = array( new FlowStep( 0, 'Hi', 'b', array( array( 'type' => 'cart_value_gt', 'value' => 50 ) ) ) );
+		$gate      = $this->gate( Plans::STARTER, new InMemoryFlowRepository() );
+
+		// A previously-active flow being re-saved active but now blocked → paused.
+		$current   = $this->flow( 1, FlowRecord::STATUS_ACTIVE );
+		$candidate = $this->flow( 1, FlowRecord::STATUS_ACTIVE, $branching );
+		$reverted  = $gate->enforce( $candidate, $current );
+		$this->assertSame( PlanGate::REASON_CONDITIONAL_LOGIC, $reverted['blocked'] );
+		$this->assertSame( FlowRecord::STATUS_PAUSED, $reverted['record']->status );
+
+		// A brand-new flow (no current) that can't activate → saved as a draft.
+		$created = $gate->enforce( $this->flow( null, FlowRecord::STATUS_ACTIVE, $branching ), null );
+		$this->assertSame( PlanGate::REASON_CONDITIONAL_LOGIC, $created['blocked'] );
+		$this->assertSame( FlowRecord::STATUS_DRAFT, $created['record']->status );
+	}
+
 	public function test_conditional_logic_is_checked_before_the_workflow_cap(): void {
 		// A flow that trips both gates reports the conditional-logic reason first.
 		$flows = new InMemoryFlowRepository();

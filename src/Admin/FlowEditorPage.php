@@ -103,19 +103,7 @@ final class FlowEditorPage {
 	 * @return array{record: FlowRecord, blocked: string}
 	 */
 	public function gate_save( FlowRecord $current, FlowRecord $candidate ): array {
-		$blocked = $candidate->is_active() ? $this->plan_gate->activation_error( $candidate ) : '';
-		if ( '' === $blocked ) {
-			return array(
-				'record'  => $candidate,
-				'blocked' => '',
-			);
-		}
-
-		$safe_status = $current->is_active() ? FlowRecord::STATUS_PAUSED : $current->status;
-		return array(
-			'record'  => $candidate->with_status( $safe_status ),
-			'blocked' => $blocked,
-		);
+		return $this->plan_gate->enforce( $candidate, $current );
 	}
 
 	/**
