@@ -23,7 +23,8 @@ final class FlowBuilderPage {
 
 	public const SLUG = 'cartquill-flow-builder';
 
-	private const HANDLE = 'cartquill-flow-builder';
+	private const HANDLE       = 'cartquill-flow-builder';
+	private const STYLE_HANDLE = 'cartquill-flow-builder-style';
 
 	public function register(): void {
 		\add_action( 'admin_menu', array( $this, 'add_page' ) );
@@ -66,6 +67,17 @@ final class FlowBuilderPage {
 			true
 		);
 		\wp_set_script_translations( self::HANDLE, 'cartquill' );
+
+		// The builder's compiled stylesheet (emitted next to the bundle by
+		// @wordpress/scripts). wp_style_add_data wires the -rtl variant so the
+		// builder is laid out correctly on RTL admin locales.
+		\wp_enqueue_style(
+			self::STYLE_HANDLE,
+			\plugins_url( 'assets/builder/build/style-index.css', CARTQUILL_FILE ),
+			array(),
+			$asset['version']
+		);
+		\wp_style_add_data( self::STYLE_HANDLE, 'rtl', 'replace' );
 
 		/**
 		 * The config handed to the builder app. Add-ons extend it (e.g. the AI add-on
