@@ -94,11 +94,42 @@ jobs:
           test -f build/cartquill/vendor/autoload.php || { echo "::error::built package is missing vendor/autoload.php"; exit 1; }
           test -f build/cartquill/assets/builder/build/index.js || { echo "::error::built package is missing the compiled flow builder bundle"; exit 1; }
 
-      - name: Upload package artifact
+      - name: Build premium package
+        run: bash bin/build.sh premium
+
+      - name: Assert the premium package ships the paid add-ons but no dev cruft
+        run: |
+          # The paid add-ons the free build strips must be PRESENT in premium...
+          for path in src/Ai/addon.php src/Automations/addon.php src/Deliverability/addon.php src/Admin/AiGeneratePage.php src/Admin/DeliverabilityPage.php; do
+            if [ ! -e "build/premium/cartquill/$path" ]; then
+              echo "::error::premium build is missing paid file '$path'"; exit 1
+            fi
+          done
+          # ...and their classes must be in the optimized classmap so they autoload
+          # (the classmap maps each paid class to its src/ path — assert on that).
+          if ! grep -q "src/Ai/AiAddon.php" build/premium/cartquill/vendor/composer/autoload_classmap.php; then
+            echo "::error::premium autoloader classmap is missing the paid AI classes"; exit 1
+          fi
+          # ...while dev/meta and free-build strippables stay out of premium too.
+          for path in tests composer.json CLAUDE.md .claude node_modules package.json package-lock.json webpack.config.js; do
+            if [ -e "build/premium/cartquill/$path" ]; then
+              echo "::error::'$path' leaked into the premium build"; exit 1
+            fi
+          done
+          if find build/premium/cartquill -name '*.test.js' | grep -q .; then
+            echo "::error::a *.test.js file leaked into the premium build"; exit 1
+          fi
+          test -f build/premium/cartquill/vendor/autoload.php || { echo "::error::premium package is missing vendor/autoload.php"; exit 1; }
+          # Building premium must not have clobbered the free zip.
+          test -f build/cartquill.zip || { echo "::error::the free zip disappeared while building premium"; exit 1; }
+
+      - name: Upload package artifacts
         uses: actions/upload-artifact@v4
         with:
           name: cartquill-plugin
-          path: build/cartquill.zip
+          path: |
+            build/cartquill.zip
+            build/cartquill-premium.zip
 
       # Plugin Check runs against the built free package. Informational for now:
       # some checks need a live WP environment and the AI proxy legal URLs are
