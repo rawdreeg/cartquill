@@ -63,6 +63,49 @@ export function initialFlowState( flow ) {
 }
 
 /**
+ * The default config for a freshly added step: every field seeded to its descriptor
+ * default. A `list` field (e.g. the Sheets row columns) is an array, so it round-trips
+ * as the multi-value shape the engine stores; the rest take their scalar default.
+ *
+ * @param {Array} fields the action's field descriptors
+ * @return {Object} the seeded config map
+ */
+export function defaultConfig( fields ) {
+	const config = {};
+	( fields || [] ).forEach( ( field ) => {
+		config[ field.key ] = 'list' === field.type ? [] : field.default ?? '';
+	} );
+	return config;
+}
+
+/**
+ * A new condition seeded from its catalog descriptor: the `type` discriminator plus
+ * each param at its default. Matches the stored gate shape `{ type, ...params }`.
+ *
+ * @param {Object} descriptor the catalog condition descriptor
+ * @return {Object} the seeded condition
+ */
+export function defaultCondition( descriptor ) {
+	const condition = { type: descriptor.type };
+	( descriptor.params || [] ).forEach( ( param ) => {
+		condition[ param.key ] = param.default ?? '';
+	} );
+	return condition;
+}
+
+/**
+ * Replace the step at `index` with the result of `fn`, leaving the others untouched.
+ *
+ * @param {Array}    steps the step list
+ * @param {number}   index the step to replace
+ * @param {Function} fn    maps the old step to the new one
+ * @return {Array} a new step list
+ */
+function updateStep( steps, index, fn ) {
+	return steps.map( ( step, i ) => ( i === index ? fn( step ) : step ) );
+}
+
+/**
  * The pure state transition for the builder.
  *
  * @param {Object} state  the current editable state
@@ -81,6 +124,81 @@ export function flowReducer( state, action ) {
 			return {
 				...state,
 				steps: arrayMove( state.steps, action.from, action.to ),
+				dirty: true,
+			};
+		case 'addStep':
+			return {
+				...state,
+				steps: [
+					...state.steps,
+					{
+						_key: nextKey(),
+						delay: 0,
+						action: action.descriptor.type,
+						config: defaultConfig( action.descriptor.fields ),
+						conditions: [],
+					},
+				],
+				dirty: true,
+			};
+		case 'removeStep':
+			return {
+				...state,
+				steps: state.steps.filter( ( step, i ) => i !== action.index ),
+				dirty: true,
+			};
+		case 'setStepDelay':
+			return {
+				...state,
+				steps: updateStep( state.steps, action.index, ( step ) => ( {
+					...step,
+					delay: Math.max( 0, parseInt( action.delay, 10 ) || 0 ),
+				} ) ),
+				dirty: true,
+			};
+		case 'setStepConfig':
+			return {
+				...state,
+				steps: updateStep( state.steps, action.index, ( step ) => ( {
+					...step,
+					config: { ...step.config, [ action.key ]: action.value },
+				} ) ),
+				dirty: true,
+			};
+		case 'addCondition':
+			return {
+				...state,
+				steps: updateStep( state.steps, action.index, ( step ) => ( {
+					...step,
+					conditions: [
+						...step.conditions,
+						defaultCondition( action.descriptor ),
+					],
+				} ) ),
+				dirty: true,
+			};
+		case 'removeCondition':
+			return {
+				...state,
+				steps: updateStep( state.steps, action.index, ( step ) => ( {
+					...step,
+					conditions: step.conditions.filter(
+						( condition, i ) => i !== action.ci
+					),
+				} ) ),
+				dirty: true,
+			};
+		case 'setConditionParam':
+			return {
+				...state,
+				steps: updateStep( state.steps, action.index, ( step ) => ( {
+					...step,
+					conditions: step.conditions.map( ( condition, i ) =>
+						i === action.ci
+							? { ...condition, [ action.key ]: action.value }
+							: condition
+					),
+				} ) ),
 				dirty: true,
 			};
 		case 'saved':
