@@ -8,7 +8,7 @@ import { GateEditor } from './GateEditor';
  * The field list comes from the catalog action, so a new channel authors itself with
  * no bespoke form. An action the catalog no longer offers still shows its delay + gates.
  */
-export function StepEditor( { step, index, catalog, dispatch } ) {
+export function StepEditor( { step, index, catalog, mergeTags, dispatch } ) {
 	const action = ( catalog.actions || [] ).find(
 		( candidate ) => candidate.type === step.action
 	);
@@ -34,6 +34,7 @@ export function StepEditor( { step, index, catalog, dispatch } ) {
 					idPrefix={ `step-${ index }` }
 					field={ field }
 					value={ step.config[ field.key ] }
+					mergeTags={ mergeTags }
 					onChange={ ( value ) =>
 						dispatch( {
 							type: 'setStepConfig',
