@@ -1,4 +1,23 @@
-import { createApi } from './api';
+import { createApi, isErrorResponse } from './api';
+
+describe( 'isErrorResponse', () => {
+	it( 'treats a WP_Error body (has a code) as an error', () => {
+		expect(
+			isErrorResponse( {
+				code: 'cartquill_flow_not_found',
+				message: 'Flow not found.',
+				data: { status: 404 },
+			} )
+		).toBe( true );
+	} );
+
+	it( 'treats a normal flow/catalog body as data', () => {
+		expect( isErrorResponse( { id: 7, name: 'Welcome' } ) ).toBe( false );
+		expect( isErrorResponse( {} ) ).toBe( false );
+		expect( isErrorResponse( null ) ).toBe( false );
+		expect( isErrorResponse( undefined ) ).toBe( false );
+	} );
+} );
 
 describe( 'builder api', () => {
 	beforeEach( () => {

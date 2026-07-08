@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { StepList } from './StepList';
+import { isErrorResponse } from './api';
 import { buildPayload, flowReducer, initialFlowState } from './reducer';
 
 /*
@@ -37,23 +38,25 @@ export function FlowBuilder( { api, flowId } ) {
 
 	useEffect( () => {
 		let active = true;
-		const loads = [
-			api.getCatalog().then( ( data ) => {
-				if ( active ) {
-					setCatalog( data );
-				}
-			} ),
-		];
-		if ( flowId ) {
-			loads.push(
-				api.getFlow( flowId ).then( ( data ) => {
+		const loadCatalog = api.getCatalog().then( ( data ) => {
+			if ( isErrorResponse( data ) ) {
+				throw new Error( 'catalog' );
+			}
+			if ( active ) {
+				setCatalog( data );
+			}
+		} );
+		const loadFlow = flowId
+			? api.getFlow( flowId ).then( ( data ) => {
+					if ( isErrorResponse( data ) ) {
+						throw new Error( 'flow' );
+					}
 					if ( active ) {
 						dispatch( { type: 'load', flow: data } );
 					}
-				} )
-			);
-		}
-		Promise.all( loads )
+			  } )
+			: Promise.resolve();
+		Promise.all( [ loadCatalog, loadFlow ] )
 			.then( () => active && setPhase( 'ready' ) )
 			.catch( () => active && setPhase( 'error' ) );
 		return () => {
@@ -103,7 +106,7 @@ export function FlowBuilder( { api, flowId } ) {
 		request
 			.then( ( result ) => {
 				setSaving( false );
-				if ( result && result.code ) {
+				if ( isErrorResponse( result ) ) {
 					setNotice( {
 						type: 'error',
 						errors: result.data?.errors || [],
