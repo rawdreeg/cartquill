@@ -66,4 +66,23 @@ describe( 'builder api', () => {
 			} )
 		);
 	} );
+
+	it( 'POSTs an AI rewrite request with copy, instruction and acknowledgement', () => {
+		createApi( {
+			root: 'https://example.test/wp-json/',
+			nonce: 'abc123',
+		} ).rewriteCopy( 'Hello', 'shorter', true );
+
+		expect( global.fetch ).toHaveBeenCalledWith(
+			'https://example.test/wp-json/cartquill/v1/ai/rewrite',
+			expect.objectContaining( {
+				method: 'POST',
+				body: JSON.stringify( {
+					copy: 'Hello',
+					instruction: 'shorter',
+					acknowledge: true,
+				} ),
+			} )
+		);
+	} );
 } );

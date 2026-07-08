@@ -48,5 +48,10 @@ export function createApi( { root = '', nonce = '' } = {} ) {
 				method: 'PUT',
 				body: JSON.stringify( data ),
 			} ),
+		rewriteCopy: ( copy, instruction, acknowledge = false ) =>
+			request( 'cartquill/v1/ai/rewrite', {
+				method: 'POST',
+				body: JSON.stringify( { copy, instruction, acknowledge } ),
+			} ),
 	};
 }
