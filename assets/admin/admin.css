@@ -1,0 +1,222 @@
+/**
+ * CartQuill admin styles.
+ *
+ * Scoped under .cartquill-admin (the class each CartQuill screen adds to its
+ * .wrap), so nothing leaks into other admin screens even though the sheet is
+ * only enqueued on CartQuill page hooks.
+ */
+
+.cartquill-admin {
+	--cq-brand: #4d65f1;
+	--cq-brand-dark: #3a4fd8;
+	--cq-brand-tint: #eef0fe;
+	--cq-ink: #1e1e2f;
+	--cq-muted: #646970;
+	--cq-border: #dcdcde;
+	--cq-green: #008a20;
+	--cq-green-tint: #e6f4ea;
+	--cq-amber: #996800;
+	--cq-amber-tint: #fcf9e8;
+}
+
+/* ---- Branded heading ---- */
+
+.cartquill-admin h1 {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-weight: 600;
+}
+
+.cartquill-admin h1::before {
+	content: "";
+	flex: 0 0 28px;
+	width: 28px;
+	height: 28px;
+	background: url(icon.svg) center / contain no-repeat;
+}
+
+.cartquill-admin h2 {
+	margin-top: 2em;
+}
+
+.cartquill-admin .cartquill-section-lead {
+	color: var(--cq-muted);
+	max-width: 640px;
+	margin-top: 4px;
+}
+
+/* ---- Buttons ---- */
+
+.cartquill-admin .button-primary {
+	background: var(--cq-brand);
+	border-color: var(--cq-brand-dark);
+}
+
+.cartquill-admin .button-primary:hover,
+.cartquill-admin .button-primary:focus {
+	background: var(--cq-brand-dark);
+	border-color: var(--cq-brand-dark);
+}
+
+/* ---- Tables ---- */
+
+.cartquill-admin table.widefat {
+	border: 1px solid var(--cq-border);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.cartquill-admin table.widefat thead th {
+	background: #f6f7f7;
+	font-weight: 600;
+}
+
+/* ---- Badges ---- */
+
+.cartquill-badge {
+	display: inline-block;
+	padding: 1px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.8;
+	background: #f0f0f1;
+	color: var(--cq-muted);
+	vertical-align: middle;
+}
+
+.cartquill-badge--active {
+	background: var(--cq-green-tint);
+	color: var(--cq-green);
+}
+
+.cartquill-badge--paused {
+	background: var(--cq-amber-tint);
+	color: var(--cq-amber);
+}
+
+.cartquill-badge--brand {
+	background: var(--cq-brand-tint);
+	color: var(--cq-brand);
+}
+
+/* ---- Card grid (flow library) ---- */
+
+.cartquill-cards {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin-top: 12px;
+}
+
+.cartquill-card {
+	flex: 1 1 280px;
+	max-width: 340px;
+	background: #fff;
+	border: 1px solid var(--cq-border);
+	border-radius: 8px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	padding: 20px;
+	transition: box-shadow 0.15s ease;
+}
+
+.cartquill-card:hover {
+	box-shadow: 0 4px 12px rgba(30, 30, 47, 0.08);
+}
+
+.cartquill-card h3 {
+	margin-top: 0;
+}
+
+.cartquill-card ol {
+	margin: 12px 0 16px;
+	padding-left: 20px;
+	color: var(--cq-muted);
+}
+
+.cartquill-card ol li {
+	margin-bottom: 4px;
+}
+
+/* ---- License tier cards ---- */
+
+.cartquill-tiers {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin: 12px 0 4px;
+}
+
+.cartquill-tier {
+	flex: 1 1 240px;
+	max-width: 320px;
+	background: #fff;
+	border: 1px solid var(--cq-border);
+	border-radius: 8px;
+	padding: 20px;
+}
+
+.cartquill-tier.is-current {
+	border: 2px solid var(--cq-brand);
+	box-shadow: 0 4px 12px rgba(77, 101, 241, 0.12);
+}
+
+.cartquill-tier h3 {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin: 0 0 4px;
+	font-size: 16px;
+}
+
+.cartquill-tier ul {
+	margin: 12px 0 16px;
+	color: var(--cq-muted);
+}
+
+.cartquill-tier ul li {
+	position: relative;
+	margin-bottom: 6px;
+	padding-left: 20px;
+}
+
+.cartquill-tier ul li::before {
+	content: "\2713";
+	position: absolute;
+	left: 0;
+	color: var(--cq-brand);
+	font-weight: 700;
+}
+
+.cartquill-tier ul li.is-soon {
+	color: #8c8f94;
+}
+
+.cartquill-tier ul li.is-soon::before {
+	content: "\25cb";
+	font-weight: 400;
+}
+
+.cartquill-tier .regular-text {
+	width: 100%;
+}
+
+/* ---- Legacy key foldout ---- */
+
+.cartquill-admin details.cartquill-legacy {
+	margin-top: 24px;
+	max-width: 640px;
+	border: 1px solid var(--cq-border);
+	border-radius: 8px;
+	padding: 12px 16px;
+	background: #fafafa;
+}
+
+.cartquill-admin details.cartquill-legacy summary {
+	cursor: pointer;
+	font-weight: 600;
+	color: var(--cq-muted);
+}

@@ -80,7 +80,7 @@ final class FlowLibraryPage {
 		$installed = $this->flows->all();
 		$by_type   = $this->latest_by_type( $installed );
 		?>
-		<div class="wrap">
+		<div class="wrap cartquill-admin">
 			<h1><?php echo \esc_html__( 'CartQuill Flows', 'cartquill' ); ?></h1>
 
 			<h2><?php echo \esc_html__( 'Your flows', 'cartquill' ); ?></h2>
@@ -98,7 +98,7 @@ final class FlowLibraryPage {
 				<?php foreach ( $installed as $flow ) : ?>
 					<tr>
 						<td><?php echo \esc_html( $flow->name ); ?></td>
-						<td><?php echo \esc_html( $flow->status ); ?></td>
+						<td><?php $this->status_badge( $flow->status ); ?></td>
 						<td><?php echo \esc_html( (string) count( $flow->steps ) ); ?></td>
 						<td>
 							<?php $this->status_button( $flow ); ?>
@@ -111,10 +111,10 @@ final class FlowLibraryPage {
 				</tbody>
 			</table>
 
-			<h2 style="margin-top:2em"><?php echo \esc_html__( 'Flow library', 'cartquill' ); ?></h2>
-			<div style="display:flex;flex-wrap:wrap;gap:16px">
+			<h2><?php echo \esc_html__( 'Flow library', 'cartquill' ); ?></h2>
+			<div class="cartquill-cards">
 				<?php foreach ( $this->library->templates() as $template ) : ?>
-					<div class="card" style="padding:16px;max-width:320px">
+					<div class="cartquill-card">
 						<h3><?php echo \esc_html( $template->name ); ?></h3>
 						<ol>
 							<?php foreach ( $template->steps as $step ) : ?>
@@ -127,8 +127,8 @@ final class FlowLibraryPage {
 						<?php $existing = $by_type[ $template->type ] ?? null; ?>
 						<?php if ( null !== $existing ) : ?>
 							<p>
-								<strong style="color:#008a20">&#10003; <?php echo \esc_html__( 'Installed', 'cartquill' ); ?></strong>
-								<em>(<?php echo \esc_html( $existing->status ); ?>)</em>
+								<span class="cartquill-badge cartquill-badge--active">&#10003; <?php echo \esc_html__( 'Installed', 'cartquill' ); ?></span>
+								<?php $this->status_badge( $existing->status ); ?>
 							</p>
 							<?php $this->status_button( $existing ); ?>
 							<a class="button" href="<?php echo \esc_url( \admin_url( 'admin.php?page=' . FlowBuilderPage::SLUG . '&flow=' . (int) $existing->id ) ); ?>">
@@ -165,6 +165,18 @@ final class FlowLibraryPage {
 			}
 		}
 		return $by_type;
+	}
+
+	/** A colored pill for a flow status (active green, paused amber, draft gray). */
+	private function status_badge( string $status ): void {
+		$variant = match ( $status ) {
+			FlowRecord::STATUS_ACTIVE => ' cartquill-badge--active',
+			FlowRecord::STATUS_PAUSED => ' cartquill-badge--paused',
+			default                   => '',
+		};
+		?>
+		<span class="cartquill-badge<?php echo \esc_attr( $variant ); ?>"><?php echo \esc_html( $status ); ?></span>
+		<?php
 	}
 
 	private function status_button( FlowRecord $flow ): void {

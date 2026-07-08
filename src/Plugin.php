@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
+use CartQuill\Admin\AdminAssets;
 use CartQuill\Admin\FlowBuilderPage;
 use CartQuill\Admin\FlowLibraryPage;
 use CartQuill\Admin\LicensePage;
@@ -209,6 +210,7 @@ final class Plugin {
 
 		( new PostPurchaseTrigger( $type_enroller ) )->register();
 		( new WelcomeTrigger( $type_enroller, $activity ) )->register();
+		( new AdminAssets() )->register();
 		( new SettingsPage( $settings ) )->register();
 		( new OnboardingPage( new Onboarding(), $settings ) )->register();
 

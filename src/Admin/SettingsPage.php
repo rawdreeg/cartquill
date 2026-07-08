@@ -39,7 +39,7 @@ final class SettingsPage {
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render' ),
-			'dashicons-email-alt',
+			MenuIcon::data_uri(),
 			56
 		);
 	}
@@ -76,7 +76,7 @@ final class SettingsPage {
 		}
 		$option = OptionsSettings::OPTION;
 		?>
-		<div class="wrap">
+		<div class="wrap cartquill-admin">
 			<h1><?php echo \esc_html__( 'CartQuill Settings', 'cartquill' ); ?></h1>
 			<form action="options.php" method="post">
 				<?php \settings_fields( self::OPTION_GROUP ); ?>
