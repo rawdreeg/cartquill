@@ -110,32 +110,42 @@ final class OnboardingPage {
 		?>
 		<div class="wrap cartquill-admin">
 			<h1><?php echo \esc_html__( 'Welcome to CartQuill', 'cartquill' ); ?></h1>
-			<p><?php echo \esc_html__( 'Two quick things and you are ready to send your first flow.', 'cartquill' ); ?></p>
+			<p class="cartquill-onboard__lead"><?php echo \esc_html__( 'Two quick things and you are ready to send your first flow.', 'cartquill' ); ?></p>
 
 			<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
 				<?php \wp_nonce_field( 'cartquill_finish_onboarding' ); ?>
 				<input type="hidden" name="action" value="cartquill_finish_onboarding" />
 
-				<h2><?php echo \esc_html__( '1. Confirm who your emails come from', 'cartquill' ); ?></h2>
-				<table class="form-table">
-					<tr>
-						<th><label for="ff-from-name"><?php echo \esc_html__( 'From name', 'cartquill' ); ?></label></th>
-						<td><input id="ff-from-name" type="text" name="from_name" class="regular-text" value="<?php echo \esc_attr( $this->settings->from_name() ); ?>" /></td>
-					</tr>
-					<tr>
-						<th><label for="ff-from-email"><?php echo \esc_html__( 'From email', 'cartquill' ); ?></label></th>
-						<td><input id="ff-from-email" type="email" name="from_email" class="regular-text" value="<?php echo \esc_attr( $this->settings->from_email() ); ?>" /></td>
-					</tr>
-				</table>
+				<div class="cartquill-onboard__step">
+					<span class="cartquill-onboard__num">1</span>
+					<div class="cartquill-onboard__body">
+						<h2><?php echo \esc_html__( 'Confirm who your emails come from', 'cartquill' ); ?></h2>
+						<table class="form-table">
+							<tr>
+								<th><label for="ff-from-name"><?php echo \esc_html__( 'From name', 'cartquill' ); ?></label></th>
+								<td><input id="ff-from-name" type="text" name="from_name" class="regular-text" value="<?php echo \esc_attr( $this->settings->from_name() ); ?>" /></td>
+							</tr>
+							<tr>
+								<th><label for="ff-from-email"><?php echo \esc_html__( 'From email', 'cartquill' ); ?></label></th>
+								<td><input id="ff-from-email" type="email" name="from_email" class="regular-text" value="<?php echo \esc_attr( $this->settings->from_email() ); ?>" /></td>
+							</tr>
+						</table>
+					</div>
+				</div>
 
-				<h2><?php echo \esc_html__( '2. Install your first flow', 'cartquill' ); ?></h2>
-				<p><?php echo \esc_html__( 'Pick a proven template from the flow library — abandoned cart, welcome, post-purchase, or win-back.', 'cartquill' ); ?></p>
+				<div class="cartquill-onboard__step">
+					<span class="cartquill-onboard__num">2</span>
+					<div class="cartquill-onboard__body">
+						<h2><?php echo \esc_html__( 'Install your first flow', 'cartquill' ); ?></h2>
+						<p><?php echo \esc_html__( 'Pick a proven template from the flow library — abandoned cart, welcome, post-purchase, or win-back.', 'cartquill' ); ?></p>
+					</div>
+				</div>
 
-				<p>
+				<div class="cartquill-onboard__actions">
 					<button type="submit" name="go_to_library" value="1" class="button button-primary"><?php echo \esc_html__( 'Finish and go to the flow library', 'cartquill' ); ?></button>
 					<button type="submit" class="button"><?php echo \esc_html__( 'Finish', 'cartquill' ); ?></button>
-					<button type="submit" name="skip" value="1" class="button-link" style="margin-left:8px"><?php echo \esc_html__( 'Skip for now', 'cartquill' ); ?></button>
-				</p>
+					<button type="submit" name="skip" value="1" class="button-link"><?php echo \esc_html__( 'Skip for now', 'cartquill' ); ?></button>
+				</div>
 			</form>
 		</div>
 		<?php
