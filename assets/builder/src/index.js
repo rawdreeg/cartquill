@@ -1,6 +1,7 @@
 import { createRoot } from '@wordpress/element';
 import { FlowBuilder } from './FlowBuilder';
 import { createApi } from './api';
+import './style.css';
 
 /**
  * Mount the builder into the container the admin page renders, using the REST
