@@ -30,7 +30,10 @@ webpack.config.js
 .claude
 
 # Paid add-ons are distributed separately (Freemius); the free WordPress.org
-# build omits their code and the admin screens that only they instantiate.
+# build omits their code and the admin screens that only they instantiate. The
+# `premium` edition of bin/build.sh keeps everything below this marker (and only
+# below it) so the Freemius package ships the gated code the license unlocks.
+# @cartquill:paid
 src/Ai
 src/Deliverability
 src/Automations
