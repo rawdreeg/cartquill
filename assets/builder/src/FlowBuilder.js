@@ -1,5 +1,6 @@
 import { useEffect, useReducer, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
+import { AddStepMenu } from './AddStepMenu';
 import { StepList } from './StepList';
 import { isErrorResponse } from './api';
 import { buildPayload, flowReducer, initialFlowState } from './reducer';
@@ -88,13 +89,6 @@ export function FlowBuilder( { api, flowId } ) {
 	if ( 'loading' === phase || ! catalog ) {
 		return <p>{ __( 'Loading…', 'cartquill' ) }</p>;
 	}
-
-	const actionLabel = ( type ) => {
-		const found = ( catalog.actions || [] ).find(
-			( action ) => action.type === type
-		);
-		return found ? found.label : type;
-	};
 
 	const save = () => {
 		setSaving( true );
@@ -201,11 +195,16 @@ export function FlowBuilder( { api, flowId } ) {
 
 			<StepList
 				steps={ state.steps }
-				actionLabel={ actionLabel }
-				onMove={ ( from, to ) =>
-					dispatch( { type: 'moveStep', from, to } )
-				}
+				catalog={ catalog }
+				dispatch={ dispatch }
 			/>
+
+			<div className="cartquill-builder__add">
+				<AddStepMenu
+					actions={ catalog.actions }
+					dispatch={ dispatch }
+				/>
+			</div>
 
 			<div className="cartquill-builder__actions">
 				<button

@@ -16,17 +16,26 @@ import { StepCard } from './StepCard';
 
 /*
  * The vertical, drag-to-reorder list of step cards. It owns the @dnd-kit context and
- * sensors (pointer with a small drag threshold so clicks still work, plus keyboard
- * for accessibility) and translates a completed drag into a `moveStep` on the parent
- * via `onMove(from, to)`. It stays presentational — the flow state lives in the reducer.
+ * sensors (pointer with a small drag threshold so clicks still work, plus keyboard for
+ * accessibility) and dispatches `moveStep` on a completed drag. It resolves each step's
+ * human action label from the catalog and hands the catalog + dispatch down so a card
+ * can expand into its editor. It stays otherwise presentational — state lives in the
+ * reducer.
  */
-export function StepList( { steps, actionLabel, onMove } ) {
+export function StepList( { steps, catalog, dispatch } ) {
 	const sensors = useSensors(
 		useSensor( PointerSensor, { activationConstraint: { distance: 5 } } ),
 		useSensor( KeyboardSensor, {
 			coordinateGetter: sortableKeyboardCoordinates,
 		} )
 	);
+
+	const actionLabel = ( type ) => {
+		const found = ( catalog.actions || [] ).find(
+			( action ) => action.type === type
+		);
+		return found ? found.label : type;
+	};
 
 	const onDragEnd = ( event ) => {
 		const { active, over } = event;
@@ -36,7 +45,7 @@ export function StepList( { steps, actionLabel, onMove } ) {
 		const from = steps.findIndex( ( step ) => step._key === active.id );
 		const to = steps.findIndex( ( step ) => step._key === over.id );
 		if ( from !== -1 && to !== -1 ) {
-			onMove( from, to );
+			dispatch( { type: 'moveStep', from, to } );
 		}
 	};
 
@@ -64,7 +73,9 @@ export function StepList( { steps, actionLabel, onMove } ) {
 							key={ step._key }
 							step={ step }
 							index={ index }
+							catalog={ catalog }
 							actionLabel={ actionLabel }
+							dispatch={ dispatch }
 						/>
 					) ) }
 				</ol>
