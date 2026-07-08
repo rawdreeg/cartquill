@@ -18,6 +18,10 @@ phpunit.xml
 CLAUDE.md
 build
 dist
+node_modules
+package.json
+package-lock.json
+webpack.config.js
 
 # OS / editor / agent cruft that must never ship. (Nested .DS_Store files are
 # scrubbed recursively in bin/build.sh, since a literal path only strips the

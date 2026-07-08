@@ -34,6 +34,29 @@ jobs:
       - name: Run tests
         run: ./vendor/bin/phpunit
 
+  assets:
+    name: Build & test JS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Lint JS
+        run: npm run lint:js
+
+      - name: Test JS
+        run: npm run test:js
+
+      - name: Build assets
+        run: npm run build
+
   build:
     name: Build package & Plugin Check
     runs-on: ubuntu-latest
@@ -47,12 +70,17 @@ jobs:
           coverage: none
           tools: composer:v2
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Build production package
         run: bash bin/build.sh
 
       - name: Assert free/paid separation and a production autoloader
         run: |
-          for path in src/Ai src/Deliverability src/Automations src/Admin/AiGeneratePage.php src/Admin/DeliverabilityPage.php tests composer.json CLAUDE.md .claude; do
+          for path in src/Ai src/Deliverability src/Automations src/Admin/AiGeneratePage.php src/Admin/DeliverabilityPage.php tests composer.json CLAUDE.md .claude node_modules package.json package-lock.json webpack.config.js; do
             if [ -e "build/cartquill/$path" ]; then
               echo "::error::'$path' leaked into the free build"; exit 1
             fi
@@ -60,7 +88,11 @@ jobs:
           if find build/cartquill -name '.DS_Store' | grep -q .; then
             echo "::error::.DS_Store leaked into the free build"; exit 1
           fi
+          if find build/cartquill -name '*.test.js' | grep -q .; then
+            echo "::error::a *.test.js file leaked into the free build"; exit 1
+          fi
           test -f build/cartquill/vendor/autoload.php || { echo "::error::built package is missing vendor/autoload.php"; exit 1; }
+          test -f build/cartquill/assets/builder/build/index.js || { echo "::error::built package is missing the compiled flow builder bundle"; exit 1; }
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
