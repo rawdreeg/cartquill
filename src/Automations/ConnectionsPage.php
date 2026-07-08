@@ -234,11 +234,11 @@ final class ConnectionsPage {
 		}
 		$notice = isset( $_GET['cartquill_notice'] ) ? \sanitize_text_field( \wp_unslash( $_GET['cartquill_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		?>
-		<div class="wrap">
+		<div class="wrap cartquill-admin">
 			<h1><?php echo \esc_html__( 'Connections', 'cartquill' ); ?></h1>
 			<?php $this->render_notice( $notice ); ?>
 
-			<p><?php echo \esc_html__( 'Connect your own external services. Credentials are stored encrypted and used only from your site.', 'cartquill' ); ?></p>
+			<p class="cartquill-onboard__lead"><?php echo \esc_html__( 'Connect your own external services. Credentials are stored encrypted and used only from your site.', 'cartquill' ); ?></p>
 
 			<?php
 			$this->render_slack_card();
@@ -254,8 +254,9 @@ final class ConnectionsPage {
 		$connection = $this->connections->find( SlackAction::SERVICE );
 		$configured = null !== $connection && $connection->is_configured();
 		?>
+		<div class="cartquill-panel">
 		<h2><?php echo \esc_html__( 'Slack', 'cartquill' ); ?>
-			<?php echo $configured ? '<span class="description">' . \esc_html( $this->status_label( (string) $connection->status ) ) . '</span>' : ''; ?>
+			<?php echo $this->status_badge( $connection ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from a constant class + esc_html'd label. ?>
 		</h2>
 		<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
 			<?php \wp_nonce_field( 'cartquill_save_connection' ); ?>
@@ -275,6 +276,7 @@ final class ConnectionsPage {
 			<?php \submit_button( \__( 'Save Slack connection', 'cartquill' ) ); ?>
 		</form>
 		<?php $this->render_test_button( SlackAction::SERVICE, $configured ); ?>
+		</div>
 		<?php
 	}
 
@@ -283,9 +285,9 @@ final class ConnectionsPage {
 		$configured = null !== $connection && $connection->is_configured();
 		$has_sa     = null !== $connection && '' !== (string) $connection->credential( 'service_account', '' );
 		?>
-		<hr />
+		<div class="cartquill-panel">
 		<h2><?php echo \esc_html__( 'Google Sheets', 'cartquill' ); ?>
-			<?php echo $configured ? '<span class="description">' . \esc_html( $this->status_label( (string) $connection->status ) ) . '</span>' : ''; ?>
+			<?php echo $this->status_badge( $connection ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from a constant class + esc_html'd label. ?>
 		</h2>
 		<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
 			<?php \wp_nonce_field( 'cartquill_save_connection' ); ?>
@@ -315,6 +317,7 @@ final class ConnectionsPage {
 			<?php \submit_button( \__( 'Save Google Sheets connection', 'cartquill' ) ); ?>
 		</form>
 		<?php $this->render_test_button( SheetsAction::SERVICE, $configured ); ?>
+		</div>
 		<?php
 	}
 
@@ -323,9 +326,9 @@ final class ConnectionsPage {
 		$configured = null !== $connection && $connection->is_configured();
 		$has_key    = null !== $connection && '' !== (string) $connection->credential( 'api_key', '' );
 		?>
-		<hr />
+		<div class="cartquill-panel">
 		<h2><?php echo \esc_html__( 'Mailchimp', 'cartquill' ); ?>
-			<?php echo $configured ? '<span class="description">' . \esc_html( $this->status_label( (string) $connection->status ) ) . '</span>' : ''; ?>
+			<?php echo $this->status_badge( $connection ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from a constant class + esc_html'd label. ?>
 		</h2>
 		<p class="description"><?php echo \esc_html__( 'CartQuill syncs contacts and tags into your Mailchimp audience — it does not send your email through Mailchimp. Your recovery and welcome emails still send from your own store.', 'cartquill' ); ?></p>
 		<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
@@ -352,6 +355,7 @@ final class ConnectionsPage {
 			<?php \submit_button( \__( 'Save Mailchimp connection', 'cartquill' ) ); ?>
 		</form>
 		<?php $this->render_test_button( MailchimpAction::SERVICE, $configured ); ?>
+		</div>
 		<?php
 	}
 
@@ -359,8 +363,10 @@ final class ConnectionsPage {
 		$connection = $this->connections->find( SmsAction::SERVICE );
 		$has_token  = null !== $connection && '' !== (string) $connection->credential( 'auth_token', '' );
 		?>
-		<hr />
-		<h2><?php echo \esc_html__( 'Twilio SMS', 'cartquill' ); ?></h2>
+		<div class="cartquill-panel">
+		<h2><?php echo \esc_html__( 'Twilio SMS', 'cartquill' ); ?>
+			<?php echo $this->status_badge( $connection ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from a constant class + esc_html'd label. ?>
+		</h2>
 		<p class="description"><?php echo \esc_html__( 'Text customers from your own Twilio account. Point a Twilio Messaging webhook at the URL below to honour STOP/START replies:', 'cartquill' ); ?>
 			<br /><code><?php echo \esc_html( \add_query_arg( SmsWebhookEndpoint::PARAM, 'twilio', \home_url( '/' ) ) ); ?></code></p>
 		<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
@@ -388,6 +394,7 @@ final class ConnectionsPage {
 			</table>
 			<?php \submit_button( \__( 'Save Twilio connection', 'cartquill' ) ); ?>
 		</form>
+		</div>
 		<?php
 	}
 
@@ -411,6 +418,23 @@ final class ConnectionsPage {
 			ConnectionRecord::STATUS_ERROR     => '✗ ' . \__( 'Connection error', 'cartquill' ),
 			default                            => \__( 'Not configured', 'cartquill' ),
 		};
+	}
+
+	/**
+	 * A colored status pill for a connection header, or '' when the service is
+	 * not configured yet.
+	 */
+	private function status_badge( ?ConnectionRecord $connection ): string {
+		if ( null === $connection || ! $connection->is_configured() ) {
+			return '';
+		}
+		$status  = (string) $connection->status;
+		$variant = match ( $status ) {
+			ConnectionRecord::STATUS_CONNECTED => ' cartquill-badge--active',
+			ConnectionRecord::STATUS_ERROR     => ' cartquill-badge--paused',
+			default                            => '',
+		};
+		return '<span class="cartquill-badge' . $variant . '">' . \esc_html( $this->status_label( $status ) ) . '</span>';
 	}
 
 	private function render_notice( string $notice ): void {
