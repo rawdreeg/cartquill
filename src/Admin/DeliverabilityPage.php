@@ -30,6 +30,7 @@ final class DeliverabilityPage {
 	private const PARENT = 'cartquill';
 	public const SLUG    = 'cartquill-deliverability';
 	private const MASK   = '••••••••';
+	private const ERROR_TRANSIENT = 'cartquill_esp_error';
 
 	public function __construct( private readonly EspSettings $esp ) {}
 
@@ -77,6 +78,7 @@ final class DeliverabilityPage {
 
 	public function handle_provision(): void {
 		$this->authorize( 'cartquill_provision_domain' );
+		$this->clear_error();
 
 		$domain = $this->esp->domain();
 		if ( '' === $domain || ! $this->esp->has_key() ) {
@@ -84,7 +86,17 @@ final class DeliverabilityPage {
 		}
 
 		try {
-			$status = ( new HttpResendClient( $this->esp->api_key() ) )->create_domain( $domain );
+			$client = new HttpResendClient( $this->esp->api_key() );
+
+			// Idempotent AND self-healing: ask Resend's live list whether the domain
+			// exists. Found → refresh its status (a duplicate create would error and
+			// strand the operator); absent — including a domain deleted in Resend
+			// after we stored its id — → create, so re-clicking always recovers.
+			$existing_id = (string) ( $client->find_domain_id( $domain ) ?? '' );
+			$status      = '' !== $existing_id
+				? $client->domain_status( $existing_id )
+				: $client->create_domain( $domain );
+
 			if ( '' !== $status->id ) {
 				$this->esp->set_domain_id( $status->id );
 			}
@@ -92,12 +104,14 @@ final class DeliverabilityPage {
 			$this->persist_status( $status );
 			$this->redirect_back( 'provisioned' );
 		} catch ( ResendException $e ) {
+			$this->flash_error( $e->getMessage() );
 			$this->redirect_back( 'verify_error' );
 		}
 	}
 
 	public function handle_verify(): void {
 		$this->authorize( 'cartquill_verify_domain' );
+		$this->clear_error();
 
 		$domain = $this->esp->domain();
 		if ( '' === $domain || ! $this->esp->has_key() ) {
@@ -122,6 +136,7 @@ final class DeliverabilityPage {
 			$this->persist_status( $status );
 			$this->redirect_back( 'verified' );
 		} catch ( ResendException $e ) {
+			$this->flash_error( $e->getMessage() );
 			$this->redirect_back( 'verify_error' );
 		}
 	}
@@ -310,11 +325,49 @@ final class DeliverabilityPage {
 		if ( ! isset( $map[ $notice ] ) ) {
 			return;
 		}
+		$text = $map[ $notice ][1];
+
+		// Prefer the specific message Resend returned over the generic fallback, so
+		// the operator sees e.g. "The domain is not verified." instead of guessing.
+		if ( 'verify_error' === $notice ) {
+			$detail = (string) \get_transient( $this->error_transient_key() );
+			\delete_transient( $this->error_transient_key() );
+			if ( '' !== $detail ) {
+				$text = $detail;
+			}
+		}
+
 		printf(
 			'<div class="notice notice-%s"><p>%s</p></div>',
 			\esc_attr( $map[ $notice ][0] ),
-			\esc_html( $map[ $notice ][1] )
+			\esc_html( $text )
 		);
+	}
+
+	/**
+	 * Per-admin key for the error flash, so one admin's error can't be consumed by
+	 * another's concurrent request.
+	 */
+	private function error_transient_key(): string {
+		return self::ERROR_TRANSIENT . '_' . \get_current_user_id();
+	}
+
+	/**
+	 * Stash a specific error message for the notice shown after the redirect. A
+	 * short transient survives the redirect that a caught exception cannot.
+	 */
+	private function flash_error( string $message ): void {
+		if ( '' !== $message ) {
+			\set_transient( $this->error_transient_key(), $message, 30 );
+		}
+	}
+
+	/**
+	 * Drop any pending error flash at the start of a handler, so a stale message
+	 * from an earlier failure can't surface under a later, unrelated error.
+	 */
+	private function clear_error(): void {
+		\delete_transient( $this->error_transient_key() );
 	}
 
 	private function authorize( string $nonce_action ): void {
