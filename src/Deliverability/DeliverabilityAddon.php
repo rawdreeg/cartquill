@@ -73,6 +73,12 @@ final class DeliverabilityAddon {
 	}
 
 	public function register_surfaces(): void {
+		// Keep the domain-health re-poll self-cleaning regardless of license state,
+		// so a lapsed license (add-on still present) doesn't orphan a recurring
+		// action. The listener is always bound; the schedule tracks configuration.
+		\add_action( DomainHealthMonitor::HOOK, array( $this, 'run_health_check' ) );
+		$this->sync_health_check_schedule();
+
 		if ( ! $this->license->is_active( Plans::DELIVERABILITY ) ) {
 			return;
 		}
@@ -116,6 +122,35 @@ final class DeliverabilityAddon {
 			'cartquill'
 		);
 		echo '</p></div>';
+	}
+
+	/**
+	 * Recurring Action Scheduler callback: re-poll Resend for the sending domain's
+	 * current verification state and write it back.
+	 */
+	public function run_health_check(): void {
+		( new DomainHealthMonitor( $this->esp, new HttpResendClient( $this->esp->api_key() ) ) )->refresh();
+	}
+
+	/**
+	 * Keep the recurring domain-health re-poll scheduled exactly while there is a
+	 * provisioned domain to check, so it self-cleans when the store deconfigures.
+	 */
+	private function sync_health_check_schedule(): void {
+		$configured = $this->license->is_active( Plans::DELIVERABILITY )
+			&& '' !== $this->esp->domain_id()
+			&& $this->esp->has_key();
+
+		if ( $configured ) {
+			if ( function_exists( 'as_has_scheduled_action' )
+				&& function_exists( 'as_schedule_recurring_action' )
+				&& ! \as_has_scheduled_action( DomainHealthMonitor::HOOK )
+			) {
+				\as_schedule_recurring_action( time(), DomainHealthMonitor::INTERVAL, DomainHealthMonitor::HOOK, array(), 'cartquill' );
+			}
+		} elseif ( function_exists( 'as_unschedule_all_actions' ) ) {
+			\as_unschedule_all_actions( DomainHealthMonitor::HOOK, array(), 'cartquill' );
+		}
 	}
 
 	public function render_undecryptable_secret_notice(): void {

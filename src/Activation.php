@@ -83,7 +83,11 @@ final class Activation {
 		if ( ! function_exists( 'as_unschedule_all_actions' ) ) {
 			return;
 		}
-		foreach ( array( AbandonedCartScanner::HOOK, WinBackScanner::HOOK ) as $hook ) {
+		// The Deliverability add-on's domain-health hook is a literal (not the class
+		// const) so this core path never hard-depends on the paid add-on, which is
+		// absent from the free build. Unscheduling a never-scheduled hook is a no-op.
+		$hooks = array( AbandonedCartScanner::HOOK, WinBackScanner::HOOK, 'cartquill_check_domain_health' );
+		foreach ( $hooks as $hook ) {
 			\as_unschedule_all_actions( $hook, array(), 'cartquill' );
 		}
 	}

@@ -266,6 +266,28 @@ final class HttpResendClientTest extends TestCase {
 		$this->client()->send( $this->message() );
 	}
 
+	public function test_a_non_2xx_error_carries_the_http_status(): void {
+		$this->stub_http( $this->ok( array( 'message' => 'Domain not found' ), 404 ) );
+
+		try {
+			$this->client()->domain_status( 'dom_x' );
+			$this->fail( 'expected a ResendException' );
+		} catch ( ResendException $e ) {
+			$this->assertSame( 404, $e->status(), 'a definitive rejection carries its status' );
+		}
+	}
+
+	public function test_a_transport_error_has_no_http_status(): void {
+		$this->stub_http( $this->wp_error( 'cURL error 28: timed out' ) );
+
+		try {
+			$this->client()->domain_status( 'dom_x' );
+			$this->fail( 'expected a ResendException' );
+		} catch ( ResendException $e ) {
+			$this->assertNull( $e->status(), 'a transport failure has no HTTP status (transient)' );
+		}
+	}
+
 	public function test_create_domain_posts_the_name_and_maps_the_status(): void {
 		$this->stub_http(
 			$this->ok(
