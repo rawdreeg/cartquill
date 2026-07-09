@@ -107,6 +107,17 @@ final class DomainHealthMonitorTest extends TestCase {
 		$this->assertTrue( $esp->is_domain_verified(), 'nothing provisioned → no poll, no change' );
 	}
 
+	public function test_refresh_unverifies_when_resend_reports_the_domain_is_gone(): void {
+		$esp    = $this->provisioned_esp();
+		$client = new StubResendClient();
+		$client->fail( 404 ); // the domain was deleted in Resend (or the account changed)
+
+		( new DomainHealthMonitor( $esp, $client ) )->refresh();
+
+		$this->assertFalse( $esp->is_domain_verified(), 'a domain gone from Resend falls back to wp_mail' );
+		$this->assertSame( 'not_found', $esp->domain_state() );
+	}
+
 	public function test_refresh_leaves_state_unchanged_on_a_transient_api_error(): void {
 		$esp    = $this->provisioned_esp();
 		$client = new StubResendClient();

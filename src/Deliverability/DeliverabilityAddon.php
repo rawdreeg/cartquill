@@ -73,6 +73,12 @@ final class DeliverabilityAddon {
 	}
 
 	public function register_surfaces(): void {
+		// Keep the domain-health re-poll self-cleaning regardless of license state,
+		// so a lapsed license (add-on still present) doesn't orphan a recurring
+		// action. The listener is always bound; the schedule tracks configuration.
+		\add_action( DomainHealthMonitor::HOOK, array( $this, 'run_health_check' ) );
+		$this->sync_health_check_schedule();
+
 		if ( ! $this->license->is_active( Plans::DELIVERABILITY ) ) {
 			return;
 		}
@@ -95,13 +101,6 @@ final class DeliverabilityAddon {
 		if ( $this->from_domain_mismatch() ) {
 			\add_action( 'admin_notices', array( $this, 'render_from_domain_mismatch_notice' ) );
 		}
-
-		// Proactively re-check the sending domain's health so a domain that drifts
-		// to unverified (DNS changed/removed) auto-falls back to wp_mail instead of
-		// bouncing every send. The listener is always bound (so a due action has a
-		// callback); the schedule tracks whether there is a domain to check.
-		\add_action( DomainHealthMonitor::HOOK, array( $this, 'run_health_check' ) );
-		$this->sync_health_check_schedule();
 
 		// Ingest Resend delivery webhooks once a signing secret is configured. A
 		// real clock enables Svix replay-window enforcement at runtime.
@@ -138,7 +137,9 @@ final class DeliverabilityAddon {
 	 * provisioned domain to check, so it self-cleans when the store deconfigures.
 	 */
 	private function sync_health_check_schedule(): void {
-		$configured = '' !== $this->esp->domain_id() && $this->esp->has_key();
+		$configured = $this->license->is_active( Plans::DELIVERABILITY )
+			&& '' !== $this->esp->domain_id()
+			&& $this->esp->has_key();
 
 		if ( $configured ) {
 			if ( function_exists( 'as_has_scheduled_action' )

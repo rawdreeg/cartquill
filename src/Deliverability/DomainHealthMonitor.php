@@ -46,7 +46,15 @@ final class DomainHealthMonitor {
 		try {
 			$status = $this->client->domain_status( $domain_id );
 		} catch ( ResendException $e ) {
-			return; // a momentary API error must not un-verify a healthy domain
+			// A definitive "not found" means the domain is gone from Resend (deleted
+			// there, or the account/key changed): un-verify so sending falls back to
+			// wp_mail. Any other error — timeout, 5xx, a transient auth blip — must
+			// NOT un-verify a healthy domain, so it is left untouched.
+			if ( 404 === $e->status() ) {
+				$this->esp->set_domain_verified( false );
+				$this->esp->set_domain_state( 'not_found' );
+			}
+			return;
 		}
 
 		$this->esp->set_domain_verified( $status->verified );
