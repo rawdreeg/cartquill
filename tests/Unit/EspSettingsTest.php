@@ -100,6 +100,14 @@ final class EspSettingsTest extends TestCase {
 		$this->assertFalse( $esp->is_domain_verified() );
 	}
 
+	public function test_last_event_at_round_trips_and_defaults_to_zero(): void {
+		$esp = $this->esp();
+		$this->assertSame( 0, $esp->last_event_at(), 'no events received yet' );
+
+		$esp->set_last_event_at( 1_700_000_000 );
+		$this->assertSame( 1_700_000_000, $esp->last_event_at() );
+	}
+
 	public function test_reports_an_undecryptable_webhook_secret(): void {
 		// A secret was stored, then the install key was lost so decrypt now fails.
 		$esp = new EspSettings(
