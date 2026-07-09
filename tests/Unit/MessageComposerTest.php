@@ -45,4 +45,17 @@ final class MessageComposerTest extends TestCase {
 		$this->assertStringContainsString( 'unsubscribe', strtolower( $message->body ) );
 		$this->assertNull( $message->unsubscribe, 'no List-Unsubscribe header without a target' );
 	}
+
+	public function test_body_is_wrapped_in_the_branded_email_shell(): void {
+		$step    = new FlowStep( 0, 'Hi', '<p>{{ store_name }} says hi</p>' );
+		$message = $this->composer()->compose( $step, 'buyer@example.com', 3, 0, 9 );
+
+		// The rendered content still lands inside the message…
+		$this->assertStringContainsString( '<p>Acme says hi</p>', $message->body );
+		// …now inside a self-contained branded HTML document with the store name.
+		$this->assertStringContainsString( '<!DOCTYPE html', $message->body );
+		$this->assertStringContainsString( 'Acme', $message->body );
+		// …and the unsubscribe compliance footer survives the wrapping.
+		$this->assertStringContainsString( 'Unsubscribe', $message->body );
+	}
 }
