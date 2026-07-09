@@ -59,6 +59,11 @@ final class ReportingPage {
 		}
 
 		$deliverability = $this->license->is_active( Plans::DELIVERABILITY );
+		// Whether delivery events are actually flowing (key + verified domain +
+		// webhook secret), refined by the Deliverability add-on. The columns show
+		// on license alone, but the green "tracking active" banner needs the real
+		// pipeline wired — otherwise it claims tracking that never arrives.
+		$tracking_ready = (bool) \apply_filters( 'cartquill_delivery_tracking_ready', false );
 		$report         = new FlowReport();
 		$rows           = $report->build(
 			$this->flows->all(),
@@ -154,11 +159,18 @@ final class ReportingPage {
 				</tfoot>
 			</table>
 
-			<?php if ( $deliverability ) : ?>
+			<?php if ( $tracking_ready ) : ?>
 				<div class="notice notice-success inline" style="margin-top:16px">
 					<p>
 						<strong><?php echo \esc_html__( 'Delivery tracking active.', 'cartquill' ); ?></strong>
 						<?php echo \esc_html__( 'Delivered, bounce, and complaint data populates here as your ESP sends webhook events. Bounced and complained addresses are automatically suppressed.', 'cartquill' ); ?>
+					</p>
+				</div>
+			<?php elseif ( $deliverability ) : ?>
+				<div class="notice notice-warning inline" style="margin-top:16px">
+					<p>
+						<strong><?php echo \esc_html__( 'Finish delivery setup.', 'cartquill' ); ?></strong>
+						<?php echo \esc_html__( 'Connect Resend, verify your sending domain, and add the webhook signing secret on the Deliverability screen to start receiving delivered, bounce, and complaint data.', 'cartquill' ); ?>
 					</p>
 				</div>
 			<?php else : ?>

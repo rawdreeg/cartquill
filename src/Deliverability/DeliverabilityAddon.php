@@ -46,6 +46,19 @@ final class DeliverabilityAddon {
 		\add_action( 'cartquill_register_senders', array( $this, 'register_sender' ), 10, 2 );
 		\add_action( 'cartquill_register_addons', array( $this, 'register_surfaces' ) );
 		\add_filter( 'cartquill_active_sender', array( $this, 'pick_active_sender' ) );
+		\add_filter( 'cartquill_delivery_tracking_ready', array( $this, 'delivery_tracking_ready' ) );
+	}
+
+	/**
+	 * Whether the store is actually set up to receive delivery events: licensed,
+	 * key present, domain verified, AND a webhook secret configured (without it
+	 * the endpoint never registers). Lets the reporting screen show an honest
+	 * "tracking active" banner instead of claiming it on the license alone.
+	 *
+	 * @param bool $ready Readiness reported by any earlier provider.
+	 */
+	public function delivery_tracking_ready( bool $ready ): bool {
+		return $ready || ( $this->credentials_ready( $this->license ) && $this->esp->has_webhook_secret() );
 	}
 
 	/**
