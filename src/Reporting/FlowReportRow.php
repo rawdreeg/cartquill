@@ -25,5 +25,6 @@ final class FlowReportRow {
 		public readonly int $delivered = 0,
 		public readonly int $bounced = 0,
 		public readonly int $complained = 0,
+		public readonly int $failed = 0,
 	) {}
 }
