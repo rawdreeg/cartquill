@@ -19,15 +19,18 @@ use CartQuill\Licensing\License;
 use CartQuill\Licensing\Plans;
 use CartQuill\Persistence\MessageRepository;
 use CartQuill\Sender\SenderRegistry;
+use CartQuill\Settings\Settings;
 use CartQuill\Support\SystemClock;
 
 /**
  * Wires itself in only when the Deliverability plan is active. Registers
  * {@see ResendSender} through the locked `register_sender()` seam (so the engine
- * is untouched), exposes the domain-auth wizard, and — once the store has saved
- * a key and verified its sending domain — makes Resend the active sender via the
- * `cartquill_active_sender` filter. Clearing the key, or an unverified domain,
- * falls straight back to wp_mail with no flow changes.
+ * is untouched), exposes the domain-auth wizard, and — once the store has saved a
+ * key, verified its sending domain, AND set a From-address that domain covers
+ * ({@see FromDomainGuard}) — makes Resend the active sender via the
+ * `cartquill_active_sender` filter. Clearing the key, an unverified domain, or a
+ * From-address on an unverified domain falls straight back to wp_mail with no
+ * flow changes.
  */
 final class DeliverabilityAddon {
 
@@ -36,6 +39,7 @@ final class DeliverabilityAddon {
 		private readonly License $license,
 		private readonly MessageRepository $messages,
 		private readonly SuppressionList $suppression,
+		private readonly Settings $settings,
 	) {}
 
 	public function register(): void {
@@ -49,7 +53,7 @@ final class DeliverabilityAddon {
 	 * @param License        $license The licensing gate.
 	 */
 	public function register_sender( SenderRegistry $senders, License $license ): void {
-		if ( ! $license->is_active( Plans::DELIVERABILITY ) || ! $this->esp->has_key() || ! $this->esp->is_domain_verified() ) {
+		if ( ! $this->resend_ready( $license ) ) {
 			return;
 		}
 		$senders->register( new ResendSender( new HttpResendClient( $this->esp->api_key() ) ) );
@@ -63,6 +67,13 @@ final class DeliverabilityAddon {
 
 		if ( $this->esp->has_undecryptable_key() ) {
 			\add_action( 'admin_notices', array( $this, 'render_undecryptable_key_notice' ) );
+		}
+
+		// Everything is provisioned except the From-address: it sits on a domain
+		// Resend hasn't verified, so Resend is being held back to wp_mail and every
+		// send would 554-bounce if forced. Tell the operator exactly why.
+		if ( $this->from_domain_mismatch() ) {
+			\add_action( 'admin_notices', array( $this, 'render_from_domain_mismatch_notice' ) );
 		}
 
 		// Ingest Resend delivery webhooks once a signing secret is configured. A
@@ -87,13 +98,58 @@ final class DeliverabilityAddon {
 		echo '</p></div>';
 	}
 
+	public function render_from_domain_mismatch_notice(): void {
+		if ( ! \current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		echo '<div class="notice notice-warning"><p>';
+		printf(
+			/* translators: 1: configured From address, 2: verified sending domain. */
+			\esc_html__(
+				'CartQuill verified the sending domain %2$s with Resend, but your From address (%1$s) is on a different domain. Resend rejects mail it cannot authenticate, so sending has stayed on wp_mail. Set the From email under CartQuill → Settings to an address on %2$s to switch to Resend.',
+				'cartquill'
+			),
+			'<code>' . \esc_html( $this->settings->from_email() ) . '</code>',
+			'<code>' . \esc_html( $this->esp->domain() ) . '</code>'
+		);
+		echo '</p></div>';
+	}
+
 	/**
 	 * @param string $current The sender key selected so far.
 	 */
 	public function pick_active_sender( string $current ): string {
-		if ( $this->license->is_active( Plans::DELIVERABILITY ) && $this->esp->has_key() && $this->esp->is_domain_verified() ) {
-			return 'resend';
-		}
-		return $current;
+		return $this->resend_ready( $this->license ) ? 'resend' : $current;
+	}
+
+	/**
+	 * Whether Resend may be the active sender: licensed, key present, domain
+	 * verified, AND the From-address covered by that verified domain. The last
+	 * check is what stops a "verified" wizard from silently 554-bouncing every
+	 * send when the From-address lives on an unverified domain.
+	 */
+	private function resend_ready( License $license ): bool {
+		return $this->credentials_ready( $license )
+			&& FromDomainGuard::allows( $this->settings->from_email(), $this->esp->domain() );
+	}
+
+	/**
+	 * Whether the ESP is fully provisioned (license + key + verified domain),
+	 * ignoring the From-address. Separated so the admin notice can tell a
+	 * From-address mismatch apart from an unconfigured add-on.
+	 */
+	private function credentials_ready( License $license ): bool {
+		return $license->is_active( Plans::DELIVERABILITY )
+			&& $this->esp->has_key()
+			&& $this->esp->is_domain_verified();
+	}
+
+	/**
+	 * True only when the add-on is otherwise ready to send through Resend but the
+	 * From-address is on a domain Resend hasn't verified.
+	 */
+	private function from_domain_mismatch(): bool {
+		return $this->credentials_ready( $this->license )
+			&& ! FromDomainGuard::allows( $this->settings->from_email(), $this->esp->domain() );
 	}
 }
