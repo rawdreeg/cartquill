@@ -34,6 +34,45 @@ jobs:
       - name: Run tests
         run: ./vendor/bin/phpunit
 
+  integration:
+    name: WordPress integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer:v2
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      # wp-env (Docker) provides WordPress + WooCommerce + MySQL and the WP
+      # PHPUnit test library. The integration suite runs inside its tests-cli
+      # container against a real $wpdb.
+      - name: Start wp-env
+        run: npx wp-env start
+
+      # The WordPress test suite still calls PHPUnit\Util\Test::parseTestMethodAnnotations
+      # (removed in PHPUnit 10), so the integration suite runs on PHPUnit 9 while the
+      # DB-free unit suite stays on PHPUnit 10.
+      - name: Download PHPUnit 9
+        run: npm run test:integration:setup
+
+      - name: Run integration tests
+        run: npm run test:integration
+
   assets:
     name: Build & test JS
     runs-on: ubuntu-latest

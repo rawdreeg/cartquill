@@ -15,6 +15,10 @@ composer.json
 composer.lock
 phpunit.xml.dist
 phpunit.xml
+phpunit-integration.xml.dist
+phpunit-9.phar
+.wp-env.json
+.wp-env.override.json
 CLAUDE.md
 build
 dist
