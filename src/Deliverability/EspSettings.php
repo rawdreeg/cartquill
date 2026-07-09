@@ -68,6 +68,20 @@ final class EspSettings {
 		return '' !== $this->webhook_secret();
 	}
 
+	/**
+	 * Unix timestamp of the most recent Resend webhook event ingested, or 0 if
+	 * none yet — lets the wizard show whether events are actually arriving.
+	 */
+	public function last_event_at(): int {
+		return (int) ( $this->data()['last_event_at'] ?? 0 );
+	}
+
+	public function set_last_event_at( int $timestamp ): void {
+		$data                  = $this->data();
+		$data['last_event_at'] = $timestamp;
+		\update_option( self::OPTION, $data, false );
+	}
+
 	public function domain(): string {
 		return (string) ( $this->data()['domain'] ?? '' );
 	}
