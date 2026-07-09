@@ -70,10 +70,12 @@ final class HttpResendClient implements ResendClient {
 	 * the customer twice. Absent for sends with no enrollment (nothing to key on).
 	 */
 	private function idempotency_key( Message $message ): ?string {
-		if ( null === $message->enrollment_id ) {
+		// Both halves of the identity must be known: without a real step index we
+		// would fake a null step as 0 and could collide two distinct sends.
+		if ( null === $message->enrollment_id || null === $message->step_index ) {
 			return null;
 		}
-		return sprintf( 'cartquill-%d-%d', $message->enrollment_id, $message->step_index ?? 0 );
+		return sprintf( 'cartquill-%d-%d', $message->enrollment_id, $message->step_index );
 	}
 
 	public function create_domain( string $domain ): DomainStatus {
