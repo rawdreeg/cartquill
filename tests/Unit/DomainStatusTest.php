@@ -35,6 +35,27 @@ final class DomainStatusTest extends TestCase {
 		$this->assertTrue( $status->records[0]->is_verified() );
 	}
 
+	public function test_maps_mx_priority_and_ttl(): void {
+		$status = DomainStatus::from_resend(
+			array(
+				'name'    => 'mail.acme.test',
+				'status'  => 'pending',
+				'records' => array(
+					array( 'record' => 'MX', 'type' => 'MX', 'name' => 'send', 'value' => 'feedback-smtp.us-east-1.amazonses.com', 'priority' => 10, 'ttl' => 'Auto', 'status' => 'pending' ),
+					array( 'record' => 'SPF', 'type' => 'TXT', 'name' => 'send', 'value' => 'v=spf1 include:amazonses.com ~all', 'status' => 'pending' ),
+				),
+			)
+		);
+
+		// The MX record's priority must survive — Resend's Return-Path MX needs 10,
+		// and hand-copying without it silently fails SPF alignment.
+		$this->assertSame( '10', $status->records[0]->priority );
+		$this->assertSame( 'Auto', $status->records[0]->ttl );
+		// Non-MX records carry no priority and their TTL is blank when absent.
+		$this->assertSame( '', $status->records[1]->priority );
+		$this->assertSame( '', $status->records[1]->ttl );
+	}
+
 	public function test_pending_domain_is_not_verified(): void {
 		$status = DomainStatus::from_resend(
 			array(

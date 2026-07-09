@@ -52,6 +52,10 @@ final class DomainStatus {
 				(string) ( $record['name'] ?? '' ),
 				(string) ( $record['value'] ?? '' ),
 				(string) ( $record['status'] ?? 'pending' ),
+				// Resend sends priority only for MX records (as an int); TTL is a
+				// string like "Auto". Absent → blank so non-MX rows stay clean.
+				isset( $record['priority'] ) ? (string) $record['priority'] : '',
+				(string) ( $record['ttl'] ?? '' ),
 			);
 		}
 

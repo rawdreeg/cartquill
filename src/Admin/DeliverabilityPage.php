@@ -220,6 +220,8 @@ final class DeliverabilityPage {
 				<th><?php echo \esc_html__( 'Type', 'cartquill' ); ?></th>
 				<th><?php echo \esc_html__( 'Name', 'cartquill' ); ?></th>
 				<th><?php echo \esc_html__( 'Value', 'cartquill' ); ?></th>
+				<th><?php echo \esc_html__( 'Priority', 'cartquill' ); ?></th>
+				<th><?php echo \esc_html__( 'TTL', 'cartquill' ); ?></th>
 				<th><?php echo \esc_html__( 'Status', 'cartquill' ); ?></th>
 			</tr></thead>
 			<tbody>
@@ -229,6 +231,8 @@ final class DeliverabilityPage {
 					<td><?php echo \esc_html( (string) ( $record['type'] ?? '' ) ); ?></td>
 					<td><code><?php echo \esc_html( (string) ( $record['name'] ?? '' ) ); ?></code></td>
 					<td><code><?php echo \esc_html( (string) ( $record['value'] ?? '' ) ); ?></code></td>
+					<td><?php echo \esc_html( (string) ( $record['priority'] ?? '' ) ); ?></td>
+					<td><?php echo \esc_html( (string) ( $record['ttl'] ?? '' ) ); ?></td>
 					<td><?php echo \esc_html( (string) ( $record['status'] ?? '' ) ); ?></td>
 				</tr>
 			<?php endforeach; ?>
@@ -273,11 +277,13 @@ final class DeliverabilityPage {
 		$records = array();
 		foreach ( $status->records as $record ) {
 			$records[] = array(
-				'purpose' => $record->purpose,
-				'type'    => $record->type,
-				'name'    => $record->name,
-				'value'   => $record->value,
-				'status'  => $record->status,
+				'purpose'  => $record->purpose,
+				'type'     => $record->type,
+				'name'     => $record->name,
+				'value'    => $record->value,
+				'priority' => $record->priority,
+				'ttl'      => $record->ttl,
+				'status'   => $record->status,
 			);
 		}
 		return array(
