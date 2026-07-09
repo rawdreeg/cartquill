@@ -190,7 +190,8 @@ final class WpdbMessageRepository implements MessageRepository {
 			"SELECT flow_id,
 				SUM(CASE WHEN status NOT IN ('queued','failed') THEN 1 ELSE 0 END) AS sent,
 				SUM(CASE WHEN status IN ('opened','clicked') THEN 1 ELSE 0 END) AS opened,
-				SUM(CASE WHEN status = 'clicked' THEN 1 ELSE 0 END) AS clicked
+				SUM(CASE WHEN status = 'clicked' THEN 1 ELSE 0 END) AS clicked,
+				SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
 			FROM {$table} WHERE channel IN ({$channels}) GROUP BY flow_id", // phpcs:ignore WordPress.DB
 			ARRAY_A
 		);
@@ -201,6 +202,7 @@ final class WpdbMessageRepository implements MessageRepository {
 				'sent'    => (int) $row['sent'],
 				'opened'  => (int) $row['opened'],
 				'clicked' => (int) $row['clicked'],
+				'failed'  => (int) $row['failed'],
 			);
 		}
 		return $stats;

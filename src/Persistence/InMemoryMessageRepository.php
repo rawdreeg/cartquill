@@ -135,14 +135,18 @@ final class InMemoryMessageRepository implements MessageRepository {
 	public function stats_by_flow(): array {
 		$stats = array();
 		foreach ( $this->records as $record ) {
-			if ( ! $record->is_customer_channel()
-				|| in_array( $record->status, array( MessageRecord::STATUS_QUEUED, MessageRecord::STATUS_FAILED ), true )
-			) {
+			if ( ! $record->is_customer_channel() || MessageRecord::STATUS_QUEUED === $record->status ) {
 				continue;
 			}
 			$flow = $record->flow_id;
 			if ( ! isset( $stats[ $flow ] ) ) {
-				$stats[ $flow ] = array( 'sent' => 0, 'opened' => 0, 'clicked' => 0 );
+				$stats[ $flow ] = array( 'sent' => 0, 'opened' => 0, 'clicked' => 0, 'failed' => 0 );
+			}
+			// Dead-lettered sends are counted apart from sent (a failed attempt
+			// never reached the transport), so the report can surface them.
+			if ( MessageRecord::STATUS_FAILED === $record->status ) {
+				++$stats[ $flow ]['failed'];
+				continue;
 			}
 			++$stats[ $flow ]['sent'];
 			if ( in_array( $record->status, array( MessageRecord::STATUS_OPENED, MessageRecord::STATUS_CLICKED ), true ) ) {

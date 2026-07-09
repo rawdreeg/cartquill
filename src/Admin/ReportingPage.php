@@ -109,6 +109,7 @@ final class ReportingPage {
 					<tr>
 						<th><?php echo \esc_html__( 'Flow', 'cartquill' ); ?></th>
 						<th><?php echo \esc_html__( 'Sent', 'cartquill' ); ?></th>
+						<th><?php echo \esc_html__( 'Failed', 'cartquill' ); ?></th>
 						<?php if ( $deliverability ) : ?>
 							<th><?php echo \esc_html__( 'Delivered', 'cartquill' ); ?></th>
 						<?php endif; ?>
@@ -122,7 +123,7 @@ final class ReportingPage {
 					</tr>
 				</thead>
 				<tbody>
-					<?php $cols = $deliverability ? 8 : 5; ?>
+					<?php $cols = $deliverability ? 9 : 6; ?>
 					<?php if ( array() === $rows ) : ?>
 						<tr><td colspan="<?php echo (int) $cols; ?>"><?php echo \esc_html__( 'No flows yet — install one from the flow library.', 'cartquill' ); ?></td></tr>
 					<?php endif; ?>
@@ -130,6 +131,7 @@ final class ReportingPage {
 						<tr>
 							<td><?php echo \esc_html( $row->name ); ?></td>
 							<td><?php echo \esc_html( (string) $row->sent ); ?></td>
+							<td><?php echo \esc_html( (string) $row->failed ); ?></td>
 							<?php if ( $deliverability ) : ?>
 								<td><?php echo \esc_html( (string) $row->delivered ); ?></td>
 							<?php endif; ?>

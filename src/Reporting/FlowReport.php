@@ -23,10 +23,10 @@ use CartQuill\Persistence\FlowRecord;
 final class FlowReport {
 
 	/**
-	 * @param list<FlowRecord>                                                     $flows
-	 * @param array<int, array{sent: int, opened: int, clicked: int}>               $stats    By flow id.
-	 * @param array<int, float>                                                     $revenue  By flow id.
-	 * @param array<int, array{delivered: int, bounced: int, complained: int}>      $delivery By flow id (Deliverability add-on; empty on the free tier).
+	 * @param list<FlowRecord>                                                        $flows
+	 * @param array<int, array{sent: int, opened: int, clicked: int, failed?: int}>   $stats    By flow id.
+	 * @param array<int, float>                                                        $revenue  By flow id.
+	 * @param array<int, array{delivered: int, bounced: int, complained: int}>         $delivery By flow id (Deliverability add-on; empty on the free tier).
 	 *
 	 * @return list<FlowReportRow>
 	 */
@@ -46,6 +46,7 @@ final class FlowReport {
 				delivered: (int) $deliv['delivered'],
 				bounced: (int) $deliv['bounced'],
 				complained: (int) $deliv['complained'],
+				failed: (int) ( $counts['failed'] ?? 0 ),
 			);
 		}
 		return $rows;
@@ -65,7 +66,7 @@ final class FlowReport {
 	 * dashboard shows above the per-flow table.
 	 *
 	 * @param list<FlowReportRow> $rows
-	 * @return array{sent: int, opened: int, clicked: int, revenue: float, delivered: int, bounced: int, complained: int}
+	 * @return array{sent: int, opened: int, clicked: int, revenue: float, delivered: int, bounced: int, complained: int, failed: int}
 	 */
 	public function totals( array $rows ): array {
 		$totals = array(
@@ -76,6 +77,7 @@ final class FlowReport {
 			'delivered'  => 0,
 			'bounced'    => 0,
 			'complained' => 0,
+			'failed'     => 0,
 		);
 		foreach ( $rows as $row ) {
 			$totals['sent']       += $row->sent;
@@ -85,6 +87,7 @@ final class FlowReport {
 			$totals['delivered']  += $row->delivered;
 			$totals['bounced']    += $row->bounced;
 			$totals['complained'] += $row->complained;
+			$totals['failed']     += $row->failed;
 		}
 		return $totals;
 	}
