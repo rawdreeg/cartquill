@@ -74,11 +74,47 @@ final class EspSettings {
 
 	public function set_domain( string $domain ): void {
 		$data = $this->data();
-		// A changed sending domain invalidates any prior id/verification.
+		// A changed sending domain invalidates any prior id/verification and the
+		// DNS records/state captured for the old domain.
 		if ( ( $data['domain'] ?? '' ) !== $domain ) {
-			unset( $data['domain_id'], $data['domain_verified'] );
+			unset( $data['domain_id'], $data['domain_verified'], $data['domain_records'], $data['domain_state'] );
 		}
 		$data['domain'] = $domain;
+		\update_option( self::OPTION, $data, false );
+	}
+
+	/**
+	 * The DNS records the store must add, persisted so they survive the user
+	 * leaving to their registrar (they previously lived only in a short transient).
+	 *
+	 * @return list<array<string, string>>
+	 */
+	public function domain_records(): array {
+		$records = $this->data()['domain_records'] ?? array();
+		return is_array( $records ) ? $records : array();
+	}
+
+	/**
+	 * @param list<array<string, string>> $records
+	 */
+	public function set_domain_records( array $records ): void {
+		$data                   = $this->data();
+		$data['domain_records'] = $records;
+		\update_option( self::OPTION, $data, false );
+	}
+
+	/**
+	 * Resend's raw verification state (pending/verified/failed/…), persisted
+	 * alongside the records so the wizard can still say "Failed" or "Pending"
+	 * after the immediate response is gone.
+	 */
+	public function domain_state(): string {
+		return (string) ( $this->data()['domain_state'] ?? '' );
+	}
+
+	public function set_domain_state( string $state ): void {
+		$data                 = $this->data();
+		$data['domain_state'] = $state;
 		\update_option( self::OPTION, $data, false );
 	}
 

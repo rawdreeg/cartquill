@@ -29,7 +29,6 @@ final class DeliverabilityPage {
 
 	private const PARENT = 'cartquill';
 	public const SLUG    = 'cartquill-deliverability';
-	private const STATUS_TRANSIENT = 'cartquill_esp_domain_status';
 	private const MASK   = '••••••••';
 
 	public function __construct( private readonly EspSettings $esp ) {}
@@ -70,7 +69,9 @@ final class DeliverabilityPage {
 			$this->esp->set_webhook_secret( $secret );
 		}
 
-		\delete_transient( self::STATUS_TRANSIENT );
+		// A changed sending domain clears its persisted DNS records inside
+		// set_domain(); an unchanged domain keeps them, so re-saving the key
+		// doesn't wipe the records the store is mid-way through adding.
 		$this->redirect_back( 'saved' );
 	}
 
@@ -88,7 +89,7 @@ final class DeliverabilityPage {
 				$this->esp->set_domain_id( $status->id );
 			}
 			$this->esp->set_domain_verified( $status->verified );
-			\set_transient( self::STATUS_TRANSIENT, $this->snapshot( $status ), MINUTE_IN_SECONDS );
+			$this->persist_status( $status );
 			$this->redirect_back( 'provisioned' );
 		} catch ( ResendException $e ) {
 			$this->redirect_back( 'verify_error' );
@@ -118,7 +119,7 @@ final class DeliverabilityPage {
 			$client->verify_domain( $domain_id );
 			$status = $client->domain_status( $domain_id );
 			$this->esp->set_domain_verified( $status->verified );
-			\set_transient( self::STATUS_TRANSIENT, $this->snapshot( $status ), MINUTE_IN_SECONDS );
+			$this->persist_status( $status );
 			$this->redirect_back( 'verified' );
 		} catch ( ResendException $e ) {
 			$this->redirect_back( 'verify_error' );
@@ -196,16 +197,16 @@ final class DeliverabilityPage {
 	}
 
 	private function render_status(): void {
-		$snapshot = \get_transient( self::STATUS_TRANSIENT );
-		if ( ! is_array( $snapshot ) ) {
+		$records = $this->esp->domain_records();
+		if ( array() === $records ) {
 			return;
 		}
-		$verified = ! empty( $snapshot['verified'] );
+		$verified = $this->esp->is_domain_verified();
 		?>
 		<p>
 			<strong><?php echo \esc_html__( 'Status:', 'cartquill' ); ?></strong>
 			<?php
-			$state = (string) ( $snapshot['state'] ?? 'pending' );
+			$state = '' !== $this->esp->domain_state() ? $this->esp->domain_state() : 'pending';
 			if ( $verified ) : ?>
 				<span style="color:#008a20">&#10003; <?php echo \esc_html__( 'Verified', 'cartquill' ); ?></span>
 			<?php elseif ( 'failed' === $state ) : ?>
@@ -225,7 +226,7 @@ final class DeliverabilityPage {
 				<th><?php echo \esc_html__( 'Status', 'cartquill' ); ?></th>
 			</tr></thead>
 			<tbody>
-			<?php foreach ( (array) ( $snapshot['records'] ?? array() ) as $record ) : ?>
+			<?php foreach ( $records as $record ) : ?>
 				<tr>
 					<td><?php echo \esc_html( (string) ( $record['purpose'] ?? '' ) ); ?></td>
 					<td><?php echo \esc_html( (string) ( $record['type'] ?? '' ) ); ?></td>
@@ -271,9 +272,19 @@ final class DeliverabilityPage {
 	}
 
 	/**
-	 * @return array<string, mixed>
+	 * Persist the domain's DNS records + raw state so the wizard can show them
+	 * after the user returns from their registrar (the verified flag is stored
+	 * separately by the caller).
 	 */
-	private function snapshot( DomainStatus $status ): array {
+	private function persist_status( DomainStatus $status ): void {
+		$this->esp->set_domain_records( $this->records_to_array( $status ) );
+		$this->esp->set_domain_state( $status->state );
+	}
+
+	/**
+	 * @return list<array<string, string>>
+	 */
+	private function records_to_array( DomainStatus $status ): array {
 		$records = array();
 		foreach ( $status->records as $record ) {
 			$records[] = array(
@@ -286,11 +297,7 @@ final class DeliverabilityPage {
 				'status'   => $record->status,
 			);
 		}
-		return array(
-			'verified' => $status->verified,
-			'state'    => $status->state,
-			'records'  => $records,
-		);
+		return $records;
 	}
 
 	private function render_notice( string $notice ): void {
