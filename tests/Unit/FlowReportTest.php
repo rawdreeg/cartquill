@@ -23,13 +23,14 @@ final class FlowReportTest extends TestCase {
 		$this->record( $messages, 1, MessageRecord::STATUS_OPENED );
 		$this->record( $messages, 1, MessageRecord::STATUS_CLICKED );
 		$this->record( $messages, 1, MessageRecord::STATUS_QUEUED ); // not counted
-		$this->record( $messages, 1, MessageRecord::STATUS_FAILED ); // not counted
+		$this->record( $messages, 1, MessageRecord::STATUS_FAILED ); // counted as failed, not sent
 
 		$stats = $messages->stats_by_flow();
 
 		$this->assertSame( 3, $stats[1]['sent'], 'sent = anything past queued/failed' );
 		$this->assertSame( 2, $stats[1]['opened'], 'a click implies an open' );
 		$this->assertSame( 1, $stats[1]['clicked'] );
+		$this->assertSame( 1, $stats[1]['failed'], 'dead-lettered sends are counted separately from sent' );
 	}
 
 	public function test_build_produces_a_row_per_flow_with_zeros_where_idle(): void {
@@ -91,11 +92,28 @@ final class FlowReportTest extends TestCase {
 		$this->assertSame( 0, $rows[0]->complained );
 	}
 
+	public function test_build_maps_the_failed_count_onto_rows(): void {
+		$flows = array( $this->flow( 1, 'Welcome' ) );
+		$stats = array( 1 => array( 'sent' => 10, 'opened' => 4, 'clicked' => 2, 'failed' => 3 ) );
+
+		$rows = ( new FlowReport() )->build( $flows, $stats, array() );
+
+		$this->assertSame( 3, $rows[0]->failed );
+	}
+
+	public function test_build_defaults_failed_to_zero_when_stats_omit_it(): void {
+		$stats = array( 1 => array( 'sent' => 1, 'opened' => 0, 'clicked' => 0 ) );
+
+		$rows = ( new FlowReport() )->build( array( $this->flow( 1, 'Welcome' ) ), $stats, array() );
+
+		$this->assertSame( 0, $rows[0]->failed, 'stats without a failed key default to 0' );
+	}
+
 	public function test_totals_sums_every_metric_across_rows(): void {
 		$flows    = array( $this->flow( 1, 'Welcome' ), $this->flow( 2, 'Win-back' ) );
 		$stats    = array(
-			1 => array( 'sent' => 10, 'opened' => 4, 'clicked' => 2 ),
-			2 => array( 'sent' => 5, 'opened' => 1, 'clicked' => 0 ),
+			1 => array( 'sent' => 10, 'opened' => 4, 'clicked' => 2, 'failed' => 1 ),
+			2 => array( 'sent' => 5, 'opened' => 1, 'clicked' => 0, 'failed' => 2 ),
 		);
 		$revenue  = array( 1 => 150.0, 2 => 30.0 );
 		$delivery = array(
@@ -113,6 +131,7 @@ final class FlowReportTest extends TestCase {
 		$this->assertSame( 13, $totals['delivered'] );
 		$this->assertSame( 2, $totals['bounced'] );
 		$this->assertSame( 1, $totals['complained'] );
+		$this->assertSame( 3, $totals['failed'] );
 	}
 
 	public function test_totals_are_zero_for_no_rows(): void {
@@ -122,6 +141,7 @@ final class FlowReportTest extends TestCase {
 		$this->assertSame( 0, $totals['opened'] );
 		$this->assertSame( 0, $totals['clicked'] );
 		$this->assertSame( 0.0, $totals['revenue'] );
+		$this->assertSame( 0, $totals['failed'] );
 	}
 
 	private function record( InMemoryMessageRepository $repo, int $flow_id, string $status ): void {
