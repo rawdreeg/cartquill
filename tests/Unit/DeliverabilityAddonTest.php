@@ -181,6 +181,38 @@ final class DeliverabilityAddonTest extends TestCase {
 		$this->assertFalse( $this->hooks_notice( $hooked, 'render_from_domain_mismatch_notice' ), 'no false-positive warning when From matches' );
 	}
 
+	public function test_delivery_tracking_is_ready_only_when_fully_wired(): void {
+		$esp = $this->esp( 'example.com' ); // licensed key + verified domain
+		$esp->set_webhook_secret( 'whsec_live' );
+		$addon = $this->addon( $esp, $this->licensed(), 'hello@example.com' );
+
+		$this->assertTrue( $addon->delivery_tracking_ready( false ) );
+	}
+
+	public function test_delivery_tracking_is_not_ready_without_a_webhook_secret(): void {
+		// No secret → the endpoint never registers → no events ever arrive.
+		$addon = $this->addon( $this->esp( 'example.com' ), $this->licensed(), 'hello@example.com' );
+
+		$this->assertFalse( $addon->delivery_tracking_ready( false ) );
+	}
+
+	public function test_delivery_tracking_is_not_ready_without_a_verified_domain_or_license(): void {
+		$unverified = new EspSettings( $this->crypto() );
+		$unverified->set_api_key( 're_test' );
+		$unverified->set_domain( 'example.com' ); // not verified
+		$unverified->set_webhook_secret( 'whsec_live' );
+		$this->assertFalse(
+			$this->addon( $unverified, $this->licensed(), 'hello@example.com' )->delivery_tracking_ready( false )
+		);
+
+		$wired = $this->esp( 'example.com' );
+		$wired->set_webhook_secret( 'whsec_live' );
+		$this->assertFalse(
+			$this->addon( $wired, new ArrayLicense(), 'hello@example.com' )->delivery_tracking_ready( false ),
+			'unlicensed is never tracking-ready'
+		);
+	}
+
 	public function test_warns_when_the_webhook_secret_cannot_be_decrypted(): void {
 		$hooked = array();
 		Functions\when( 'add_action' )->alias(
