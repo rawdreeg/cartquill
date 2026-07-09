@@ -28,3 +28,5 @@ Thumbs.db
 
 # PHPUnit
 .phpunit.cache/
+# PHPUnit 9 phar for the WP-integration suite (downloaded, see npm run test:integration:setup).
+/phpunit-9.phar

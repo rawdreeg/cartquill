@@ -8,9 +8,14 @@
     "build": "wp-scripts build",
     "start": "wp-scripts start",
     "lint:js": "wp-scripts lint-js assets/builder/src",
-    "test:js": "wp-scripts test-unit-js"
+    "test:js": "wp-scripts test-unit-js",
+    "env:start": "wp-env start",
+    "env:destroy": "wp-env destroy",
+    "test:integration:setup": "curl -fsSL --retry 3 --retry-delay 2 https://phar.phpunit.de/phpunit-9.6.35.phar -o phpunit-9.phar && php phpunit-9.phar --version | grep -q PHPUnit",
+    "test:integration": "wp-env run tests-cli --env-cwd=wp-content/plugins/cartquill php phpunit-9.phar -c phpunit-integration.xml.dist"
   },
   "devDependencies": {
+    "@wordpress/env": "^10.0.0",
     "@wordpress/scripts": "^27.9.0"
   },
   "dependencies": {
