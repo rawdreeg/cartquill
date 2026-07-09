@@ -152,6 +152,17 @@ final class EspSettings {
 	}
 
 	/**
+	 * Whether a webhook signing secret is stored but no longer decrypts. Unlike a
+	 * broken key (which loudly falls back to wp_mail), a broken secret is silent:
+	 * the webhook endpoint simply never registers, so delivery/bounce events stop
+	 * flowing and addresses stop auto-suppressing with no other symptom.
+	 */
+	public function has_undecryptable_secret(): bool {
+		$data = $this->data();
+		return ! empty( $data['webhook_secret'] ) && null === $this->crypto->decrypt( (string) $data['webhook_secret'] );
+	}
+
+	/**
 	 * @return array<string, mixed>
 	 */
 	private function data(): array {

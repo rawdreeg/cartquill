@@ -174,23 +174,54 @@ final class DeliverabilityAddonTest extends TestCase {
 		);
 
 		$this->addon( $this->esp( 'example.com' ), $this->licensed(), 'owner@gmail.com' )->register_surfaces();
-		$this->assertTrue( $this->hooks_mismatch_notice( $hooked ), 'mismatch warns the operator' );
+		$this->assertTrue( $this->hooks_notice( $hooked, 'render_from_domain_mismatch_notice' ), 'mismatch warns the operator' );
 
 		$hooked = array();
 		$this->addon( $this->esp( 'example.com' ), $this->licensed(), 'hello@example.com' )->register_surfaces();
-		$this->assertFalse( $this->hooks_mismatch_notice( $hooked ), 'no false-positive warning when From matches' );
+		$this->assertFalse( $this->hooks_notice( $hooked, 'render_from_domain_mismatch_notice' ), 'no false-positive warning when From matches' );
+	}
+
+	public function test_warns_when_the_webhook_secret_cannot_be_decrypted(): void {
+		$hooked = array();
+		Functions\when( 'add_action' )->alias(
+			static function ( string $hook, $callback = null ) use ( &$hooked ): bool {
+				$hooked[] = array( $hook, $callback );
+				return true;
+			}
+		);
+
+		// A stored-but-undecryptable secret (the install key was lost). encrypt is
+		// identity so the stored value round-trips to storage; decrypt fails.
+		$esp = new EspSettings(
+			new class() implements Crypto {
+				public function encrypt( string $plaintext ): string {
+					return $plaintext;
+				}
+				public function decrypt( string $ciphertext ): ?string {
+					return null;
+				}
+			}
+		);
+		$esp->set_webhook_secret( 'whsec_lost' );
+
+		$this->addon( $esp, $this->licensed(), 'hello@example.com' )->register_surfaces();
+
+		$this->assertTrue(
+			$this->hooks_notice( $hooked, 'render_undecryptable_secret_notice' ),
+			'a broken webhook secret is surfaced rather than silently killing ingestion'
+		);
 	}
 
 	/**
 	 * @param array<int, array{0: string, 1: mixed}> $hooked Recorded add_action calls.
 	 */
-	private function hooks_mismatch_notice( array $hooked ): bool {
+	private function hooks_notice( array $hooked, string $method ): bool {
 		foreach ( $hooked as $call ) {
 			$callback = $call[1];
 			if ( 'admin_notices' === $call[0]
 				&& is_array( $callback )
 				&& isset( $callback[1] )
-				&& 'render_from_domain_mismatch_notice' === $callback[1] ) {
+				&& $method === $callback[1] ) {
 				return true;
 			}
 		}
