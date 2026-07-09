@@ -29,14 +29,17 @@ use CartQuill\Tracking\NullLinkTracker;
 final class MessageComposer {
 
 	private readonly LinkTracker $tracker;
+	private readonly EmailTemplate $template;
 
 	public function __construct(
 		private readonly Renderer $renderer,
 		private readonly Settings $settings,
 		?LinkTracker $tracker = null,
 		private readonly ?UnsubscribeLink $unsubscribe_link = null,
+		?EmailTemplate $template = null,
 	) {
-		$this->tracker = $tracker ?? new NullLinkTracker();
+		$this->tracker  = $tracker ?? new NullLinkTracker();
+		$this->template = $template ?? new EmailTemplate();
 	}
 
 	/**
@@ -52,12 +55,17 @@ final class MessageComposer {
 			'unsubscribe_url' => $unsubscribe,
 		);
 
-		// Render content, wrap its links for click tracking, add the unsubscribe
-		// footer (not wrapped — it is a mailto:), then the open pixel last.
-		$body = $this->renderer->render( $step->body, $context );
-		$body = $this->tracker->wrap_links( $body, $message_id );
-		$body = $this->with_unsubscribe_footer( $body, $unsubscribe );
-		$body .= $this->tracker->pixel_html( $message_id );
+		// Render content and wrap its links for click tracking, then wrap the
+		// whole thing in the branded email shell with the unsubscribe footer, and
+		// add the open pixel last (inside the document body).
+		$content = $this->renderer->render( $step->body, $context );
+		$content = $this->tracker->wrap_links( $content, $message_id );
+		$content .= $this->tracker->pixel_html( $message_id );
+		$body    = $this->template->wrap(
+			$content,
+			$this->unsubscribe_footer( $unsubscribe ),
+			$this->settings->from_name()
+		);
 
 		return new Message(
 			to: $recipient,
@@ -85,18 +93,16 @@ final class MessageComposer {
 	}
 
 	/**
-	 * Append an unsubscribe footer to every email. When an unsubscribe target
-	 * exists it is a link; otherwise a plain-text notice still guarantees the
-	 * message visibly carries an unsubscribe, honoring the locked compliance
-	 * rule even if the from-address is unconfigured.
+	 * The unsubscribe footer for every email. When an unsubscribe target exists it
+	 * is a link; otherwise a plain-text notice still guarantees the message visibly
+	 * carries an unsubscribe, honoring the locked compliance rule even if the
+	 * from-address is unconfigured.
 	 */
-	private function with_unsubscribe_footer( string $body, string $unsubscribe ): string {
+	private function unsubscribe_footer( string $unsubscribe ): string {
 		$notice = '' !== $unsubscribe
-			? sprintf( '<a href="%s">Unsubscribe</a> from these emails.', $unsubscribe )
+			? sprintf( '<a href="%s" style="color:#646970;">Unsubscribe</a> from these emails.', $unsubscribe )
 			: 'To unsubscribe, reply to this email with &ldquo;unsubscribe&rdquo;.';
 
-		$footer = '<p style="font-size:12px;color:#888;margin-top:24px">' . $notice . '</p>';
-
-		return $body . "\n" . $footer;
+		return '<p style="font-size:12px;color:#888888;margin:0;">' . $notice . '</p>';
 	}
 }
