@@ -54,13 +54,28 @@ final class HttpResendClient implements ResendClient {
 			$payload['headers'] = $headers;
 		}
 
-		$data = $this->request( 'POST', '/emails', $payload );
+		$data = $this->request( 'POST', '/emails', $payload, $this->idempotency_key( $message ) );
 
 		if ( ! isset( $data['id'] ) || '' === (string) $data['id'] ) {
 			throw new ResendException( 'Resend accepted the request but returned no message id.' );
 		}
 
 		return (string) $data['id'];
+	}
+
+	/**
+	 * A key stable across retries of the same logical send — the engine retries a
+	 * step's own claimed message row, so (enrollment, step) identifies it. Lets a
+	 * lost-response resend land in Resend's idempotency window instead of mailing
+	 * the customer twice. Absent for sends with no enrollment (nothing to key on).
+	 */
+	private function idempotency_key( Message $message ): ?string {
+		// Both halves of the identity must be known: without a real step index we
+		// would fake a null step as 0 and could collide two distinct sends.
+		if ( null === $message->enrollment_id || null === $message->step_index ) {
+			return null;
+		}
+		return sprintf( 'cartquill-%d-%d', $message->enrollment_id, $message->step_index );
 	}
 
 	public function create_domain( string $domain ): DomainStatus {
@@ -98,14 +113,19 @@ final class HttpResendClient implements ResendClient {
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function request( string $method, string $path, ?array $body ): array {
+	private function request( string $method, string $path, ?array $body, ?string $idempotency_key = null ): array {
+		$headers = array(
+			'Authorization' => 'Bearer ' . $this->api_key,
+			'Content-Type'  => 'application/json',
+		);
+		if ( null !== $idempotency_key ) {
+			$headers['Idempotency-Key'] = $idempotency_key;
+		}
+
 		$args = array(
 			'method'  => $method,
 			'timeout' => $this->timeout,
-			'headers' => array(
-				'Authorization' => 'Bearer ' . $this->api_key,
-				'Content-Type'  => 'application/json',
-			),
+			'headers' => $headers,
 		);
 		if ( null !== $body ) {
 			$args['body'] = (string) \wp_json_encode( $body );

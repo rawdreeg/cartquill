@@ -181,6 +181,35 @@ final class HttpResendClientTest extends TestCase {
 		$this->assertArrayNotHasKey( 'headers', $body, 'no unsubscribe target → no extra headers' );
 	}
 
+	public function test_send_includes_an_idempotency_key_from_enrollment_and_step(): void {
+		$this->stub_http( $this->ok( array( 'id' => 'resend-1' ) ) );
+
+		$message = new Message(
+			to: 'buyer@example.com',
+			subject: 'Your order',
+			body: '<p>Thanks</p>',
+			from_name: 'Acme',
+			from_email: 'hello@acme.test',
+			enrollment_id: 9,
+			step_index: 2,
+		);
+
+		$this->client()->send( $message );
+
+		// Stable across retries of the same (enrollment, step) → a lost-response
+		// resend hits Resend's idempotency window and does not duplicate the email.
+		$this->assertSame( 'cartquill-9-2', $this->last_request['args']['headers']['Idempotency-Key'] );
+	}
+
+	public function test_send_omits_the_idempotency_key_without_an_enrollment(): void {
+		$this->stub_http( $this->ok( array( 'id' => 'resend-1' ) ) );
+
+		// The default message() helper has no enrollment (e.g. an ad-hoc test send).
+		$this->client()->send( $this->message() );
+
+		$this->assertArrayNotHasKey( 'Idempotency-Key', $this->last_request['args']['headers'] );
+	}
+
 	public function test_send_throws_when_the_response_has_no_id(): void {
 		$this->stub_http( $this->ok( array() ) ); // accepted, but no id
 

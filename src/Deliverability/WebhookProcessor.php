@@ -20,9 +20,10 @@ use CartQuill\Persistence\MessageRepository;
 /**
  * The tested core of webhook ingestion (no WordPress): given a decoded Resend
  * event, it moves the matching message row forward through
- * delivered → opened → clicked (never backwards) and marks bounced/complained.
- * A bounce or complaint additionally adds the recipient to the global
- * suppression list, so the very next send skips a dead or hostile address.
+ * delivered → opened → clicked (never backwards) and marks bounced/complained/
+ * failed. A bounce, complaint, or permanent failure additionally adds the
+ * recipient to the global suppression list, so the very next send skips a dead,
+ * hostile, or unreachable address.
  */
 final class WebhookProcessor {
 
@@ -34,6 +35,7 @@ final class WebhookProcessor {
 		'email.clicked'    => MessageRecord::STATUS_CLICKED,
 		'email.bounced'    => MessageRecord::STATUS_BOUNCED,
 		'email.complained' => MessageRecord::STATUS_COMPLAINED,
+		'email.failed'     => MessageRecord::STATUS_FAILED,
 	);
 
 	/** How far a positive lifecycle status has progressed (higher = further). */
@@ -48,6 +50,7 @@ final class WebhookProcessor {
 	private const SUPPRESSING = array(
 		MessageRecord::STATUS_BOUNCED,
 		MessageRecord::STATUS_COMPLAINED,
+		MessageRecord::STATUS_FAILED,
 	);
 
 	public function __construct(
@@ -74,7 +77,11 @@ final class WebhookProcessor {
 		if ( in_array( $status, self::SUPPRESSING, true ) ) {
 			$recipient = null !== $message ? $message->recipient : $this->recipient_from( $data );
 			if ( '' !== $recipient ) {
-				$reason = MessageRecord::STATUS_BOUNCED === $status ? 'bounce' : 'complaint';
+				$reason = match ( $status ) {
+					MessageRecord::STATUS_BOUNCED    => 'bounce',
+					MessageRecord::STATUS_COMPLAINED => 'complaint',
+					default                          => 'failed',
+				};
 				$this->suppression->suppress( $recipient, $reason );
 			}
 			// Suppression always applies, but a message already in a terminal
