@@ -69,6 +69,13 @@ final class DeliverabilityAddon {
 			\add_action( 'admin_notices', array( $this, 'render_undecryptable_key_notice' ) );
 		}
 
+		// A broken signing secret is silent — the webhook endpoint below never
+		// registers — so warn explicitly rather than letting delivery events and
+		// bounce auto-suppression quietly stop.
+		if ( $this->esp->has_undecryptable_secret() ) {
+			\add_action( 'admin_notices', array( $this, 'render_undecryptable_secret_notice' ) );
+		}
+
 		// Everything is provisioned except the From-address: it sits on a domain
 		// Resend hasn't verified, so Resend is being held back to wp_mail and every
 		// send would 554-bounce if forced. Tell the operator exactly why.
@@ -93,6 +100,18 @@ final class DeliverabilityAddon {
 		echo '<div class="notice notice-error"><p>';
 		echo \esc_html__(
 			'CartQuill could not decrypt your saved Resend API key (the site security keys may have changed). Sending has fallen back to wp_mail — re-enter your key on the Deliverability screen to resume.',
+			'cartquill'
+		);
+		echo '</p></div>';
+	}
+
+	public function render_undecryptable_secret_notice(): void {
+		if ( ! \current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		echo '<div class="notice notice-error"><p>';
+		echo \esc_html__(
+			'CartQuill could not decrypt your saved Resend webhook signing secret (the site security keys may have changed). Delivery, bounce, and complaint events are no longer being received — re-enter your webhook signing secret on the Deliverability screen to resume.',
 			'cartquill'
 		);
 		echo '</p></div>';
