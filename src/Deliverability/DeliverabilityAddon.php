@@ -96,6 +96,13 @@ final class DeliverabilityAddon {
 			\add_action( 'admin_notices', array( $this, 'render_from_domain_mismatch_notice' ) );
 		}
 
+		// Proactively re-check the sending domain's health so a domain that drifts
+		// to unverified (DNS changed/removed) auto-falls back to wp_mail instead of
+		// bouncing every send. The listener is always bound (so a due action has a
+		// callback); the schedule tracks whether there is a domain to check.
+		\add_action( DomainHealthMonitor::HOOK, array( $this, 'run_health_check' ) );
+		$this->sync_health_check_schedule();
+
 		// Ingest Resend delivery webhooks once a signing secret is configured. A
 		// real clock enables Svix replay-window enforcement at runtime.
 		if ( $this->esp->has_webhook_secret() ) {
@@ -116,6 +123,33 @@ final class DeliverabilityAddon {
 			'cartquill'
 		);
 		echo '</p></div>';
+	}
+
+	/**
+	 * Recurring Action Scheduler callback: re-poll Resend for the sending domain's
+	 * current verification state and write it back.
+	 */
+	public function run_health_check(): void {
+		( new DomainHealthMonitor( $this->esp, new HttpResendClient( $this->esp->api_key() ) ) )->refresh();
+	}
+
+	/**
+	 * Keep the recurring domain-health re-poll scheduled exactly while there is a
+	 * provisioned domain to check, so it self-cleans when the store deconfigures.
+	 */
+	private function sync_health_check_schedule(): void {
+		$configured = '' !== $this->esp->domain_id() && $this->esp->has_key();
+
+		if ( $configured ) {
+			if ( function_exists( 'as_has_scheduled_action' )
+				&& function_exists( 'as_schedule_recurring_action' )
+				&& ! \as_has_scheduled_action( DomainHealthMonitor::HOOK )
+			) {
+				\as_schedule_recurring_action( time(), DomainHealthMonitor::INTERVAL, DomainHealthMonitor::HOOK, array(), 'cartquill' );
+			}
+		} elseif ( function_exists( 'as_unschedule_all_actions' ) ) {
+			\as_unschedule_all_actions( DomainHealthMonitor::HOOK, array(), 'cartquill' );
+		}
 	}
 
 	public function render_undecryptable_secret_notice(): void {

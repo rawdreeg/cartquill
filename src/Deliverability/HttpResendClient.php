@@ -143,7 +143,7 @@ final class HttpResendClient implements ResendClient {
 
 		if ( $code < 200 || $code >= 300 ) {
 			$detail = isset( $data['message'] ) ? (string) $data['message'] : "HTTP {$code}";
-			throw new ResendException( 'Resend error: ' . $detail );
+			throw new ResendException( 'Resend error: ' . $detail, $code );
 		}
 
 		return $data;
