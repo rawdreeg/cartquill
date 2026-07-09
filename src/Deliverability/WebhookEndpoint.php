@@ -27,6 +27,7 @@ final class WebhookEndpoint {
 	public function __construct(
 		private readonly WebhookVerifier $verifier,
 		private readonly WebhookProcessor $processor,
+		private readonly ?EspSettings $esp = null,
 	) {}
 
 	public function register(): void {
@@ -58,6 +59,12 @@ final class WebhookEndpoint {
 		}
 
 		$status = $this->handle( $this->read_body(), $this->read_headers() );
+
+		// Record that a genuine, authenticated event arrived, so the wizard can
+		// show the store whether delivery events are actually flowing.
+		if ( 200 === $status && null !== $this->esp ) {
+			$this->esp->set_last_event_at( time() );
+		}
 
 		\status_header( $status );
 		echo 200 === $status ? 'ok' : 'rejected';

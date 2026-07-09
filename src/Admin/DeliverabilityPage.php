@@ -179,6 +179,22 @@ final class DeliverabilityPage {
 								<?php echo \esc_html__( 'Point a Resend webhook at the URL below and paste its signing secret here to receive delivery, bounce and complaint events:', 'cartquill' ); ?>
 								<br /><code><?php echo \esc_html( \add_query_arg( \CartQuill\Deliverability\WebhookEndpoint::PARAM, 'resend', \home_url( '/' ) ) ); ?></code>
 							</p>
+							<?php if ( $this->esp->has_webhook_secret() ) : ?>
+								<p class="description">
+									<?php
+									$last_event = $this->esp->last_event_at();
+									if ( $last_event > 0 ) {
+										printf(
+											/* translators: %s: human-readable time since the last event, e.g. "5 minutes". */
+											\esc_html__( '&#10003; Last delivery event received %s ago.', 'cartquill' ),
+											\esc_html( \human_time_diff( $last_event ) )
+										);
+									} else {
+										echo \esc_html__( 'No delivery events received yet — send a test event from your Resend webhook, or wait for your next send.', 'cartquill' );
+									}
+									?>
+								</p>
+							<?php endif; ?>
 						</td>
 					</tr>
 				</table>

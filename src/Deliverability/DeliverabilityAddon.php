@@ -108,6 +108,7 @@ final class DeliverabilityAddon {
 			( new WebhookEndpoint(
 				new ResendWebhookVerifier( $this->esp->webhook_secret(), new SystemClock() ),
 				new WebhookProcessor( $this->messages, $this->suppression ),
+				$this->esp,
 			) )->register();
 		}
 	}
