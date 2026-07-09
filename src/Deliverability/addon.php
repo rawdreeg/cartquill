@@ -19,6 +19,7 @@ use CartQuill\Licensing\OptionLicense;
 use CartQuill\Persistence\WpdbMessageRepository;
 use CartQuill\Security\InstallKey;
 use CartQuill\Security\SodiumCrypto;
+use CartQuill\Settings\OptionsSettings;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -28,5 +29,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	new EspSettings( new SodiumCrypto( InstallKey::get() ) ),
 	new OptionLicense(),
 	new WpdbMessageRepository(),
-	new WpdbSuppressionList()
+	new WpdbSuppressionList(),
+	new OptionsSettings()
 ) )->register();
