@@ -125,6 +125,49 @@ final class WebhookProcessorTest extends TestCase {
 		$this->assertTrue( $this->suppression->is_suppressed( 'dead@example.com' ) );
 	}
 
+	public function test_failed_event_marks_failed_and_suppresses_the_recipient(): void {
+		$message = $this->sent_message( 'resend-9', 'reject@example.com' );
+
+		$handled = $this->processor->process(
+			$this->event( 'email.failed', array( 'email_id' => 'resend-9', 'to' => array( 'reject@example.com' ) ) )
+		);
+
+		$this->assertTrue( $handled );
+		$this->assertSame( MessageRecord::STATUS_FAILED, $this->messages->find( (int) $message->id )->status );
+		$this->assertTrue( $this->suppression->is_suppressed( 'reject@example.com' ), 'a permanently failed address is suppressed' );
+	}
+
+	public function test_failed_for_unknown_message_still_suppresses_from_payload(): void {
+		$handled = $this->processor->process(
+			$this->event( 'email.failed', array( 'email_id' => 'nope', 'to' => array( 'ghost2@example.com' ) ) )
+		);
+
+		$this->assertTrue( $handled );
+		$this->assertTrue( $this->suppression->is_suppressed( 'ghost2@example.com' ), 'suppress even without a matching message row' );
+	}
+
+	public function test_a_failed_event_never_downgrades_a_complaint(): void {
+		$message = $this->sent_message( 'resend-10', 'angry2@example.com' );
+		$this->processor->process( $this->event( 'email.complained', array( 'email_id' => 'resend-10' ) ) );
+		$this->assertSame( MessageRecord::STATUS_COMPLAINED, $this->messages->find( (int) $message->id )->status );
+
+		$this->processor->process( $this->event( 'email.failed', array( 'email_id' => 'resend-10', 'to' => array( 'angry2@example.com' ) ) ) );
+
+		$this->assertSame( MessageRecord::STATUS_COMPLAINED, $this->messages->find( (int) $message->id )->status, 'a later failed event does not overwrite a complaint' );
+	}
+
+	public function test_a_late_positive_event_never_resurrects_a_failed_message(): void {
+		$message = $this->sent_message( 'resend-11', 'reject@example.com' );
+		$this->processor->process( $this->event( 'email.failed', array( 'email_id' => 'resend-11', 'to' => array( 'reject@example.com' ) ) ) );
+		$this->assertSame( MessageRecord::STATUS_FAILED, $this->messages->find( (int) $message->id )->status );
+
+		// A delivered/opened event arriving after the permanent failure must not revive it.
+		$this->processor->process( $this->event( 'email.delivered', array( 'email_id' => 'resend-11' ) ) );
+		$this->processor->process( $this->event( 'email.opened', array( 'email_id' => 'resend-11' ) ) );
+
+		$this->assertSame( MessageRecord::STATUS_FAILED, $this->messages->find( (int) $message->id )->status, 'failed is terminal' );
+	}
+
 	public function test_unknown_event_type_is_ignored(): void {
 		$message = $this->sent_message( 'resend-6' );
 
