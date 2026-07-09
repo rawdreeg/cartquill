@@ -100,6 +100,35 @@ final class EspSettingsTest extends TestCase {
 		$this->assertFalse( $esp->is_domain_verified() );
 	}
 
+	public function test_reports_an_undecryptable_webhook_secret(): void {
+		// A secret was stored, then the install key was lost so decrypt now fails.
+		$esp = new EspSettings(
+			new class() implements Crypto {
+				public function encrypt( string $plaintext ): string {
+					return $plaintext;
+				}
+				public function decrypt( string $ciphertext ): ?string {
+					return null;
+				}
+			}
+		);
+		$esp->set_webhook_secret( 'whsec_lost' );
+
+		$this->assertTrue( $esp->has_undecryptable_secret() );
+		$this->assertSame( '', $esp->webhook_secret(), 'reads as empty so ingestion degrades safely' );
+	}
+
+	public function test_a_decryptable_webhook_secret_is_not_flagged(): void {
+		$esp = $this->esp();
+		$esp->set_webhook_secret( 'whsec_ok' );
+
+		$this->assertFalse( $esp->has_undecryptable_secret() );
+	}
+
+	public function test_no_webhook_secret_is_not_undecryptable(): void {
+		$this->assertFalse( $this->esp()->has_undecryptable_secret() );
+	}
+
 	public function test_re_saving_the_same_domain_preserves_records_and_state(): void {
 		$esp = $this->esp();
 		$esp->set_domain( 'mail.acme.test' );
