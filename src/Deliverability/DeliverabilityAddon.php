@@ -77,7 +77,13 @@ final class DeliverabilityAddon {
 		// so a lapsed license (add-on still present) doesn't orphan a recurring
 		// action. The listener is always bound; the schedule tracks configuration.
 		\add_action( DomainHealthMonitor::HOOK, array( $this, 'run_health_check' ) );
-		$this->sync_health_check_schedule();
+
+		// This runs on `cartquill_register_addons`, which fires during
+		// `plugins_loaded` — before Action Scheduler's data store is initialized.
+		// Scheduling/unscheduling here trips AS's "called too early" notice (and
+		// pulls the bundled woocommerce textdomain in early). Defer to `init`, like
+		// the core scanners do in Plugin::schedule_recurring().
+		\add_action( 'init', array( $this, 'sync_health_check_schedule' ) );
 
 		if ( ! $this->license->is_active( Plans::DELIVERABILITY ) ) {
 			return;
@@ -136,8 +142,11 @@ final class DeliverabilityAddon {
 	/**
 	 * Keep the recurring domain-health re-poll scheduled exactly while there is a
 	 * provisioned domain to check, so it self-cleans when the store deconfigures.
+	 *
+	 * Bound to `init` (not called inline) because Action Scheduler's data store is
+	 * only ready then; see the note in register_surfaces().
 	 */
-	private function sync_health_check_schedule(): void {
+	public function sync_health_check_schedule(): void {
 		$configured = $this->license->is_active( Plans::DELIVERABILITY )
 			&& '' !== $this->esp->domain_id()
 			&& $this->esp->has_key();
