@@ -199,11 +199,14 @@ final class FlowLibraryPage {
 			return \__( 'Immediately', 'cartquill' );
 		}
 		if ( $seconds % DAY_IN_SECONDS === 0 ) {
+			/* translators: %d: number of days. */
 			return sprintf( \_n( '%d day', '%d days', $seconds / DAY_IN_SECONDS, 'cartquill' ), $seconds / DAY_IN_SECONDS );
 		}
 		if ( $seconds % HOUR_IN_SECONDS === 0 ) {
+			/* translators: %d: number of hours. */
 			return sprintf( \_n( '%d hour', '%d hours', $seconds / HOUR_IN_SECONDS, 'cartquill' ), $seconds / HOUR_IN_SECONDS );
 		}
+		/* translators: %d: number of minutes. */
 		return sprintf( \_n( '%d minute', '%d minutes', max( 1, (int) round( $seconds / 60 ) ), 'cartquill' ), max( 1, (int) round( $seconds / 60 ) ) );
 	}
 

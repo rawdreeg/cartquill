@@ -101,10 +101,12 @@ final class ReportingPage {
 
 			<p class="description">
 				<?php
+				/* translators: %d: number of days in the attribution window. */
+				$window = sprintf( \_n( '%d day', '%d days', $days, 'cartquill' ), $days );
 				printf(
 					/* translators: %s: attribution window, e.g. "1 day" or "7 days". */
 					\esc_html__( 'Revenue is attributed last-touch: an order credits the most recent flow email sent within %s.', 'cartquill' ),
-					\esc_html( sprintf( \_n( '%d day', '%d days', $days, 'cartquill' ), $days ) )
+					\esc_html( $window )
 				);
 				?>
 			</p>
