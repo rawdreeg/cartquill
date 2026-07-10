@@ -33,7 +33,7 @@ final class InMemoryMessageRepository implements MessageRepository {
 		$key = $this->unique_key( $record->enrollment_id, $record->step_index );
 		if ( null !== $key ) {
 			if ( isset( $this->unique[ $key ] ) && null === $record->id ) {
-				throw new \RuntimeException( "Duplicate message for {$key} (unique constraint)." );
+				throw new \RuntimeException( \esc_html( "Duplicate message for {$key} (unique constraint)." ) );
 			}
 			$this->unique[ $key ] = true;
 		}
