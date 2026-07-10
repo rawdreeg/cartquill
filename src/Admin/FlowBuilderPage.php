@@ -50,7 +50,7 @@ final class FlowBuilderPage {
 		$flow_id = isset( $_GET['flow'] ) ? (int) $_GET['flow'] : 0;
 		$this->enqueue( $flow_id );
 
-		echo '<div class="wrap cartquill-admin"><div id="cartquill-flow-builder"></div></div>';
+		echo '<div class="wrap cartquill-admin"><h1>' . \esc_html__( 'Flow builder', 'cartquill' ) . '</h1><div id="cartquill-flow-builder"></div></div>';
 	}
 
 	/**
