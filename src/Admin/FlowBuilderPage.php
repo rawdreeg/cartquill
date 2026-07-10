@@ -31,7 +31,7 @@ final class FlowBuilderPage {
 	}
 
 	public function add_page(): void {
-		\add_submenu_page(
+		$hook = \add_submenu_page(
 			'',
 			\__( 'Flow builder', 'cartquill' ),
 			\__( 'Flow builder', 'cartquill' ),
@@ -39,6 +39,18 @@ final class FlowBuilderPage {
 			self::SLUG,
 			array( $this, 'render' )
 		);
+
+		// A submenu page with an empty parent never gets its title resolved by
+		// get_admin_page_title(), so core's admin-header.php runs strip_tags(null)
+		// (a PHP 8.1+ deprecation). Set the global title on this page's load hook,
+		// which fires before admin-header.php is included.
+		if ( $hook ) {
+			\add_action( 'load-' . $hook, array( $this, 'set_admin_title' ) );
+		}
+	}
+
+	public function set_admin_title(): void {
+		$GLOBALS['title'] = \__( 'Flow builder', 'cartquill' );
 	}
 
 	public function render(): void {

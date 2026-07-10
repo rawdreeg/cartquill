@@ -37,7 +37,7 @@ final class OnboardingPage {
 	}
 
 	public function add_menu(): void {
-		\add_submenu_page(
+		$hook = \add_submenu_page(
 			'',
 			\__( 'Welcome to CartQuill', 'cartquill' ),
 			\__( 'Welcome', 'cartquill' ),
@@ -45,6 +45,18 @@ final class OnboardingPage {
 			self::SLUG,
 			array( $this, 'render' )
 		);
+
+		// A submenu page with an empty parent never gets its title resolved by
+		// get_admin_page_title(), so core's admin-header.php runs strip_tags(null)
+		// (a PHP 8.1+ deprecation). Set the global title on this page's load hook,
+		// which fires before admin-header.php is included.
+		if ( $hook ) {
+			\add_action( 'load-' . $hook, array( $this, 'set_admin_title' ) );
+		}
+	}
+
+	public function set_admin_title(): void {
+		$GLOBALS['title'] = \__( 'Welcome to CartQuill', 'cartquill' );
 	}
 
 	/**
