@@ -124,8 +124,12 @@ final class Plugin {
 		( new TrackingEndpoint( $messages, $signer, $tracking_urls ) )->register();
 
 		// Licensing + sender registry. Core ships wp_mail as the default sender.
+		// LicensePage's own ->register() call is deferred until after SettingsPage's,
+		// below — it adds a submenu under the 'cartquill' parent slug, and WordPress
+		// resolves the wrong page hook (landing on "Sorry, you are not allowed to
+		// access this page") if add_submenu_page() runs before the parent's own
+		// add_menu_page() call within the same admin_menu cycle.
 		$license = new OptionLicense();
-		( new LicensePage( $license ) )->register();
 
 		// Freemius owns plan status in production. The bridge drives the licensing
 		// filters (cartquill_plan_active / _limits / _plan) from the customer's
@@ -212,6 +216,7 @@ final class Plugin {
 		( new WelcomeTrigger( $type_enroller, $activity ) )->register();
 		( new AdminAssets() )->register();
 		( new SettingsPage( $settings ) )->register();
+		( new LicensePage( $license ) )->register();
 		( new OnboardingPage( new Onboarding(), $settings ) )->register();
 
 		( new FlowLibraryPage( $library, new FlowInstaller( $library, $flows ), $flows ) )->register();
