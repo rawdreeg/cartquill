@@ -34,14 +34,18 @@ final class HttpProxyClient implements ProxyClient {
 		private readonly int $timeout = 20,
 	) {}
 
-	public function generate( string $flow_type, array $store_context ): array {
-		$data = $this->post(
-			'generate',
-			array(
-				'flow_type'     => $flow_type,
-				'store_context' => $store_context,
-			),
+	public function generate( string $flow_type, array $store_context, array $seed_steps = array() ): array {
+		$body = array(
+			'flow_type'     => $flow_type,
+			'store_context' => $store_context,
 		);
+		// Only send a seed when we have curated content, so flow types without a
+		// template behave exactly as before (guidance-only on the proxy).
+		if ( array() !== $seed_steps ) {
+			$body['seed_steps'] = $seed_steps;
+		}
+
+		$data = $this->post( 'generate', $body );
 
 		if ( ! isset( $data['steps'] ) || ! is_array( $data['steps'] ) ) {
 			throw new ProxyException( 'Proxy response did not contain steps.' );
