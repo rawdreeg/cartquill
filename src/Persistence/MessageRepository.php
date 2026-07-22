@@ -40,9 +40,9 @@ interface MessageRepository {
 	public function find( int $id ): ?MessageRecord;
 
 	/**
-	 * Fetch a record by its transport external id (e.g. a Resend message id),
-	 * or null. The lookup ESP webhooks use to correlate a delivery event back to
-	 * the message that produced it.
+	 * Fetch a record by its transport external id (e.g. a transport message id),
+	 * or null. The lookup used to correlate a transport-side event back to the
+	 * message that produced it.
 	 */
 	public function find_by_external_id( string $external_id ): ?MessageRecord;
 
@@ -86,7 +86,8 @@ interface MessageRepository {
 	public function stats_by_flow(): array;
 
 	/**
-	 * Per-flow delivery counts from ESP webhooks (Deliverability add-on).
+	 * Per-flow delivery counts (delivered/bounced/complained), for senders that
+	 * report those lifecycle events.
 	 *
 	 * @return array<int, array{delivered: int, bounced: int, complained: int}>
 	 */

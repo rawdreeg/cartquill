@@ -24,8 +24,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Note: these are *entitlement* keys (they identify a purchase), not ESP send
  * credentials. They are short-lived scaffold state that Freemius replaces, so
- * they are stored plainly here; the send-credential encryption the data model
- * mandates applies to the Deliverability add-on's ESP key, not to this.
+ * they are stored plainly here; the credential encryption the data model
+ * mandates applies to add-on connection credentials, not to this.
  */
 final class OptionLicense implements License {
 

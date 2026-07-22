@@ -64,7 +64,7 @@ final class LicensePageTest extends TestCase {
 		$this->assertStringContainsString( '150000', $html, 'Agency action cap' );
 		$this->assertStringNotContainsString( 'is-current', $html, 'no tier held → none highlighted' );
 
-		foreach ( array( 'starter', 'growth', 'agency', 'ai', 'deliverability', 'pro' ) as $plan ) {
+		foreach ( array( 'starter', 'growth', 'agency', 'ai', 'pro' ) as $plan ) {
 			$this->assertStringContainsString( 'name="keys[' . $plan . ']"', $html, "a key input for {$plan}" );
 		}
 	}
@@ -83,7 +83,7 @@ final class LicensePageTest extends TestCase {
 
 		$this->assertStringContainsString( '<details class="cartquill-legacy"', $html );
 		$foldout = (string) strstr( $html, '<details' );
-		foreach ( array( 'ai', 'deliverability', 'pro' ) as $plan ) {
+		foreach ( array( 'ai', 'pro' ) as $plan ) {
 			$this->assertStringContainsString( 'name="keys[' . $plan . ']"', $foldout, "{$plan} key lives in the foldout" );
 		}
 	}

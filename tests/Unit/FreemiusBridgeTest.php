@@ -29,7 +29,7 @@ final class FreemiusBridgeTest extends TestCase {
 		$this->assertTrue( $bridge->plan_active_filter( false, Plans::AI ) );
 		$this->assertTrue( $bridge->plan_active_filter( false, Plans::AUTOMATIONS ) );
 		$this->assertTrue( $bridge->plan_active_filter( false, Plans::GROWTH ) );
-		$this->assertFalse( $bridge->plan_active_filter( false, Plans::DELIVERABILITY ) );
+		$this->assertFalse( $bridge->plan_active_filter( false, Plans::PRO ) );
 	}
 
 	public function test_growth_drives_limits_and_plan(): void {
@@ -39,8 +39,10 @@ final class FreemiusBridgeTest extends TestCase {
 		$this->assertSame( Plans::GROWTH, $bridge->plan_filter( '' ) );
 	}
 
-	public function test_agency_unlocks_deliverability(): void {
-		$this->assertTrue( $this->bridge( Plans::AGENCY )->plan_active_filter( false, Plans::DELIVERABILITY ) );
+	public function test_agency_unlocks_ai_and_automations(): void {
+		$agency = $this->bridge( Plans::AGENCY );
+		$this->assertTrue( $agency->plan_active_filter( false, Plans::AI ) );
+		$this->assertTrue( $agency->plan_active_filter( false, Plans::AUTOMATIONS ) );
 	}
 
 	public function test_starter_locks_ai_but_unlocks_automations(): void {

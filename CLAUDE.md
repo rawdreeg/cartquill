@@ -4,7 +4,7 @@ Guidance for AI coding agents working in this repo.
 
 ## What this is
 
-A standalone **WooCommerce email-automation plugin** (PHP 8.1+, WooCommerce 8+). Free core sends via `wp_mail`; **AI Flow Generation** and **Deliverability** ship as paid, license-gated add-ons. See `README.md` for the model and `WooCommerce-Automation-PRD.md` / `WooCommerce-Automation-v1-Build-Spec.md` for the full contract.
+A standalone **WooCommerce email-automation plugin** (PHP 8.1+, WooCommerce 8+). Free core sends via `wp_mail`; **AI Flow Generation** and **Automations** ship as paid, license-gated add-ons. Deliverability is intentionally left to the store's own SMTP/ESP plugin (e.g. WP Mail SMTP) — CartQuill ships no bespoke sending integration. See `README.md` for the model and `WooCommerce-Automation-PRD.md` / `WooCommerce-Automation-v1-Build-Spec.md` for the full contract.
 
 ## Commit conventions
 
@@ -14,14 +14,14 @@ A standalone **WooCommerce email-automation plugin** (PHP 8.1+, WooCommerce 8+).
 ## Non-negotiable architecture decisions (locked — do not relitigate)
 
 - **`SenderInterface` is the single sending seam.** `send(Message $m): SendResult` returns at least an external id + accepted/failed status. Core ships `WpMailSender`. Add-ons register senders via a `register_sender()` hook and attach their own webhook ingestion. The engine stays ignorant of *how* mail is sent. Tests inject a `FakeSender`.
-- **No resold sending.** Add-ons connect the customer's *own* ESP account. The vendor never operates or resells sending infrastructure.
+- **No resold sending.** Any sending transport an add-on adds connects the customer's *own* provider account. The vendor never operates or resells sending infrastructure.
 - **Queue = Action Scheduler** (bundled with Woo). Never hand-roll cron.
 - **Flow engine step pipeline:** trigger (Woo hook) → create enrollment → per step: check suppression → check conditions → render → `SenderInterface.send()` → record message → schedule next step.
 - **Suppression is the first thing every send does.** Global suppression list checked before every send.
 - **Idempotency:** unique key on `(enrollment, step)` — never double-send.
 - **Attribution is last-touch**, computed on Woo order placement by matching the buyer to the most recent flow message within a configurable **attribution window** (default 7d, surfaced in UI). No multi-touch claims.
-- **Message status progression:** `queued → sent` on wp_mail (+ self-hosted `opened`/`clicked` via pixel + wrapped-link). Deliverability add-on extends the same record with `delivered → bounced → complained` from ESP webhooks.
-- **Credentials encrypted at rest; ESP webhook signatures verified.**
+- **Message status progression:** `queued → sent` on wp_mail (+ self-hosted `opened`/`clicked` via pixel + wrapped-link).
+- **Credentials encrypted at rest; inbound webhook signatures verified.**
 - **Compliance is core, not optional:** unsubscribe link on every email → enrollment + global suppression; store consent source; wire WP privacy export/erase hooks.
 
 ## Data model (custom tables)
@@ -34,7 +34,6 @@ Test **external behavior through the highest seam**, not private methods.
 
 - **Primary seam — `SenderInterface`:** inject a `FakeSender` that records calls. Assert enrollment creation, step scheduling/delays, conditions (exit-on-conversion, no send after purchase), suppression, and idempotency.
 - **Attribution seam:** given recorded messages + synthetic Woo orders inside/outside the window, assert revenue-per-flow output.
-- **Webhook seam (Deliverability add-on):** given a representative ESP payload, assert message status transitions and that bounced/complained addresses land on the suppression list.
 - **Tooling (decided):** the **primary** suite is fast and DB-free — plain PHPUnit with the core wired through its injected seams (`FakeSender`, in-memory repositories, `ArraySettings`, `FixedClock`), and the few direct WP function calls stubbed with **Brain\Monkey**. This keeps CI dependency-free and pushes logic out of WP-coupled classes. A `WP_UnitTestCase` integration layer (WordPress PHPUnit harness + WooCommerce factories + Action Scheduler advanced in-test) is added later for the genuinely DB/hook-coupled paths; it is not required for slices whose behavior is observable at the `SenderInterface`/repository seam. Prefer integration-style trigger→sender tests over unit tests of private methods.
 
 ## Scope discipline
