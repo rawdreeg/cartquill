@@ -45,8 +45,13 @@ final class AiFlowGenerator {
 			return GenerationResult::rate_limited();
 		}
 
+		// Seed the proxy with the first curated starter template for this flow type
+		// (if any) so the AI personalizes vetted copy instead of inventing it.
+		$variants   = CuratedFlowLibrary::variants( $flow_type );
+		$seed_steps = $variants[0] ?? array();
+
 		try {
-			$raw_steps = $this->proxy->generate( $flow_type, $store_context );
+			$raw_steps = $this->proxy->generate( $flow_type, $store_context, $seed_steps );
 		} catch ( ProxyException $e ) {
 			return GenerationResult::error( $e->getMessage() );
 		}

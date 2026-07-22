@@ -12,6 +12,7 @@ namespace CartQuill\Tests\Unit;
 
 use CartQuill\Ai\AiFlowGenerator;
 use CartQuill\Ai\ArrayRateLimiter;
+use CartQuill\Ai\CuratedFlowLibrary;
 use CartQuill\Ai\GenerationResult;
 use CartQuill\Engine\Enroller;
 use CartQuill\Licensing\ArrayLicense;
@@ -64,6 +65,29 @@ final class AiGeneratorTest extends TestCase {
 		$this->assertSame( 86400, $flow->steps[1]->delay, 'step order and delays are preserved' );
 		$this->assertNotNull( $flows->find( (int) $flow->id ), 'flow is saved for the editor' );
 		$this->assertSame( array( 'abandoned_cart' ), array_column( $proxy->generate_calls, 'flow_type' ) );
+	}
+
+	public function test_generate_seeds_the_proxy_with_the_curated_starter_template(): void {
+		$proxy               = new StubProxyClient( self::STEPS );
+		[ $generator ]       = $this->generator( $proxy );
+
+		$generator->generate( 'abandoned_cart', array( 'store_name' => 'Acme' ) );
+
+		$this->assertCount( 1, $proxy->generate_calls );
+		$this->assertSame(
+			CuratedFlowLibrary::variants( 'abandoned_cart' )[0],
+			$proxy->generate_calls[0]['seed_steps'],
+			'the first curated variant is passed through to the proxy as the seed'
+		);
+	}
+
+	public function test_generate_sends_no_seed_for_a_flow_type_without_curated_content(): void {
+		$proxy               = new StubProxyClient( self::STEPS );
+		[ $generator ]       = $this->generator( $proxy );
+
+		$generator->generate( 'browse_abandonment', array() );
+
+		$this->assertSame( array(), $proxy->generate_calls[0]['seed_steps'], 'no curated content means no seed' );
 	}
 
 	public function test_generated_flow_never_auto_sends(): void {

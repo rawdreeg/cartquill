@@ -25,14 +25,15 @@ interface ProxyClient {
 	/**
 	 * Generate ordered steps for a flow type given store context.
 	 *
-	 * @param string               $flow_type     e.g. "abandoned_cart".
-	 * @param array<string, mixed> $store_context Store name, products, tone, …
+	 * @param string                                                                                  $flow_type     e.g. "abandoned_cart".
+	 * @param array<string, mixed>                                                                    $store_context Store name, products, tone, …
+	 * @param list<array{delay: int, subject: string, body: string, conditions?: array<int, mixed>}> $seed_steps    Curated starter template to personalize; empty means none.
 	 *
 	 * @return list<array{delay: int, subject: string, body: string, conditions?: array<int, mixed>}>
 	 *
 	 * @throws ProxyException On transport failure or a proxy error.
 	 */
-	public function generate( string $flow_type, array $store_context ): array;
+	public function generate( string $flow_type, array $store_context, array $seed_steps = array() ): array;
 
 	/**
 	 * Rewrite/vary a single piece of copy.

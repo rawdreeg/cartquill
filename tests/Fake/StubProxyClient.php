@@ -24,7 +24,7 @@ final class StubProxyClient implements ProxyClient {
 
 	private bool $throw = false;
 
-	/** @var list<array{flow_type: string, store_context: array<string, mixed>}> */
+	/** @var list<array{flow_type: string, store_context: array<string, mixed>, seed_steps: array<int, mixed>}> */
 	public array $generate_calls = array();
 
 	/** @var list<array{copy: string, instruction: string}> */
@@ -41,10 +41,11 @@ final class StubProxyClient implements ProxyClient {
 		$this->throw = true;
 	}
 
-	public function generate( string $flow_type, array $store_context ): array {
+	public function generate( string $flow_type, array $store_context, array $seed_steps = array() ): array {
 		$this->generate_calls[] = array(
 			'flow_type'     => $flow_type,
 			'store_context' => $store_context,
+			'seed_steps'    => $seed_steps,
 		);
 		if ( $this->throw ) {
 			throw new ProxyException( 'stub failure' );
