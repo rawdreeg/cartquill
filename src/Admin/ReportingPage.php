@@ -14,17 +14,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use CartQuill\Integration\AttributionTrigger;
-use CartQuill\Licensing\License;
-use CartQuill\Licensing\Plans;
 use CartQuill\Persistence\AttributionRepository;
 use CartQuill\Persistence\FlowRepository;
 use CartQuill\Persistence\MessageRepository;
 use CartQuill\Reporting\FlowReport;
 
 /**
- * Renders the one reporting screen: per-flow sent / opens / clicks / revenue,
- * the attribution window (surfaced, per the transparency requirement), and the
- * free-tier "delivery unconfirmed" upgrade note.
+ * Renders the one reporting screen: per-flow sent / opens / clicks / revenue and
+ * the attribution window (surfaced, per the transparency requirement).
  */
 final class ReportingPage {
 
@@ -35,7 +32,6 @@ final class ReportingPage {
 		private readonly FlowRepository $flows,
 		private readonly MessageRepository $messages,
 		private readonly AttributionRepository $attributions,
-		private readonly License $license,
 	) {}
 
 	public function register(): void {
@@ -58,22 +54,16 @@ final class ReportingPage {
 			return;
 		}
 
-		$deliverability = $this->license->is_active( Plans::DELIVERABILITY );
-		// Whether delivery events are actually flowing (key + verified domain +
-		// webhook secret), refined by the Deliverability add-on. The columns show
-		// on license alone, but the green "tracking active" banner needs the real
-		// pipeline wired — otherwise it claims tracking that never arrives.
-		$tracking_ready = (bool) \apply_filters( 'cartquill_delivery_tracking_ready', false );
-		$report         = new FlowReport();
-		$rows           = $report->build(
+		$report = new FlowReport();
+		$rows   = $report->build(
 			$this->flows->all(),
 			$this->messages->stats_by_flow(),
 			$this->attributions->revenue_by_flow(),
-			$deliverability ? $this->messages->delivery_stats_by_flow() : array()
+			array()
 		);
-		$total          = $report->total_revenue( $rows );
-		$totals         = $report->totals( $rows );
-		$days           = max( 1, (int) round( AttributionTrigger::window() / DAY_IN_SECONDS ) );
+		$total  = $report->total_revenue( $rows );
+		$totals = $report->totals( $rows );
+		$days   = max( 1, (int) round( AttributionTrigger::window() / DAY_IN_SECONDS ) );
 		?>
 		<div class="wrap cartquill-admin">
 			<h1><?php echo \esc_html__( 'CartQuill Reporting', 'cartquill' ); ?></h1>
@@ -117,20 +107,13 @@ final class ReportingPage {
 						<th><?php echo \esc_html__( 'Flow', 'cartquill' ); ?></th>
 						<th><?php echo \esc_html__( 'Sent', 'cartquill' ); ?></th>
 						<th><?php echo \esc_html__( 'Failed', 'cartquill' ); ?></th>
-						<?php if ( $deliverability ) : ?>
-							<th><?php echo \esc_html__( 'Delivered', 'cartquill' ); ?></th>
-						<?php endif; ?>
 						<th><?php echo \esc_html__( 'Opens', 'cartquill' ); ?></th>
 						<th><?php echo \esc_html__( 'Clicks', 'cartquill' ); ?></th>
-						<?php if ( $deliverability ) : ?>
-							<th><?php echo \esc_html__( 'Bounced', 'cartquill' ); ?></th>
-							<th><?php echo \esc_html__( 'Complaints', 'cartquill' ); ?></th>
-						<?php endif; ?>
 						<th><?php echo \esc_html__( 'Revenue', 'cartquill' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
-					<?php $cols = $deliverability ? 9 : 6; ?>
+					<?php $cols = 6; ?>
 					<?php if ( array() === $rows ) : ?>
 						<tr><td colspan="<?php echo (int) $cols; ?>"><?php echo \esc_html__( 'No flows yet — install one from the flow library.', 'cartquill' ); ?></td></tr>
 					<?php endif; ?>
@@ -139,15 +122,8 @@ final class ReportingPage {
 							<td><?php echo \esc_html( $row->name ); ?></td>
 							<td><?php echo \esc_html( (string) $row->sent ); ?></td>
 							<td><?php echo \esc_html( (string) $row->failed ); ?></td>
-							<?php if ( $deliverability ) : ?>
-								<td><?php echo \esc_html( (string) $row->delivered ); ?></td>
-							<?php endif; ?>
 							<td><?php echo \esc_html( (string) $row->opened ); ?></td>
 							<td><?php echo \esc_html( (string) $row->clicked ); ?></td>
-							<?php if ( $deliverability ) : ?>
-								<td><?php echo \esc_html( (string) $row->bounced ); ?></td>
-								<td><?php echo \esc_html( (string) $row->complained ); ?></td>
-							<?php endif; ?>
 							<td><?php echo \wp_kses_post( $this->money( $row->revenue ) ); ?></td>
 						</tr>
 					<?php endforeach; ?>
@@ -161,28 +137,12 @@ final class ReportingPage {
 				</tfoot>
 			</table>
 
-			<?php if ( $tracking_ready ) : ?>
-				<div class="notice notice-success inline" style="margin-top:16px">
-					<p>
-						<strong><?php echo \esc_html__( 'Delivery tracking active.', 'cartquill' ); ?></strong>
-						<?php echo \esc_html__( 'Delivered, bounce, and complaint data populates here as your ESP sends webhook events. Bounced and complained addresses are automatically suppressed.', 'cartquill' ); ?>
-					</p>
-				</div>
-			<?php elseif ( $deliverability ) : ?>
-				<div class="notice notice-warning inline" style="margin-top:16px">
-					<p>
-						<strong><?php echo \esc_html__( 'Finish delivery setup.', 'cartquill' ); ?></strong>
-						<?php echo \esc_html__( 'Connect Resend, verify your sending domain, and add the webhook signing secret on the Deliverability screen to start receiving delivered, bounce, and complaint data.', 'cartquill' ); ?>
-					</p>
-				</div>
-			<?php else : ?>
-				<div class="notice notice-info inline" style="margin-top:16px">
-					<p>
-						<strong><?php echo \esc_html__( 'Delivery unconfirmed.', 'cartquill' ); ?></strong>
-						<?php echo \esc_html__( 'The free tier sends via your site mail, so inbox delivery can’t be confirmed. Add the Deliverability add-on to see delivered, bounce, and inbox-placement data.', 'cartquill' ); ?>
-					</p>
-				</div>
-			<?php endif; ?>
+			<div class="notice notice-info inline" style="margin-top:16px">
+				<p>
+					<strong><?php echo \esc_html__( 'About inbox delivery.', 'cartquill' ); ?></strong>
+					<?php echo \esc_html__( 'CartQuill sends through your site mail (wp_mail), so inbox placement follows however WordPress sends mail on your store. For higher-volume sending and delivery insight, pair CartQuill with a dedicated SMTP/ESP plugin (such as WP Mail SMTP) connected to your own provider.', 'cartquill' ); ?>
+				</p>
+			</div>
 		</div>
 		<?php
 	}

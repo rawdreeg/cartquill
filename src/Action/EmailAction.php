@@ -21,12 +21,12 @@ use CartQuill\Sender\SenderInterface;
 
 /**
  * Wraps the original step pipeline's compose -> SenderInterface::send() path
- * exactly, so `wp_mail`/Resend sending, the unsubscribe footer + List-Unsubscribe
+ * exactly, so `wp_mail` sending, the unsubscribe footer + List-Unsubscribe
  * header, tracking pixel + wrapped links, and last-touch attribution keep
  * working unchanged now that a step runs a typed action.
  *
  * It is customer-facing (suppression is checked before it runs) and records the
- * active sender's key so ESP webhooks can correlate lifecycle events back to it.
+ * active sender's key against the message row.
  */
 final class EmailAction implements ActionInterface, DescribesConfig {
 

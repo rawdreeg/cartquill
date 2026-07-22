@@ -119,7 +119,7 @@ jobs:
 
       - name: Assert free/paid separation and a production autoloader
         run: |
-          for path in src/Ai src/Deliverability src/Automations src/Admin/AiGeneratePage.php src/Admin/DeliverabilityPage.php tests composer.json CLAUDE.md .claude node_modules package.json package-lock.json webpack.config.js; do
+          for path in src/Ai src/Automations src/Admin/AiGeneratePage.php tests composer.json CLAUDE.md .claude node_modules package.json package-lock.json webpack.config.js; do
             if [ -e "build/cartquill/$path" ]; then
               echo "::error::'$path' leaked into the free build"; exit 1
             fi
@@ -140,7 +140,7 @@ jobs:
       - name: Assert the premium package ships the paid add-ons but no dev cruft
         run: |
           # The paid add-ons the free build strips must be PRESENT in premium...
-          for path in src/Ai/addon.php src/Automations/addon.php src/Deliverability/addon.php src/Admin/AiGeneratePage.php src/Admin/DeliverabilityPage.php; do
+          for path in src/Ai/addon.php src/Automations/addon.php src/Admin/AiGeneratePage.php; do
             if [ ! -e "build/premium/cartquill/$path" ]; then
               echo "::error::premium build is missing paid file '$path'"; exit 1
             fi
