@@ -82,7 +82,7 @@ final class SmsWebhookEndpoint {
 	 * them unmodified — sanitizing first (trimming whitespace, stripping markup)
 	 * would break verification for legitimate messages. The values are only ever
 	 * HMAC-verified, then normalized (phone) or keyword-matched (body); none is
-	 * echoed. Mirrors the Resend endpoint HMACing the raw request body.
+	 * echoed.
 	 *
 	 * @return array<string, string>
 	 */

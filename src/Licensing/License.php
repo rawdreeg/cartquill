@@ -14,8 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Answers "is this capability licensed?" — the single seam add-ons (AI,
- * Deliverability) consult before wiring themselves in. The concrete
+ * Answers "is this capability licensed?" — the single seam add-ons (e.g. AI)
+ * consult before wiring themselves in. The concrete
  * implementation is manual/option-backed in the scaffold and Freemius-backed in
  * production; the gate contract is the same either way.
  */

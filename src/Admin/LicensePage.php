@@ -17,8 +17,8 @@ use CartQuill\Licensing\OptionLicense;
 use CartQuill\Licensing\Plans;
 
 /**
- * Lets a store enter license keys to unlock the AI and Deliverability add-ons
- * (or the Pro bundle). SCAFFOLD: this stores the keys and marks plans active
+ * Lets a store enter license keys to unlock the AI add-on (or the Pro bundle).
+ * SCAFFOLD: this stores the keys and marks plans active
  * locally; in production Freemius validates each key. The gate the add-ons read
  * (`License::is_active`) is the same in both worlds.
  */
@@ -29,9 +29,8 @@ final class LicensePage {
 	private const MASK   = '••••••••';
 
 	private const LABELS = array(
-		Plans::AI            => 'AI Flow Generation',
-		Plans::DELIVERABILITY => 'Deliverability',
-		Plans::PRO           => 'Pro bundle (AI + Deliverability)',
+		Plans::AI  => 'AI Flow Generation',
+		Plans::PRO => 'Pro bundle (AI)',
 	);
 
 	/** Subscription tiers for the automation product (scaffold: Freemius owns these in production). */
@@ -198,9 +197,6 @@ final class LicensePage {
 				<?php endif; ?>
 				<?php if ( in_array( Plans::AI, $grants, true ) ) : ?>
 					<li><?php echo \esc_html__( 'AI flow generation', 'cartquill' ); ?></li>
-				<?php endif; ?>
-				<?php if ( in_array( Plans::DELIVERABILITY, $grants, true ) ) : ?>
-					<li><?php echo \esc_html__( 'Deliverability (ESP + bounce tracking)', 'cartquill' ); ?></li>
 				<?php endif; ?>
 				<?php if ( Plans::AGENCY === $tier ) : ?>
 					<li class="is-soon"><?php echo \esc_html__( 'Multi-store console (coming soon)', 'cartquill' ); ?></li>

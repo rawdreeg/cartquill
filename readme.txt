@@ -26,15 +26,15 @@ A **paid subscription** — Starter, Growth, or Agency — unlocks CartQuill's p
 
 * **Automations** (all paid tiers) — turn a WooCommerce event into a no-code multi-tool "recipe": *when* it fires, *if* a condition holds, *do* one or more actions across Slack, Google Sheets, Mailchimp, and Twilio SMS (plus email). Each tool connects *your own* account. Usage is metered by actions per month, with a higher cap on each tier.
 * **AI Flow Generation** (Growth and up) — draft a whole flow, or rewrite a single step, from a short prompt. Generated copy always opens in the builder for your review; nothing is ever sent to customers automatically.
-* **Deliverability** (Agency) — connect *your own* Resend account to send at scale, run a guided sending-domain authentication wizard, and ingest delivery/bounce/complaint webhooks that feed inbox reporting and auto-suppression.
 
 A few honest notes on the paid tiers:
 
+* **Deliverability is your SMTP plugin's job.** CartQuill sends through WordPress' `wp_mail()`, exactly as it always has, so inbox placement follows however your site sends mail. For higher-volume sending or delivery insight, pair CartQuill with a dedicated SMTP/ESP plugin (such as WP Mail SMTP) connected to your own provider — CartQuill does not ship its own sending integration.
 * **Mailchimp is audience sync, not sending.** The Mailchimp action upserts and tags a subscriber in *your* audience; CartQuill still sends every email through its own sender. Your customer email is never routed through, or resold via, Mailchimp.
 * **Conditional logic** (data-driven branching, e.g. "only if cart value is over $50") is a Growth-and-up feature. Timed delays are available on every plan.
 * **Coming soon:** the Agency plan's multi-store management, white-label workflows, and team roles & audit log are on the roadmap and not yet built; the Agency plan today ships as a higher monthly action cap.
 
-CartQuill never operates or resells sending infrastructure — the Deliverability and Automations integrations connect accounts you already own.
+CartQuill never operates or resells sending infrastructure — the Automations integrations connect accounts you already own.
 
 == External services ==
 
@@ -46,13 +46,6 @@ When you use "Generate with AI" or "Rewrite with AI", the plugin sends a request
 
 * Terms of Service: https://api.cartquill.com/legal/ai-terms
 * Privacy Policy: https://api.cartquill.com/legal/ai-privacy
-
-= Resend (Deliverability add-on, your own account) =
-
-If you enable the Deliverability add-on and connect your own Resend account, the plugin sends email through the Resend API at https://api.resend.com using the API key you provide. Each send includes the sender (from) name and address, the recipient's email address, the subject line, the HTML body, and the list-unsubscribe header of the automation email. During domain setup the plugin also sends your sending-domain name to create and verify it. Requests are made when a flow email is sent and when you run the domain-authentication wizard. Resend is your own third-party account, governed by your agreement with Resend.
-
-* Terms of Service: https://resend.com/legal/terms-of-service
-* Privacy Policy: https://resend.com/legal/privacy-policy
 
 The four services below are used only by the **Automations** add-on, and only when a recipe you build runs a step that targets that tool. Each connects an account you already own.
 
@@ -100,7 +93,7 @@ No. AI-generated and AI-rewritten copy always lands in the builder as a draft fo
 
 = Do you resell email sending? =
 
-No. The Deliverability add-on connects the Resend account you own; CartQuill never operates or resells sending infrastructure. The Automations add-on's Mailchimp action syncs your audience (upsert and tag a subscriber) but never sends your email — CartQuill always sends through its own sender.
+No. CartQuill never operates or resells sending infrastructure — it always sends through your site's own `wp_mail()`. The Automations add-on's Mailchimp action syncs your audience (upsert and tag a subscriber) but never sends your email — CartQuill always sends through its own sender.
 
 = What can the Automations add-on do? =
 
@@ -115,7 +108,6 @@ Attribution is last-touch: when an order is placed, CartQuill matches the buyer 
 = 0.1.0 =
 * Initial release: flow library and a drag-and-drop step builder, wp_mail sending, self-hosted open/click tracking, last-touch revenue attribution and reporting, one-click unsubscribe with global suppression, and WordPress privacy export/erase integration.
 * AI Flow Generation add-on: draft a whole flow or rewrite a step from a prompt, for review in the builder.
-* Deliverability add-on: bring-your-own Resend sending, domain-authentication wizard, and delivery/bounce/complaint webhook ingestion with auto-suppression and inbox reporting.
 * Automations add-on: no-code multi-tool recipes across Slack, Google Sheets, Mailchimp (audience sync), Twilio SMS, and email, with per-month action metering and Starter/Growth/Agency plans. Agency multi-store, white-label, and team roles are coming soon.
 
 == Development ==

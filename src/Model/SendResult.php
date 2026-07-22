@@ -17,9 +17,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The minimum contract every sender must return: an external id (when the
  * transport provides one) plus an accepted/failed status.
  *
- * The engine records this against the message row so later lifecycle events
- * (delivered/bounce/complaint, added by the Deliverability add-on) can be
- * correlated back to the original send.
+ * The engine records this against the message row so the original send can be
+ * correlated back to its message later.
  */
 final class SendResult {
 

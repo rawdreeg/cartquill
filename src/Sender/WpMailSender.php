@@ -21,8 +21,8 @@ use CartQuill\Model\SendResult;
  *
  * wp_mail() reports only whether the message was handed off (true/false) — it
  * has no external id and no delivery/bounce signal. That is by design: the free
- * core caps message lifecycle at "sent". Real delivery data requires the paid
- * Deliverability add-on (a different SenderInterface implementation).
+ * core caps message lifecycle at "sent". Real delivery data requires a sender
+ * that reports it (a different SenderInterface implementation).
  */
 final class WpMailSender implements SenderInterface {
 

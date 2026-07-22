@@ -218,7 +218,7 @@ final class Plugin {
 		( new FlowBuilderPage() )->register();
 
 		( new AttributionTrigger( new Attributor( $messages, $attributions ) ) )->register();
-		( new ReportingPage( $flows, $messages, $attributions, $license ) )->register();
+		( new ReportingPage( $flows, $messages, $attributions ) )->register();
 
 		// Builder REST read API (cartquill/v1): the catalog + stored flows the React
 		// builder loads. Built at rest_api_init so the catalog (which folds in add-on
@@ -284,7 +284,7 @@ final class Plugin {
 	 * directories, so this loads whichever add-ons are actually present.
 	 */
 	private function load_addons(): void {
-		foreach ( array( 'Ai', 'Deliverability', 'Automations' ) as $addon ) {
+		foreach ( array( 'Ai', 'Automations' ) as $addon ) {
 			$bootstrap = CARTQUILL_PATH . 'src/' . $addon . '/addon.php';
 			if ( is_readable( $bootstrap ) ) {
 				require_once $bootstrap;

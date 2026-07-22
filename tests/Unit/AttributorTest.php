@@ -85,9 +85,9 @@ final class AttributorTest extends TestCase {
 		$first = $this->attributor->attribute( 'buyer@example.com', 900, 50.0, self::ORDER_TS, self::WINDOW );
 		$this->assertSame( 2, $first->flow_id );
 
-		// A Deliverability webhook flips flow 2's message to bounced, so it drops
-		// out of last-touch and flow 1 becomes newest — then the checkout hook
-		// re-fires. The order is already attributed, so nothing is re-credited.
+		// Flow 2's message is flipped to bounced, so it drops out of last-touch and
+		// flow 1 becomes newest — then the checkout hook re-fires. The order is
+		// already attributed, so nothing is re-credited.
 		$this->messages->update_status( (int) $flow2->id, MessageRecord::STATUS_BOUNCED );
 
 		$second = $this->attributor->attribute( 'buyer@example.com', 900, 50.0, self::ORDER_TS, self::WINDOW );

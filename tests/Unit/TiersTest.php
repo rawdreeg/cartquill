@@ -55,23 +55,20 @@ final class TiersTest extends TestCase {
 		$this->assertContains( Plans::AUTOMATIONS, Plans::grants( Plans::STARTER ) );
 		$this->assertContains( Plans::STARTER, Plans::grants( Plans::STARTER ) );
 
-		// Starter unlocks automations only — the paid add-ons stay locked.
+		// Starter unlocks automations only — AI generation stays locked.
 		$starter = new ArrayLicense( array( Plans::STARTER ) );
 		$this->assertTrue( $starter->is_active( Plans::AUTOMATIONS ) );
 		$this->assertFalse( $starter->is_active( Plans::AI ) );
-		$this->assertFalse( $starter->is_active( Plans::DELIVERABILITY ) );
 
-		// Growth folds in AI generation, but not Deliverability.
+		// Growth folds in AI generation on top of automations.
 		$growth = new ArrayLicense( array( Plans::GROWTH ) );
 		$this->assertTrue( $growth->is_active( Plans::AUTOMATIONS ) );
 		$this->assertTrue( $growth->is_active( Plans::AI ) );
-		$this->assertFalse( $growth->is_active( Plans::DELIVERABILITY ) );
 
-		// Agency folds in both AI and Deliverability.
+		// Agency grants the same capabilities as Growth (it differs only in caps).
 		$agency = new ArrayLicense( array( Plans::AGENCY ) );
 		$this->assertTrue( $agency->is_active( Plans::AUTOMATIONS ) );
 		$this->assertTrue( $agency->is_active( Plans::AI ) );
-		$this->assertTrue( $agency->is_active( Plans::DELIVERABILITY ) );
 	}
 
 	public function test_array_license_reports_its_held_tier(): void {

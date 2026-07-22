@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * concatenated as `name.value`, and the `X-Twilio-Signature` header carries the
  * base64 HMAC-SHA1 of that content. We recompute it with the store's own token
  * and accept only on a constant-time match — unsigned or tampered requests never
- * reach STOP/START handling. (Mirrors the Resend/Svix verifier's shape.)
+ * reach STOP/START handling.
  */
 final class TwilioWebhookVerifier {
 

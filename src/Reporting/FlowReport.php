@@ -26,7 +26,7 @@ final class FlowReport {
 	 * @param list<FlowRecord>                                                        $flows
 	 * @param array<int, array{sent: int, opened: int, clicked: int, failed?: int}>   $stats    By flow id.
 	 * @param array<int, float>                                                        $revenue  By flow id.
-	 * @param array<int, array{delivered: int, bounced: int, complained: int}>         $delivery By flow id (Deliverability add-on; empty on the free tier).
+	 * @param array<int, array{delivered: int, bounced: int, complained: int}>         $delivery By flow id; empty unless a sender reports delivery events.
 	 *
 	 * @return list<FlowReportRow>
 	 */

@@ -15,8 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Mirrors the `messages` table. Status progresses queued -> sent on the
- * wp_mail path (later: opened/clicked via self-hosted tracking, and
- * delivered/bounced/complained once the Deliverability add-on is active).
+ * wp_mail path, then opened/clicked via self-hosted tracking; the
+ * delivered/bounced/complained states are reserved for senders that report
+ * those lifecycle events.
  *
  * `channel` names the action that produced the row (email, slack_post, ...);
  * `recipient` always stays the customer's email so GDPR export/erase and
