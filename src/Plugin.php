@@ -120,15 +120,19 @@ final class Plugin {
 		$flows     = new WpdbFlowRepository();
 		$activity  = new WooCustomerActivity();
 
+		// Registered this early so the top-level 'cartquill' menu always exists
+		// on the admin_menu hook before anything else runs — core pages and
+		// add-on-contributed ones alike. add_submenu_page() resolves the wrong
+		// page hook (landing on "Sorry, you are not allowed to access this
+		// page") if it runs before the parent's own add_menu_page() call within
+		// the same admin_menu cycle, and add-ons hook their surfaces in well
+		// before this method reaches its own admin-page registrations below.
+		( new SettingsPage( $settings ) )->register();
+
 		$tracking_urls = new TrackingUrls( \home_url( '/' ), $signer );
 		( new TrackingEndpoint( $messages, $signer, $tracking_urls ) )->register();
 
 		// Licensing + sender registry. Core ships wp_mail as the default sender.
-		// LicensePage's own ->register() call is deferred until after SettingsPage's,
-		// below — it adds a submenu under the 'cartquill' parent slug, and WordPress
-		// resolves the wrong page hook (landing on "Sorry, you are not allowed to
-		// access this page") if add_submenu_page() runs before the parent's own
-		// add_menu_page() call within the same admin_menu cycle.
 		$license = new OptionLicense();
 
 		// Freemius owns plan status in production. The bridge drives the licensing
@@ -215,7 +219,6 @@ final class Plugin {
 		( new PostPurchaseTrigger( $type_enroller ) )->register();
 		( new WelcomeTrigger( $type_enroller, $activity ) )->register();
 		( new AdminAssets() )->register();
-		( new SettingsPage( $settings ) )->register();
 		( new LicensePage( $license ) )->register();
 		( new OnboardingPage( new Onboarding(), $settings ) )->register();
 
