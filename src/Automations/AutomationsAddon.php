@@ -150,6 +150,7 @@ final class AutomationsAddon {
 		}
 
 		( new ConnectionsPage( $this->connections, $this->client, $this->sheets, $this->mailchimp ) )->register();
+		( new MissingConnectionNotice( new WpdbFlowRepository(), $this->connections ) )->register();
 
 		$type_enroller = new FlowTypeEnroller(
 			new WpdbFlowRepository(),
