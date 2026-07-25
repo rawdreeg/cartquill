@@ -32,6 +32,7 @@ webpack.config.js
 # top-level one.)
 .DS_Store
 .claude
+.omc
 
 # Paid add-ons are distributed separately (Freemius); the free WordPress.org
 # build omits their code and the admin screens that only they instantiate. The
