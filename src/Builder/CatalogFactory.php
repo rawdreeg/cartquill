@@ -27,10 +27,15 @@ use CartQuill\Persistence\ConnectionStore;
 final class CatalogFactory {
 
 	public static function create( License $license, ConnectionStore $connections ): BuilderCatalog {
+		// Both hook names are `cartquill_`-prefixed string constants on
+		// BuilderCatalog; PHPCS only reads literals, so it cannot see the prefix
+		// through the class constant and reports a dynamic hook name.
+		// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 		/** @var list<ActionDescriptor> $actions */
 		$actions = (array) \apply_filters( BuilderCatalog::FILTER_ACTIONS, CoreActionDescriptors::all() );
 		/** @var list<TriggerDescriptor> $triggers */
 		$triggers = (array) \apply_filters( BuilderCatalog::FILTER_TRIGGERS, CoreTriggers::all() );
+		// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 
 		return new BuilderCatalog( $license, $connections, $actions, $triggers );
 	}

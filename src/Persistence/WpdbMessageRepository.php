@@ -13,6 +13,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
+/*
+ * Direct $wpdb access is this class's entire job: CartQuill owns its custom
+ * tables (see Persistence\Schema) and WordPress ships no API for them. Table
+ * names come from Schema::*_table() - `$wpdb->prefix` plus a hard-coded literal,
+ * never user input - and an identifier cannot travel through a prepare()
+ * placeholder, so the name is interpolated while every *value* stays prepared.
+ * Rows are read uncached deliberately: they carry the unique
+ * (enrollment, step) key the engine checks to guarantee it never double-sends,
+ * so a stale object-cache hit would mail a customer the same message twice.
+ */
+// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter -- see above.
+
 /**
  * Persists message rows to the custom `messages` table via $wpdb.
  *
@@ -95,7 +107,7 @@ final class WpdbMessageRepository implements MessageRepository {
 		$table = Schema::messages_table();
 
 		$row = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), // phpcs:ignore WordPress.DB.PreparedSQL
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ),
 			ARRAY_A
 		);
 
@@ -110,7 +122,7 @@ final class WpdbMessageRepository implements MessageRepository {
 		$table = Schema::messages_table();
 
 		$row = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM {$table} WHERE external_id = %s ORDER BY id DESC LIMIT 1", $external_id ), // phpcs:ignore WordPress.DB.PreparedSQL
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE external_id = %s ORDER BY id DESC LIMIT 1", $external_id ),
 			ARRAY_A
 		);
 
@@ -134,7 +146,7 @@ final class WpdbMessageRepository implements MessageRepository {
 
 		$count = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table} WHERE enrollment_id = %d AND step_index = %d", // phpcs:ignore WordPress.DB.PreparedSQL
+				"SELECT COUNT(*) FROM {$table} WHERE enrollment_id = %d AND step_index = %d",
 				$enrollment_id,
 				$step_index
 			)
@@ -149,7 +161,7 @@ final class WpdbMessageRepository implements MessageRepository {
 
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE enrollment_id = %d AND step_index = %d LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL
+				"SELECT * FROM {$table} WHERE enrollment_id = %d AND step_index = %d LIMIT 1",
 				$enrollment_id,
 				$step_index
 			),
@@ -170,7 +182,7 @@ final class WpdbMessageRepository implements MessageRepository {
 				WHERE recipient = %s AND status NOT IN ('queued','failed','bounced','complained')
 				AND channel IN ({$channels})
 				AND sent_at BETWEEN %s AND %s
-				ORDER BY sent_at DESC, id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL
+				ORDER BY sent_at DESC, id DESC LIMIT 1",
 				strtolower( trim( $email ) ),
 				$from,
 				$to
@@ -192,7 +204,7 @@ final class WpdbMessageRepository implements MessageRepository {
 				SUM(CASE WHEN status IN ('opened','clicked') THEN 1 ELSE 0 END) AS opened,
 				SUM(CASE WHEN status = 'clicked' THEN 1 ELSE 0 END) AS clicked,
 				SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
-			FROM {$table} WHERE channel IN ({$channels}) GROUP BY flow_id", // phpcs:ignore WordPress.DB
+			FROM {$table} WHERE channel IN ({$channels}) GROUP BY flow_id",
 			ARRAY_A
 		);
 
@@ -217,7 +229,7 @@ final class WpdbMessageRepository implements MessageRepository {
 				SUM(CASE WHEN status IN ('delivered','opened','clicked') THEN 1 ELSE 0 END) AS delivered,
 				SUM(CASE WHEN status = 'bounced' THEN 1 ELSE 0 END) AS bounced,
 				SUM(CASE WHEN status = 'complained' THEN 1 ELSE 0 END) AS complained
-			FROM {$table} GROUP BY flow_id", // phpcs:ignore WordPress.DB
+			FROM {$table} GROUP BY flow_id",
 			ARRAY_A
 		);
 
@@ -237,7 +249,7 @@ final class WpdbMessageRepository implements MessageRepository {
 		$table = Schema::messages_table();
 
 		$rows = $wpdb->get_results(
-			$wpdb->prepare( "SELECT * FROM {$table} WHERE recipient = %s ORDER BY id ASC", strtolower( trim( $email ) ) ), // phpcs:ignore WordPress.DB.PreparedSQL
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE recipient = %s ORDER BY id ASC", strtolower( trim( $email ) ) ),
 			ARRAY_A
 		);
 
@@ -257,7 +269,7 @@ final class WpdbMessageRepository implements MessageRepository {
 		global $wpdb;
 		$table = Schema::messages_table();
 
-		$rows = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB
+		$rows = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY id ASC", ARRAY_A );
 
 		return array_map( array( $this, 'hydrate' ), $rows ?: array() );
 	}
