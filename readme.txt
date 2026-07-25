@@ -8,7 +8,7 @@ Stable tag: 0.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Install proven WooCommerce email flows, draft them with AI, and see revenue per flow. The free core sends through wp_mail.
+Recover carts, welcome buyers, and win back lapsed customers — proven WooCommerce email flows that show the revenue they drive. Free to start.
 
 == Description ==
 
