@@ -95,7 +95,9 @@ echo "==> Installing production dependencies"
 composer install --no-dev --optimize-autoloader --no-interaction --working-dir="$STAGE"
 
 echo "==> Stripping build metadata"
-rm -f "$STAGE/composer.json" "$STAGE/composer.lock"
+# composer.json ships: Plugin Check flags a vendor/ dir without it
+# (missing_composer_json_file). The lock file and binaries stay out.
+rm -f "$STAGE/composer.lock"
 rm -rf "$STAGE/vendor/bin"
 
 echo "==> Zipping"
