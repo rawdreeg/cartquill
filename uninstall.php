@@ -61,8 +61,8 @@ if ( function_exists( 'as_unschedule_all_actions' ) ) {
 }
 
 if ( is_multisite() ) {
-	foreach ( get_sites( array( 'fields' => 'ids', 'number' => 0 ) ) as $site_id ) {
-		switch_to_blog( (int) $site_id );
+	foreach ( get_sites( array( 'fields' => 'ids', 'number' => 0 ) ) as $cartquill_site_id ) {
+		switch_to_blog( (int) $cartquill_site_id );
 		cartquill_uninstall_current_site();
 		restore_current_blog();
 	}
