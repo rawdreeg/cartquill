@@ -13,6 +13,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
+/*
+ * Direct $wpdb access is this class's entire job: CartQuill owns its custom
+ * tables (see Persistence\Schema) and WordPress ships no API for them. Table
+ * names come from Schema::*_table() - `$wpdb->prefix` plus a hard-coded literal,
+ * never user input - and an identifier cannot travel through a prepare()
+ * placeholder, so the name is interpolated while every *value* stays prepared.
+ * Rows are read uncached deliberately: suppression is checked before
+ * every single send, and a stale hit would email someone who has unsubscribed.
+ */
+// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter -- see above.
+
 use CartQuill\Persistence\Schema;
 
 /**
@@ -28,7 +39,7 @@ final class WpdbSuppressionList implements SuppressionList {
 
 		$count = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table} WHERE setting_key = %s", // phpcs:ignore WordPress.DB.PreparedSQL
+				"SELECT COUNT(*) FROM {$table} WHERE setting_key = %s",
 				$this->key( $identifier, $channel )
 			)
 		);
@@ -43,7 +54,7 @@ final class WpdbSuppressionList implements SuppressionList {
 		// INSERT ... ON DUPLICATE KEY UPDATE keeps this idempotent.
 		$wpdb->query(
 			$wpdb->prepare(
-				"INSERT INTO {$table} (setting_key, setting_value) VALUES (%s, %s) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)", // phpcs:ignore WordPress.DB.PreparedSQL
+				"INSERT INTO {$table} (setting_key, setting_value) VALUES (%s, %s) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
 				$this->key( $identifier, $channel ),
 				$reason
 			)

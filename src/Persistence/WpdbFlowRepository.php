@@ -13,6 +13,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
+/*
+ * Direct $wpdb access is this class's entire job: CartQuill owns its custom
+ * tables (see Persistence\Schema) and WordPress ships no API for them. Table
+ * names come from Schema::*_table() - `$wpdb->prefix` plus a hard-coded literal,
+ * never user input - and an identifier cannot travel through a prepare()
+ * placeholder, so the name is interpolated while every *value* stays prepared.
+ * Rows are read uncached deliberately: the trigger path reads flow
+ * status on every matching WooCommerce event, so a stale read would keep running
+ * a flow the store owner just paused.
+ */
+// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter -- see above.
+
 final class WpdbFlowRepository implements FlowRepository {
 
 	public function save( FlowRecord $record ): FlowRecord {
@@ -43,7 +55,7 @@ final class WpdbFlowRepository implements FlowRepository {
 		$table = Schema::flows_table();
 
 		$row = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), // phpcs:ignore WordPress.DB.PreparedSQL
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ),
 			ARRAY_A
 		);
 
@@ -56,7 +68,7 @@ final class WpdbFlowRepository implements FlowRepository {
 
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE type = %s AND status = %s ORDER BY id ASC", // phpcs:ignore WordPress.DB.PreparedSQL
+				"SELECT * FROM {$table} WHERE type = %s AND status = %s ORDER BY id ASC",
 				$type,
 				FlowRecord::STATUS_ACTIVE
 			),
@@ -70,7 +82,7 @@ final class WpdbFlowRepository implements FlowRepository {
 		global $wpdb;
 		$table = Schema::flows_table();
 
-		$rows = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB
+		$rows = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY id ASC", ARRAY_A );
 
 		return array_map( array( $this, 'hydrate' ), $rows ?: array() );
 	}

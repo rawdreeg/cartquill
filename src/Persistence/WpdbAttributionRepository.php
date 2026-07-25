@@ -13,6 +13,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
+/*
+ * Direct $wpdb access is this class's entire job: CartQuill owns its custom
+ * tables (see Persistence\Schema) and WordPress ships no API for them. Table
+ * names come from Schema::*_table() - `$wpdb->prefix` plus a hard-coded literal,
+ * never user input - and an identifier cannot travel through a prepare()
+ * placeholder, so the name is interpolated while every *value* stays prepared.
+ * Rows are read uncached deliberately: the unique `order_id` insert is
+ * what makes attribution exactly-once per order, and the revenue totals have to
+ * reflect orders placed since the report was last opened.
+ */
+// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter -- see above.
+
 final class WpdbAttributionRepository implements AttributionRepository {
 
 	public function record( AttributionRecord $record ): ?AttributionRecord {
@@ -46,7 +58,7 @@ final class WpdbAttributionRepository implements AttributionRepository {
 		$table = Schema::attributions_table();
 
 		$row = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM {$table} WHERE order_id = %d LIMIT 1", $order_id ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE order_id = %d LIMIT 1", $order_id ),
 			ARRAY_A
 		);
 		if ( null === $row ) {
@@ -73,7 +85,7 @@ final class WpdbAttributionRepository implements AttributionRepository {
 		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
 
 		$rows = $wpdb->get_results(
-			$wpdb->prepare( "SELECT * FROM {$table} WHERE message_id IN ({$placeholders})", $ids ), // phpcs:ignore WordPress.DB.PreparedSQL
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE message_id IN ({$placeholders})", $ids ),
 			ARRAY_A
 		);
 
@@ -100,7 +112,7 @@ final class WpdbAttributionRepository implements AttributionRepository {
 		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
 
 		return (int) $wpdb->query(
-			$wpdb->prepare( "UPDATE {$table} SET message_id = NULL WHERE message_id IN ({$placeholders})", $ids ) // phpcs:ignore WordPress.DB.PreparedSQL
+			$wpdb->prepare( "UPDATE {$table} SET message_id = NULL WHERE message_id IN ({$placeholders})", $ids )
 		);
 	}
 
@@ -108,7 +120,7 @@ final class WpdbAttributionRepository implements AttributionRepository {
 		global $wpdb;
 		$table = Schema::attributions_table();
 
-		$rows = $wpdb->get_results( "SELECT flow_id, SUM(revenue) AS revenue FROM {$table} GROUP BY flow_id", ARRAY_A ); // phpcs:ignore WordPress.DB
+		$rows = $wpdb->get_results( "SELECT flow_id, SUM(revenue) AS revenue FROM {$table} GROUP BY flow_id", ARRAY_A );
 
 		$totals = array();
 		foreach ( $rows ?: array() as $row ) {
@@ -121,7 +133,7 @@ final class WpdbAttributionRepository implements AttributionRepository {
 		global $wpdb;
 		$table = Schema::attributions_table();
 
-		$rows = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB
+		$rows = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY id ASC", ARRAY_A );
 
 		return array_map(
 			static fn( array $row ) => new AttributionRecord(
