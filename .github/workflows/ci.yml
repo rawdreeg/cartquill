@@ -119,7 +119,7 @@ jobs:
 
       - name: Assert free/paid separation and a production autoloader
         run: |
-          for path in src/Ai src/Automations src/Admin/AiGeneratePage.php tests composer.json CLAUDE.md .claude node_modules package.json package-lock.json webpack.config.js; do
+          for path in src/Ai src/Automations src/Admin/AiGeneratePage.php tests composer.lock CLAUDE.md .claude .omc node_modules package.json package-lock.json webpack.config.js; do
             if [ -e "build/cartquill/$path" ]; then
               echo "::error::'$path' leaked into the free build"; exit 1
             fi
@@ -131,6 +131,9 @@ jobs:
             echo "::error::a *.test.js file leaked into the free build"; exit 1
           fi
           test -f build/cartquill/vendor/autoload.php || { echo "::error::built package is missing vendor/autoload.php"; exit 1; }
+          # Ships on purpose: Plugin Check reports missing_composer_json_file for a
+          # vendor/ directory with no composer.json beside it.
+          test -f build/cartquill/composer.json || { echo "::error::built package is missing composer.json"; exit 1; }
           test -f build/cartquill/assets/builder/build/index.js || { echo "::error::built package is missing the compiled flow builder bundle"; exit 1; }
           test -f build/cartquill/assets/builder/build/style-index.css || { echo "::error::built package is missing the compiled flow builder stylesheet"; exit 1; }
 
@@ -151,7 +154,7 @@ jobs:
             echo "::error::premium autoloader classmap is missing the paid AI classes"; exit 1
           fi
           # ...while dev/meta and free-build strippables stay out of premium too.
-          for path in tests composer.json CLAUDE.md .claude node_modules package.json package-lock.json webpack.config.js; do
+          for path in tests composer.lock CLAUDE.md .claude .omc node_modules package.json package-lock.json webpack.config.js; do
             if [ -e "build/premium/cartquill/$path" ]; then
               echo "::error::'$path' leaked into the premium build"; exit 1
             fi
