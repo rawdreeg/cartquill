@@ -58,8 +58,11 @@ final class UnsubscribeEndpoint {
 			return;
 		}
 
-		$email  = isset( $_GET['email'] ) ? \sanitize_email( \wp_unslash( $_GET['email'] ) ) : '';
-		$token  = isset( $_GET['t'] ) ? \sanitize_text_field( \wp_unslash( $_GET['t'] ) ) : '';
+		$email = isset( $_GET['email'] ) ? \sanitize_email( \wp_unslash( $_GET['email'] ) ) : '';
+		$token = isset( $_GET['t'] ) ? \sanitize_text_field( \wp_unslash( $_GET['t'] ) ) : '';
+		// There is no sanitizer for an HTTP verb: the unslashed value is upper-cased
+		// and compared to the literal 'POST' below, and never reaches output or a query.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( (string) \wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : 'GET';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 

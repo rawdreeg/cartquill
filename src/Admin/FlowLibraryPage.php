@@ -54,6 +54,10 @@ final class FlowLibraryPage {
 
 	public function handle_install(): void {
 		$this->authorize( 'cartquill_install_flow' );
+		// authorize() wp_die()s unless check_admin_referer() passes, so the nonce
+		// is verified before any read below; PHPCS cannot follow it through the
+		// helper and reports the check as missing.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$type = isset( $_POST['type'] ) ? \sanitize_text_field( \wp_unslash( $_POST['type'] ) ) : '';
 		$this->installer->install( $type );
 		$this->redirect_back();
@@ -61,8 +65,11 @@ final class FlowLibraryPage {
 
 	public function handle_set_status(): void {
 		$this->authorize( 'cartquill_set_status' );
+		// Nonce verified in authorize() above, as in handle_install().
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
 		$id     = isset( $_POST['flow'] ) ? (int) $_POST['flow'] : 0;
 		$status = isset( $_POST['status'] ) ? \sanitize_text_field( \wp_unslash( $_POST['status'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
 		$flow = $this->flows->find( $id );
 		if ( null !== $flow && in_array( $status, array( FlowRecord::STATUS_ACTIVE, FlowRecord::STATUS_DRAFT, FlowRecord::STATUS_PAUSED ), true ) ) {
