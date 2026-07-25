@@ -13,6 +13,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
+/*
+ * Direct $wpdb access is this class's entire job: CartQuill owns its custom
+ * tables (see Persistence\Schema) and WordPress ships no API for them. Table
+ * names come from Schema::*_table() - `$wpdb->prefix` plus a hard-coded literal,
+ * never user input - and an identifier cannot travel through a prepare()
+ * placeholder, so the name is interpolated while every *value* stays prepared.
+ * Rows are read uncached deliberately: `next_run_at` drives step
+ * scheduling from a background Action Scheduler worker, where a stale read would
+ * either fire a step twice or strand an enrollment mid-flow.
+ */
+// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter -- see above.
+
 final class WpdbEnrollmentRepository implements EnrollmentRepository {
 
 	/** Column formats for row_data(), in key order. */
@@ -84,7 +96,7 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 		$table = Schema::enrollments_table();
 
 		$row = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), // phpcs:ignore WordPress.DB.PreparedSQL
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ),
 			ARRAY_A
 		);
 
@@ -97,7 +109,7 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE flow_id = %d AND customer_email = %s AND status = %s ORDER BY id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL
+				"SELECT * FROM {$table} WHERE flow_id = %d AND customer_email = %s AND status = %s ORDER BY id DESC LIMIT 1",
 				$flow_id,
 				$customer_email,
 				EnrollmentRecord::STATUS_ACTIVE
@@ -114,7 +126,7 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 
 		$count = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table} WHERE flow_id = %d AND customer_email = %s", // phpcs:ignore WordPress.DB.PreparedSQL
+				"SELECT COUNT(*) FROM {$table} WHERE flow_id = %d AND customer_email = %s",
 				$flow_id,
 				$customer_email
 			)
@@ -128,7 +140,7 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 		$table = Schema::enrollments_table();
 
 		$rows = $wpdb->get_results(
-			$wpdb->prepare( "SELECT * FROM {$table} WHERE customer_email = %s ORDER BY id ASC", strtolower( trim( $customer_email ) ) ), // phpcs:ignore WordPress.DB.PreparedSQL
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE customer_email = %s ORDER BY id ASC", strtolower( trim( $customer_email ) ) ),
 			ARRAY_A
 		);
 
@@ -141,7 +153,7 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 
 		return (int) $wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$table} SET status = %s, active_key = NULL WHERE customer_email = %s AND status = %s", // phpcs:ignore WordPress.DB.PreparedSQL
+				"UPDATE {$table} SET status = %s, active_key = NULL WHERE customer_email = %s AND status = %s",
 				EnrollmentRecord::STATUS_UNSUBSCRIBED,
 				strtolower( trim( $customer_email ) ),
 				EnrollmentRecord::STATUS_ACTIVE
@@ -162,7 +174,7 @@ final class WpdbEnrollmentRepository implements EnrollmentRepository {
 		global $wpdb;
 		$table = Schema::enrollments_table();
 
-		$rows = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB
+		$rows = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY id ASC", ARRAY_A );
 
 		return array_map( array( $this, 'hydrate' ), $rows ?: array() );
 	}

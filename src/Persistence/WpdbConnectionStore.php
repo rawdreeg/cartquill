@@ -13,6 +13,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
+/*
+ * Direct $wpdb access is this class's entire job: CartQuill owns its custom
+ * tables (see Persistence\Schema) and WordPress ships no API for them. Table
+ * names come from Schema::*_table() - `$wpdb->prefix` plus a hard-coded literal,
+ * never user input - and an identifier cannot travel through a prepare()
+ * placeholder, so the name is interpolated while every *value* stays prepared.
+ * Rows are read uncached deliberately: they hold credentials encrypted
+ * at rest, which belong in one place rather than copied into a persistent object
+ * cache that may outlive a disconnect.
+ */
+// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter -- see above.
+
 /**
  * Persists connections to the custom `connections` table via $wpdb, one row per
  * service. Credentials are encrypted at rest with {@see EncryptedCredentials}
@@ -50,7 +62,7 @@ final class WpdbConnectionStore implements ConnectionStore {
 		$table = Schema::connections_table();
 
 		$row = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM {$table} WHERE service = %s LIMIT 1", $service ), // phpcs:ignore WordPress.DB.PreparedSQL
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE service = %s LIMIT 1", $service ),
 			ARRAY_A
 		);
 
@@ -66,7 +78,7 @@ final class WpdbConnectionStore implements ConnectionStore {
 		global $wpdb;
 		$table = Schema::connections_table();
 
-		$rows = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY service ASC", ARRAY_A ); // phpcs:ignore WordPress.DB
+		$rows = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY service ASC", ARRAY_A );
 
 		return array_map( array( $this, 'hydrate' ), $rows ?: array() );
 	}
@@ -76,7 +88,7 @@ final class WpdbConnectionStore implements ConnectionStore {
 		$table = Schema::connections_table();
 
 		$id = $wpdb->get_var(
-			$wpdb->prepare( "SELECT id FROM {$table} WHERE service = %s LIMIT 1", $service ) // phpcs:ignore WordPress.DB.PreparedSQL
+			$wpdb->prepare( "SELECT id FROM {$table} WHERE service = %s LIMIT 1", $service )
 		);
 
 		return null !== $id ? (int) $id : null;

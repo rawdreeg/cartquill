@@ -94,6 +94,10 @@ final class TrackingEndpoint {
 		if ( TrackingUrls::ACTION_CLICK === $action ) {
 			// PHP already percent-decodes $_GET once; do NOT decode again, or a
 			// target containing % / + would no longer match the signed payload.
+			// Sanitizing here would mutate the value for the same reason, so the
+			// raw string is what handle_click() checks the HMAC against, and it
+			// only ever leaves this method through esc_url_raw() below.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$url      = isset( $_GET['url'] ) ? (string) \wp_unslash( $_GET['url'] ) : '';
 			$redirect = $this->handle_click( $message_id, $url, $token );
 

@@ -13,6 +13,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
+/*
+ * Direct $wpdb access is this class's entire job: CartQuill owns its custom
+ * tables (see Persistence\Schema) and WordPress ships no API for them. Table
+ * names come from Schema::*_table() - `$wpdb->prefix` plus a hard-coded literal,
+ * never user input - and an identifier cannot travel through a prepare()
+ * placeholder, so the name is interpolated while every *value* stays prepared.
+ * Rows are read uncached deliberately: the abandonment scan runs in a
+ * background worker and compares live `updated_at` values, so a cached snapshot
+ * would email customers who have already checked out.
+ */
+// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter -- see above.
+
 final class WpdbCartCaptureStore implements CartCaptureStore {
 
 	public function capture( string $email, string $updated_at, float $cart_value = 0.0 ): void {
@@ -24,7 +36,7 @@ final class WpdbCartCaptureStore implements CartCaptureStore {
 		$wpdb->query(
 			$wpdb->prepare(
 				"INSERT INTO {$table} (customer_email, status, updated_at, cart_value) VALUES (%s, %s, %s, %f)
-				ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = VALUES(updated_at), cart_value = VALUES(cart_value)", // phpcs:ignore WordPress.DB.PreparedSQL
+				ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = VALUES(updated_at), cart_value = VALUES(cart_value)",
 				$this->normalize( $email ),
 				CartCaptureRecord::STATUS_PENDING,
 				$updated_at,
@@ -47,7 +59,7 @@ final class WpdbCartCaptureStore implements CartCaptureStore {
 
 		$emails = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT customer_email FROM {$table} WHERE status = %s AND updated_at <= %s ORDER BY id ASC", // phpcs:ignore WordPress.DB.PreparedSQL
+				"SELECT customer_email FROM {$table} WHERE status = %s AND updated_at <= %s ORDER BY id ASC",
 				CartCaptureRecord::STATUS_PENDING,
 				$cutoff
 			)
@@ -61,7 +73,7 @@ final class WpdbCartCaptureStore implements CartCaptureStore {
 		$table = Schema::cart_captures_table();
 
 		$row = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM {$table} WHERE customer_email = %s", $this->normalize( $email ) ), // phpcs:ignore WordPress.DB.PreparedSQL
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE customer_email = %s", $this->normalize( $email ) ),
 			ARRAY_A
 		);
 
