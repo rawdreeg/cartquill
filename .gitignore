@@ -19,6 +19,13 @@ wp-cli.local.yml
 .env.*
 !.env.example
 
+# Agent / assistant state (never belongs in the repo)
+.claude/
+.omc/
+
+# Local wp-env override (points wp-env at build/cartquill; personal preference)
+.wp-env.override.json
+
 # OS / editor
 .DS_Store
 Thumbs.db
