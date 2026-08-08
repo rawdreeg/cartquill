@@ -117,18 +117,31 @@ jobs:
       - name: Build production package
         run: bash bin/build.sh
 
-      - name: Assert free/paid separation and a production autoloader
+      - name: Assert core/paid separation and a production autoloader
         run: |
-          for path in src/Ai src/Automations src/Admin/AiGeneratePage.php tests composer.lock CLAUDE.md .claude .omc node_modules package.json package-lock.json webpack.config.js; do
+          for path in src/Ai src/Automations src/Licensing src/freemius.php \
+                      src/Admin/AiGeneratePage.php src/Admin/LicensePage.php src/Admin/UsageNotice.php \
+                      src/Metering/UsageMeter.php src/Metering/UsageStore.php \
+                      src/Metering/WpdbUsageStore.php src/Metering/InMemoryUsageStore.php \
+                      assets/builder/src/ai assets/builder/build/ai.js \
+                      tests composer.lock CLAUDE.md .claude .omc node_modules package.json package-lock.json webpack.config.js; do
             if [ -e "build/cartquill/$path" ]; then
-              echo "::error::'$path' leaked into the free build"; exit 1
+              echo "::error::'$path' leaked into core"; exit 1
             fi
           done
+          # Core is a complete product, not a limited preview: it must contain no
+          # licence check, plan gate, usage cap or upgrade prompt. Grep the shipped
+          # source (excluding vendor/ and the readme itself) for the vocabulary.
+          if grep -rniE "licen[cs]e key|plan gate|upgrade required|your plan|freemius|is_active\(|held plan" \
+               build/cartquill --include='*.php' --include='*.js' --include='*.css' \
+             | grep -v '/vendor/' | grep -v 'is_active()'; then
+            echo "::error::core references licensing or plan gating"; exit 1
+          fi
           if find build/cartquill -name '.DS_Store' | grep -q .; then
-            echo "::error::.DS_Store leaked into the free build"; exit 1
+            echo "::error::.DS_Store leaked into core"; exit 1
           fi
           if find build/cartquill -name '*.test.js' | grep -q .; then
-            echo "::error::a *.test.js file leaked into the free build"; exit 1
+            echo "::error::a *.test.js file leaked into core"; exit 1
           fi
           test -f build/cartquill/vendor/autoload.php || { echo "::error::built package is missing vendor/autoload.php"; exit 1; }
           # Ships on purpose: Plugin Check reports missing_composer_json_file for a
@@ -142,7 +155,7 @@ jobs:
 
       - name: Assert the premium package ships the paid add-ons but no dev cruft
         run: |
-          # The paid add-ons the free build strips must be PRESENT in premium...
+          # The paid add-ons core strips must be PRESENT in premium...
           for path in src/Ai/addon.php src/Automations/addon.php src/Admin/AiGeneratePage.php; do
             if [ ! -e "build/premium/cartquill/$path" ]; then
               echo "::error::premium build is missing paid file '$path'"; exit 1
@@ -153,7 +166,7 @@ jobs:
           if ! grep -q "src/Ai/AiAddon.php" build/premium/cartquill/vendor/composer/autoload_classmap.php; then
             echo "::error::premium autoloader classmap is missing the paid AI classes"; exit 1
           fi
-          # ...while dev/meta and free-build strippables stay out of premium too.
+          # ...while dev/meta and core strippables stay out of premium too.
           for path in tests composer.lock CLAUDE.md .claude .omc node_modules package.json package-lock.json webpack.config.js; do
             if [ -e "build/premium/cartquill/$path" ]; then
               echo "::error::'$path' leaked into the premium build"; exit 1
@@ -163,8 +176,8 @@ jobs:
             echo "::error::a *.test.js file leaked into the premium build"; exit 1
           fi
           test -f build/premium/cartquill/vendor/autoload.php || { echo "::error::premium package is missing vendor/autoload.php"; exit 1; }
-          # Building premium must not have clobbered the free zip.
-          test -f build/cartquill.zip || { echo "::error::the free zip disappeared while building premium"; exit 1; }
+          # Building premium must not have clobbered the core zip.
+          test -f build/cartquill.zip || { echo "::error::the core zip disappeared while building premium"; exit 1; }
 
       - name: Upload package artifacts
         uses: actions/upload-artifact@v5
@@ -174,7 +187,7 @@ jobs:
             build/cartquill.zip
             build/cartquill-premium.zip
 
-      # Plugin Check runs against the built free package. Informational for now:
+      # Plugin Check runs against the built core package. Informational for now:
       # some checks need a live WP environment and the AI proxy legal URLs are
       # still HITL placeholders, so a hard gate would block on known items.
       - name: Run Plugin Check (informational)

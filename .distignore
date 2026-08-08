@@ -33,13 +33,26 @@ webpack.config.js
 .claude
 .omc
 
-# Paid add-ons are distributed separately (Freemius); the free WordPress.org
-# build omits their code and the admin screens that only they instantiate. The
-# `premium` edition of bin/build.sh keeps everything below this marker (and only
-# below it) so the Freemius package ships the gated code the license unlocks.
+# Everything below this marker belongs to the separately distributed premium
+# edition and is NOT part of core: the add-ons themselves, their admin screens
+# and builder bundle, and the whole licensing/metering layer only premium uses.
+#
+# The core build strips all of it, so the plugin it produces contains no licence
+# check, no plan, no usage cap and no upgrade prompt — every feature it ships is
+# fully functional for every user. `bin/build.sh premium` keeps everything below
+# the marker, assembled from this same tree.
 # @cartquill:paid
 src/Ai
 src/Deliverability
 src/Automations
+src/Licensing
+src/Metering/UsageMeter.php
+src/Metering/UsageStore.php
+src/Metering/WpdbUsageStore.php
+src/Metering/InMemoryUsageStore.php
 src/Admin/AiGeneratePage.php
 src/Admin/DeliverabilityPage.php
+src/Admin/LicensePage.php
+src/Admin/UsageNotice.php
+src/freemius.php
+assets/builder/src/ai
