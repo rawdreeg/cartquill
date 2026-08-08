@@ -42,11 +42,11 @@ use CartQuill\Support\Clock;
  * Every step runs a typed {@see \CartQuill\Action\ActionInterface} resolved from
  * the {@see ActionRegistry}. Core always provides the `email` action (which
  * wraps the compose → {@see SenderInterface::send()} path unchanged), so the
- * email path — sending, unsubscribe, tracking, attribution — is untouched;
- * add-ons register Slack/Sheets/Mailchimp/SMS actions on the registry.
+ * email path — sending, unsubscribe, tracking, attribution — is untouched; an
+ * extension can register further channels on the registry.
  *
- * An unknown or unavailable action (add-on absent, unlicensed, connection down)
- * is permanently dead-lettered so the flow advances instead of stalling. A send
+ * An unknown or unavailable action (an extension is absent, or its connection is
+ * down) is permanently dead-lettered so the flow advances instead of stalling. A send
  * that fails or throws is retried with bounded backoff on the same step; only
  * after the retry budget is exhausted is the step dead-lettered (recorded
  * failed, failure surfaced via `cartquill_step_send_failed`) and the flow
@@ -163,9 +163,9 @@ final class StepRunner {
 			return;
 		}
 
-		// Enforce the monthly action cap before executing (fail-closed): an
-		// over-cap step defers to the next period rather than consuming a billed
-		// action or dropping the enrolled customer.
+		// Ask the execution policy before running the step. CartQuill's own meter
+		// always says yes; an extension's may defer, in which case the step waits
+		// rather than being dropped and the customer stays enrolled.
 		if ( $this->meter->would_exceed() ) {
 			$this->defer_to_next_period( $enrollment, $step_index );
 			return;
@@ -289,9 +289,9 @@ final class StepRunner {
 	}
 
 	/**
-	 * Defer an over-cap step to the start of the next billing period. The step is
-	 * neither claimed nor executed (no billed action), the enrollment keeps its
-	 * place, and the cap-reached hook fires for admin surfacing.
+	 * Defer a step the execution policy declined to the start of the next period.
+	 * The step is neither claimed nor executed, the enrollment keeps its place, and
+	 * the deferral hook fires so an extension can surface it.
 	 */
 	private function defer_to_next_period( EnrollmentRecord $enrollment, int $step_index ): void {
 		$run_at = $this->next_period_start();
@@ -301,12 +301,12 @@ final class StepRunner {
 		$this->scheduler->schedule( $run_at, (int) $enrollment->id, $step_index );
 
 		if ( function_exists( 'do_action' ) ) {
-			\do_action( 'cartquill_action_cap_reached', (int) $enrollment->id, $step_index );
+			\do_action( 'cartquill_step_deferred', (int) $enrollment->id, $step_index );
 		}
 	}
 
 	/**
-	 * Unix timestamp for the start of the next UTC month (when the cap resets).
+	 * Unix timestamp for the start of the next UTC month.
 	 */
 	private function next_period_start(): int {
 		$now   = $this->clock->now();

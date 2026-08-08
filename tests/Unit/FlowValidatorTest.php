@@ -12,12 +12,15 @@ namespace CartQuill\Tests\Unit;
 
 use Brain\Monkey;
 use Brain\Monkey\Functions;
+use CartQuill\Builder\ActionDescriptor;
 use CartQuill\Builder\BuilderCatalog;
 use CartQuill\Builder\CoreActionDescriptors;
 use CartQuill\Builder\CoreTriggers;
 use CartQuill\Builder\FlowValidator;
+use CartQuill\Builder\OpenAvailability;
 use CartQuill\Builder\TriggerDescriptor;
 use CartQuill\Licensing\ArrayLicense;
+use CartQuill\Licensing\LicensedAvailability;
 use CartQuill\Licensing\Plans;
 use CartQuill\Persistence\ConnectionRecord;
 use CartQuill\Persistence\ConnectionStore;
@@ -43,7 +46,7 @@ final class FlowValidatorTest extends TestCase {
 
 	/** A free-tier catalog: only the email action is available. */
 	private function free_validator(): FlowValidator {
-		return new FlowValidator( new BuilderCatalog( new ArrayLicense(), new InMemoryConnectionStore(), CoreActionDescriptors::all(), CoreTriggers::all() ) );
+		return new FlowValidator( new BuilderCatalog( new OpenAvailability(), new InMemoryConnectionStore(), CoreActionDescriptors::all(), CoreTriggers::all() ) );
 	}
 
 	/** A licensed + Slack-connected catalog whose triggers include the paid ones. */
@@ -54,8 +57,12 @@ final class FlowValidatorTest extends TestCase {
 			CoreTriggers::all(),
 			array( new TriggerDescriptor( 'order_alert', 'New paid order', '', array( 'order_total' ), Plans::AUTOMATIONS ) )
 		);
+		$actions = array_merge(
+			CoreActionDescriptors::all(),
+			array( new ActionDescriptor( 'slack_post', 'Post to Slack', 'slack', Plans::AUTOMATIONS, false, array() ) )
+		);
 		$license = new ArrayLicense( array( Plans::GROWTH ), Plans::entitlements( Plans::GROWTH ) );
-		return new FlowValidator( new BuilderCatalog( $license, $connections, CoreActionDescriptors::all(), $triggers ) );
+		return new FlowValidator( new BuilderCatalog( new LicensedAvailability( $license ), $connections, $actions, $triggers ) );
 	}
 
 	/** @return array<string, string> field => message */

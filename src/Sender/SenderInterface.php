@@ -19,7 +19,7 @@ use CartQuill\Model\SendResult;
 /**
  * Every way CartQuill sends email implements this interface.
  *
- * Core ships WpMailSender. Paid add-ons register additional senders
+ * Core ships WpMailSender. An extension registers additional senders
  * (e.g. an ESP-backed sender) through the register_sender() hook. The flow
  * engine only ever talks to this interface, so it stays ignorant of *how* mail
  * is actually sent. Tests inject a FakeSender.

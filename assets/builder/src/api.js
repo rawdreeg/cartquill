@@ -35,6 +35,10 @@ export function createApi( { root = '', nonce = '' } = {} ) {
 			.then( ( response ) => response.json() );
 
 	return {
+		// Exposed so an extension filling a builder slot can call its own
+		// cartquill/v1 route with the same root + nonce instead of rebuilding
+		// this client.
+		request,
 		getCatalog: () => request( 'cartquill/v1/catalog' ),
 		listFlows: () => request( 'cartquill/v1/flows' ),
 		getFlow: ( id ) => request( `cartquill/v1/flows/${ id }` ),
@@ -47,11 +51,6 @@ export function createApi( { root = '', nonce = '' } = {} ) {
 			request( `cartquill/v1/flows/${ id }`, {
 				method: 'PUT',
 				body: JSON.stringify( data ),
-			} ),
-		rewriteCopy: ( copy, instruction, acknowledge = false ) =>
-			request( 'cartquill/v1/ai/rewrite', {
-				method: 'POST',
-				body: JSON.stringify( { copy, instruction, acknowledge } ),
 			} ),
 	};
 }

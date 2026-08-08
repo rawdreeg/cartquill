@@ -53,23 +53,22 @@ final class FlowLibraryPage {
 	}
 
 	public function handle_install(): void {
-		$this->authorize( 'cartquill_install_flow' );
-		// authorize() wp_die()s unless check_admin_referer() passes, so the nonce
-		// is verified before any read below; PHPCS cannot follow it through the
-		// helper and reports the check as missing.
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! \current_user_can( 'manage_options' ) || ! \check_admin_referer( 'cartquill_install_flow' ) ) {
+			\wp_die( \esc_html__( 'Not allowed.', 'cartquill' ) );
+		}
+
 		$type = isset( $_POST['type'] ) ? \sanitize_text_field( \wp_unslash( $_POST['type'] ) ) : '';
 		$this->installer->install( $type );
 		$this->redirect_back();
 	}
 
 	public function handle_set_status(): void {
-		$this->authorize( 'cartquill_set_status' );
-		// Nonce verified in authorize() above, as in handle_install().
-		// phpcs:disable WordPress.Security.NonceVerification.Missing
+		if ( ! \current_user_can( 'manage_options' ) || ! \check_admin_referer( 'cartquill_set_status' ) ) {
+			\wp_die( \esc_html__( 'Not allowed.', 'cartquill' ) );
+		}
+
 		$id     = isset( $_POST['flow'] ) ? (int) $_POST['flow'] : 0;
 		$status = isset( $_POST['status'] ) ? \sanitize_text_field( \wp_unslash( $_POST['status'] ) ) : '';
-		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
 		$flow = $this->flows->find( $id );
 		if ( null !== $flow && in_array( $status, array( FlowRecord::STATUS_ACTIVE, FlowRecord::STATUS_DRAFT, FlowRecord::STATUS_PAUSED ), true ) ) {
@@ -215,12 +214,6 @@ final class FlowLibraryPage {
 		}
 		/* translators: %d: number of minutes. */
 		return sprintf( \_n( '%d minute', '%d minutes', max( 1, (int) round( $seconds / 60 ) ), 'cartquill' ), max( 1, (int) round( $seconds / 60 ) ) );
-	}
-
-	private function authorize( string $nonce_action ): void {
-		if ( ! \current_user_can( 'manage_options' ) || ! \check_admin_referer( $nonce_action ) ) {
-			\wp_die( \esc_html__( 'Not allowed.', 'cartquill' ) );
-		}
 	}
 
 	private function redirect_back(): void {

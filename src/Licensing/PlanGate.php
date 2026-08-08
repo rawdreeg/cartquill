@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use CartQuill\Engine\ConditionEvaluator;
 use CartQuill\Persistence\FlowRecord;
 use CartQuill\Persistence\FlowRepository;
+use CartQuill\Rest\FlowBuilderController;
 
 /**
  * The tier caps that bite at *activation* (not at send time, which the meter
@@ -109,6 +110,48 @@ final class PlanGate {
 			'record'  => $candidate->with_status( $safe_status ),
 			'blocked' => $blocked,
 		);
+	}
+
+	/**
+	 * Hook the gate onto the builder's pre-save seam. Absent this call — which is
+	 * what the WordPress.org plugin ships — the filter has no listener and every
+	 * save is persisted exactly as the builder sent it.
+	 */
+	public function register(): void {
+		\add_filter( FlowBuilderController::FILTER_PRESAVE, array( $this, 'presave_filter' ), 10, 3 );
+	}
+
+	/**
+	 * Apply {@see self::enforce()} to a pending builder save and translate the block
+	 * reason into the message the builder shows.
+	 *
+	 * @param array{record: FlowRecord, blocked: string} $pending   The pending save.
+	 * @param FlowRecord                                 $candidate The record the builder sent.
+	 * @param FlowRecord|null                            $existing  The stored record being replaced.
+	 *
+	 * @return array{record: FlowRecord, blocked: string}
+	 */
+	public function presave_filter( array $pending, FlowRecord $candidate, ?FlowRecord $existing ): array {
+		$gated = $this->enforce( $candidate, $existing );
+
+		return array(
+			'record'  => $gated['record'],
+			'blocked' => self::message_for( $gated['blocked'] ),
+		);
+	}
+
+	/**
+	 * The builder-facing message for a block reason ('' when nothing was blocked).
+	 */
+	private static function message_for( string $reason ): string {
+		switch ( $reason ) {
+			case self::REASON_WORKFLOW_CAP:
+				return \__( 'The active-workflow limit for your plan was reached, so the flow was saved but not activated.', 'cartquill' );
+			case self::REASON_CONDITIONAL_LOGIC:
+				return \__( 'Conditional logic needs a higher plan, so the flow was saved but not activated.', 'cartquill' );
+			default:
+				return '';
+		}
 	}
 
 	/**

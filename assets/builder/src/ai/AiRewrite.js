@@ -1,6 +1,6 @@
 import { useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { isErrorResponse } from './api';
+import { isErrorResponse } from '../api';
 
 /*
  * Per-step "rewrite with AI" for the builder, replacing the same feature that used to live
@@ -19,7 +19,10 @@ export function AiRewrite( { api, copy, onApply, idPrefix } ) {
 	const rewrite = ( acknowledge ) => {
 		setBusy( true );
 		setNotice( null );
-		api.rewriteCopy( copy, instruction, acknowledge )
+		api.request( 'cartquill/v1/ai/rewrite', {
+			method: 'POST',
+			body: JSON.stringify( { copy, instruction, acknowledge } ),
+		} )
 			.then( ( result ) => {
 				setBusy( false );
 				if ( isErrorResponse( result ) ) {

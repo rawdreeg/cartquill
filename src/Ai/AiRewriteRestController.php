@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * acknowledged. Rewritten copy is returned to the builder for review — never persisted
  * or sent here.
  *
- * Registered only by the AI add-on when the AI plan is active (the free build never ships
+ * Registered only by the AI add-on when the AI plan is active (core never ships
  * this class), so, like the other AI wiring, it is instantiated from `AiAddon::boot()` and
  * never referenced by any free-shipped file.
  *

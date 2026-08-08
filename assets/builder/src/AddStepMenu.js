@@ -2,15 +2,13 @@ import { useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
 /*
- * The action picker for appending a step. Available actions add a step; locked ones
- * (plan or connection) are shown disabled with an upgrade/connect hint, so the whole
- * menu — and its upsell path — is visible. Selecting an available action dispatches
- * addStep with the catalog descriptor, which seeds the new step's default config.
+ * The action picker for appending a step. Every action CartQuill ships is available.
+ * An action contributed by an extension can report itself as not-yet-usable — for
+ * example an integration whose account is not connected — and is then shown disabled
+ * with the reason. Selecting an available action dispatches addStep with the catalog
+ * descriptor, which seeds the new step's default config.
  */
 function lockLabel( reason ) {
-	if ( 'requires_plan' === reason ) {
-		return __( 'Upgrade required', 'cartquill' );
-	}
 	if ( 'requires_connection' === reason ) {
 		return __( 'Connect first', 'cartquill' );
 	}

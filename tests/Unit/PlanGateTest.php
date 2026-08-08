@@ -17,9 +17,25 @@ use CartQuill\Licensing\Plans;
 use CartQuill\Persistence\FlowRecord;
 use CartQuill\Persistence\InMemoryFlowRepository;
 use CartQuill\Flow\FlowStep;
+use Brain\Monkey;
+use Brain\Monkey\Functions;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 
 final class PlanGateTest extends TestCase {
+
+	use MockeryPHPUnitIntegration;
+
+	protected function setUp(): void {
+		parent::setUp();
+		Monkey\setUp();
+		Functions\when( '__' )->returnArg();
+	}
+
+	protected function tearDown(): void {
+		Monkey\tearDown();
+		parent::tearDown();
+	}
 
 	private function flow( ?int $id, string $status, array $steps = array() ): FlowRecord {
 		return new FlowRecord( $id, 'Flow ' . (string) $id, 'post_purchase', $status, FlowRecord::SOURCE_TEMPLATE, $steps );
@@ -147,5 +163,40 @@ final class PlanGateTest extends TestCase {
 			array( new FlowStep( 0, 'Hi', 'body', array( array( 'type' => 'first_time_customer' ) ) ) )
 		);
 		$this->assertSame( PlanGate::REASON_CONDITIONAL_LOGIC, $gate->activation_error( $flow ) );
+	}
+
+	public function test_presave_filter_reverts_a_blocked_activation_and_explains_why(): void {
+		$flows = new InMemoryFlowRepository();
+		$this->seed_active( $flows, 5 ); // Starter cap is 5.
+		$gate = $this->gate( Plans::STARTER, $flows );
+
+		$candidate = $this->flow( null, FlowRecord::STATUS_ACTIVE );
+		$pending   = array(
+			'record'  => $candidate,
+			'blocked' => '',
+		);
+
+		$result = $gate->presave_filter( $pending, $candidate, null );
+
+		$this->assertSame( FlowRecord::STATUS_DRAFT, $result['record']->status, 'kept out of active, edits preserved' );
+		$this->assertNotSame( '', $result['blocked'], 'the builder is told why' );
+	}
+
+	public function test_presave_filter_passes_an_allowed_save_through_untouched(): void {
+		$flows = new InMemoryFlowRepository();
+		$gate  = $this->gate( Plans::GROWTH, $flows );
+
+		$candidate = $this->flow( null, FlowRecord::STATUS_ACTIVE );
+		$result    = $gate->presave_filter(
+			array(
+				'record'  => $candidate,
+				'blocked' => '',
+			),
+			$candidate,
+			null
+		);
+
+		$this->assertSame( FlowRecord::STATUS_ACTIVE, $result['record']->status );
+		$this->assertSame( '', $result['blocked'] );
 	}
 }

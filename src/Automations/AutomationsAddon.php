@@ -55,22 +55,23 @@ final class AutomationsAddon {
 	) {}
 
 	public function register(): void {
-		\add_action( 'cartquill_register_actions', array( $this, 'register_actions' ), 10, 2 );
+		\add_action( 'cartquill_register_actions', array( $this, 'register_actions' ) );
 		\add_action( 'cartquill_register_addons', array( $this, 'register_surfaces' ) );
 		\add_filter( 'cartquill_flow_templates', array( $this, 'register_recipes' ) );
 
 		// Contribute this add-on's actions + triggers to the flow builder's catalog.
-		// Registered unconditionally (not license-gated) so a paid-but-unlicensed store
-		// still sees them as locked "upgrade" cards; the catalog computes availability
+		// Registered unconditionally so the catalog can compute each one's availability
 		// from the license + connection status.
 		\add_filter( BuilderCatalog::FILTER_ACTIONS, array( $this, 'builder_action_descriptors' ) );
 		\add_filter( BuilderCatalog::FILTER_TRIGGERS, array( $this, 'builder_triggers' ) );
 	}
 
 	/**
-	 * Replace the core static fallback descriptors for this add-on's actions with
-	 * authoritative ones sourced from the live action classes, so a licensed store
-	 * edits the exact config keys each action reads at runtime.
+	 * Contribute this add-on's action descriptors, sourced from the live action
+	 * classes so the builder edits the exact config keys each action reads at
+	 * runtime. CartQuill itself ships only the `email` descriptor; these are added
+	 * on top, and a descriptor already present for one of these types (an older
+	 * install, or another extension) is replaced rather than duplicated.
 	 *
 	 * @param list<ActionDescriptor> $descriptors The catalog's descriptors so far.
 	 *
@@ -84,10 +85,12 @@ final class AutomationsAddon {
 			SmsAction::TYPE       => new ActionDescriptor( SmsAction::TYPE, 'Send SMS', SmsAction::SERVICE, Plans::AUTOMATIONS, true, SmsAction::config_fields() ),
 		);
 
-		return array_map(
-			static fn( ActionDescriptor $descriptor ) => $authoritative[ $descriptor->type ] ?? $descriptor,
-			$descriptors
-		);
+		$merged = array();
+		foreach ( $descriptors as $descriptor ) {
+			$merged[ $descriptor->type ] = $authoritative[ $descriptor->type ] ?? $descriptor;
+		}
+
+		return array_values( array_merge( $merged, array_diff_key( $authoritative, $merged ) ) );
 	}
 
 	/**
@@ -113,10 +116,9 @@ final class AutomationsAddon {
 
 	/**
 	 * @param ActionRegistry $actions The action registry.
-	 * @param License        $license The licensing gate.
 	 */
-	public function register_actions( ActionRegistry $actions, License $license ): void {
-		if ( ! $license->is_active( Plans::AUTOMATIONS ) ) {
+	public function register_actions( ActionRegistry $actions ): void {
+		if ( ! $this->license->is_active( Plans::AUTOMATIONS ) ) {
 			return;
 		}
 

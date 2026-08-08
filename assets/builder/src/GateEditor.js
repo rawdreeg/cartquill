@@ -4,9 +4,9 @@ import { FieldControl } from './FieldControl';
 
 /*
  * The condition gates on one step. Each gate is a catalog condition with its params;
- * the picker below adds another. Locked conditions (the paid conditional-logic gates)
- * are offered disabled with an upgrade hint — the write-side validator and PlanGate are
- * the real enforcement, this only shapes the UI.
+ * the picker below adds another. Every gate CartQuill ships is offered; the catalog's
+ * `available` flag only ever hides something an extension contributed but cannot run
+ * yet, and the write-side validator is the real enforcement either way.
  */
 export function GateEditor( { step, index, conditions, dispatch } ) {
 	const descriptorFor = ( type ) =>
@@ -77,16 +77,13 @@ export function GateEditor( { step, index, conditions, dispatch } ) {
 }
 
 /*
- * The picker for adding a gate: a select of the available conditions plus an add button.
- * When some conditions are locked behind a plan, a hint names the upgrade path.
+ * The picker for adding a gate: a select of the available conditions plus an add
+ * button. Every condition CartQuill ships is available.
  */
 function AddGate( { index, conditions, dispatch } ) {
 	const [ selected, setSelected ] = useState( '' );
 	const available = ( conditions || [] ).filter(
 		( condition ) => condition.available
-	);
-	const hasLocked = ( conditions || [] ).some(
-		( condition ) => ! condition.available
 	);
 
 	const add = () => {
@@ -121,11 +118,6 @@ function AddGate( { index, conditions, dispatch } ) {
 			>
 				{ __( 'Add', 'cartquill' ) }
 			</button>
-			{ hasLocked && (
-				<p className="cartquill-builder__muted">
-					{ __( 'Some gates need a higher plan.', 'cartquill' ) }
-				</p>
-			) }
 		</div>
 	);
 }

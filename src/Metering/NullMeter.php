@@ -14,8 +14,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * The default when metering is not wired (tests, or the engine constructed
- * without a meter): never caps, never counts.
+ * The meter CartQuill runs with: it never defers a step and never counts one, so
+ * the engine executes every step as soon as it is due. This is the default the
+ * engine falls back to when no meter is injected, and what the plugin wires in
+ * {@see \CartQuill\Plugin}.
  */
 final class NullMeter implements Meter {
 
