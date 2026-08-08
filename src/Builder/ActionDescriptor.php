@@ -1,6 +1,6 @@
 <?php
 /**
- * What the builder needs to know to offer an action: its identity, the plan and
+ * What the builder needs to know to offer an action: its identity, the capability and
  * connection it requires, and its editable config fields.
  *
  * @package CartQuill
@@ -18,12 +18,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * A value object describing one step action for the builder. It carries the
  * static facts (what the action is, which capability + connection it needs, what
  * fields it edits); the {@see BuilderCatalog} computes the live availability from
- * the held plan and connection status when it serializes.
+ * the {@see Availability} seam and connection status when it serializes.
  *
- * `capability` is a {@see \CartQuill\Licensing\Plans} constant the held plan must
- * grant (null for a core action like email that every tier ships). `service` is
- * the connection key that must be connected before the action can run (null for
- * an action that needs no external connection).
+ * `capability` is an opaque key an extension tags its own descriptors with, so its
+ * {@see Availability} can answer for them; it is null for everything CartQuill
+ * ships, which is always offered. `service` is the connection key that must be
+ * connected before the action can run (null when it needs no external connection).
  */
 final class ActionDescriptor {
 
@@ -31,7 +31,7 @@ final class ActionDescriptor {
 	 * @param string                     $type            Stable action key (e.g. "slack_post").
 	 * @param string                     $label           Human label for the picker.
 	 * @param string|null                $service         Connection key required, or null.
-	 * @param string|null                $capability      Plans::* capability required, or null.
+	 * @param string|null                $capability      Extension capability key, or null for core.
 	 * @param bool                       $customer_facing Whether it reaches the customer directly.
 	 * @param list<array<string, mixed>> $fields          Editable config field descriptors.
 	 */

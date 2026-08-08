@@ -88,6 +88,6 @@ final class FlowBuilderPageTest extends TestCase {
 		$this->assertSame( 'https://example.test/wp-json/', $localized['data']['root'] );
 		$this->assertSame( 'nonce123', $localized['data']['nonce'] );
 		$this->assertSame( 7, $localized['data']['flowId'] );
-		$this->assertSame( array(), $localized['data']['features'], 'core ships no builder features; add-ons contribute via the filter' );
+		$this->assertArrayNotHasKey( 'features', $localized['data'], 'the builder config carries no feature flags' );
 	}
 }

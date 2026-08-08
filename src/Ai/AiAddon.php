@@ -30,20 +30,24 @@ final class AiAddon {
 	private const DEFAULT_LIMIT  = 20;
 	private const DEFAULT_WINDOW = DAY_IN_SECONDS;
 
+	/** Where the proxy's bearer key comes from; separate from the gate so tests can fake the gate. */
+	private readonly OptionLicense $keys;
+
 	public function __construct(
 		private readonly FlowRepository $flows,
 		private readonly FlowLibrary $library,
-		private readonly OptionLicense $license,
-	) {}
+		private readonly License $license,
+		?OptionLicense $keys = null,
+	) {
+		$this->keys = $keys ?? new OptionLicense();
+	}
 
 	public function register(): void {
 		\add_action( 'cartquill_register_addons', array( $this, 'boot' ) );
 	}
 
-	/**
-	 * @param License $license The licensing gate passed by the registration hook.
-	 */
-	public function boot( License $license ): void {
+	public function boot(): void {
+		$license = $this->license;
 		if ( ! $license->is_active( Plans::AI ) ) {
 			return;
 		}
@@ -55,7 +59,7 @@ final class AiAddon {
 
 		$limiter   = new TransientRateLimiter( $limit, $window );
 		$generator = new AiFlowGenerator(
-			new HttpProxyClient( $this->license ),
+			new HttpProxyClient( $this->keys ),
 			$this->flows,
 			$limiter,
 			$license,
@@ -65,17 +69,27 @@ final class AiAddon {
 
 		( new AiGeneratePage( $generator, $this->library, $disclosure, $limiter ) )->register();
 
-		// Per-step rewrite lives in the builder now (a REST endpoint plus a feature flag
-		// telling the React app the control is available), not the retired classic editor.
+		// Per-step rewrite lives in the builder: a REST endpoint plus this add-on's own
+		// bundle, which fills the builder's `emailCopyAssist` slot with the control.
 		$rewrite = new AiRewriteRestController( $generator, $disclosure );
 		\add_action( 'rest_api_init', array( $rewrite, 'register_routes' ) );
-		\add_filter(
-			'cartquill_builder_config',
-			static function ( array $config ): array {
-				$config['features']              = (array) ( $config['features'] ?? array() );
-				$config['features']['aiRewrite'] = true;
-				return $config;
-			}
+		\add_action( 'cartquill_builder_enqueued', array( $this, 'enqueue_builder_bundle' ) );
+	}
+
+	/**
+	 * Enqueue the add-on's builder bundle alongside the builder's own, so it can
+	 * register its slot component before the builder mounts on DOMContentLoaded.
+	 *
+	 * @param string $version The builder bundle's cache-busting version.
+	 */
+	public function enqueue_builder_bundle( string $version ): void {
+		\wp_enqueue_script(
+			'cartquill-flow-builder-ai',
+			\plugins_url( 'assets/builder/build/ai.js', CARTQUILL_FILE ),
+			array( 'wp-element', 'wp-i18n' ),
+			$version,
+			true
 		);
+		\wp_set_script_translations( 'cartquill-flow-builder-ai', 'cartquill' );
 	}
 }

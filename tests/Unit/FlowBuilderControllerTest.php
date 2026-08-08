@@ -10,15 +10,17 @@ declare(strict_types=1);
 namespace CartQuill\Tests\Unit;
 
 use Brain\Monkey;
+use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
+use CartQuill\Builder\ActionDescriptor;
 use CartQuill\Builder\BuilderCatalog;
 use CartQuill\Builder\CoreActionDescriptors;
 use CartQuill\Builder\CoreTriggers;
 use CartQuill\Builder\FlowSerializer;
 use CartQuill\Builder\FlowValidator;
 use CartQuill\Flow\FlowStep;
-use CartQuill\Licensing\ArrayLicense;
-use CartQuill\Licensing\PlanGate;
+use CartQuill\Builder\OpenAvailability;
+use CartQuill\Licensing\Plans;
 use CartQuill\Persistence\FlowRecord;
 use CartQuill\Persistence\InMemoryConnectionStore;
 use CartQuill\Persistence\InMemoryFlowRepository;
@@ -41,10 +43,32 @@ final class FlowBuilderControllerTest extends TestCase {
 		parent::tearDown();
 	}
 
-	private function controller( InMemoryFlowRepository $flows, ?ArrayLicense $license = null ): FlowBuilderController {
-		$license = $license ?? new ArrayLicense();
-		$catalog = new BuilderCatalog( $license, new InMemoryConnectionStore(), CoreActionDescriptors::all(), CoreTriggers::all() );
-		return new FlowBuilderController( $flows, $catalog, new FlowSerializer(), new FlowValidator( $catalog ), new PlanGate( $license, $flows ) );
+	/**
+	 * @param list<ActionDescriptor> $extra Descriptors an extension would contribute.
+	 */
+	private function controller( InMemoryFlowRepository $flows, array $extra = array() ): FlowBuilderController {
+		$catalog = new BuilderCatalog(
+			new OpenAvailability(),
+			new InMemoryConnectionStore(),
+			array_merge( CoreActionDescriptors::all(), $extra ),
+			CoreTriggers::all()
+		);
+		return new FlowBuilderController( $flows, $catalog, new FlowSerializer(), new FlowValidator( $catalog ) );
+	}
+
+	/** The Slack descriptor as the Automations add-on contributes it. */
+	private function slack_descriptor(): ActionDescriptor {
+		return new ActionDescriptor(
+			'slack_post',
+			'Post to Slack',
+			'slack',
+			Plans::AUTOMATIONS,
+			false,
+			array(
+				array( 'key' => 'channel', 'label' => 'Channel', 'type' => 'text' ),
+				array( 'key' => 'text', 'label' => 'Message', 'type' => 'textarea' ),
+			)
+		);
 	}
 
 	private function email_payload( string $name, string $status ): array {
@@ -127,7 +151,7 @@ final class FlowBuilderControllerTest extends TestCase {
 
 		$this->assertSame( 200, $result['status'] );
 		$this->assertSame( 'Welcome', $result['flow']['name'] );
-		$this->assertSame( '', $result['plan_blocked'] );
+		$this->assertSame( '', $result['blocked'] );
 		$this->assertNotNull( $result['flow']['id'] );
 		$this->assertCount( 1, $flows->all(), 'the flow was persisted' );
 		$this->assertSame( FlowRecord::SOURCE_BUILDER, $flows->find( $result['flow']['id'] )->source );
@@ -183,7 +207,7 @@ final class FlowBuilderControllerTest extends TestCase {
 			),
 		);
 
-		$clean = $this->controller( new InMemoryFlowRepository() )->sanitize_payload( $payload );
+		$clean = $this->controller( new InMemoryFlowRepository(), array( $this->slack_descriptor() ) )->sanitize_payload( $payload );
 
 		$this->assertSame( 'T:Hi', $clean['name'] );
 		$this->assertSame( 'T:s', $clean['steps'][0]['config']['subject'], 'text field' );
@@ -192,8 +216,8 @@ final class FlowBuilderControllerTest extends TestCase {
 		$this->assertSame( "A:l1\nl2", $clean['steps'][1]['config']['text'], 'textarea preserves newlines' );
 	}
 
-	public function test_activating_conditional_logic_without_the_entitlement_is_kept_out_of_active(): void {
-		// A free license lacks the conditional-logic entitlement.
+	public function test_every_valid_save_is_persisted_as_sent(): void {
+		// Nothing in the plugin blocks a save — conditional gates included.
 		$flows   = new InMemoryFlowRepository();
 		$payload = array(
 			'name'   => 'Gated',
@@ -210,7 +234,26 @@ final class FlowBuilderControllerTest extends TestCase {
 		$result = $this->controller( $flows )->create_flow( $payload );
 
 		$this->assertSame( 200, $result['status'] );
-		$this->assertSame( PlanGate::REASON_CONDITIONAL_LOGIC, $result['plan_blocked'] );
-		$this->assertSame( FlowRecord::STATUS_DRAFT, $result['flow']['status'], 'kept out of active, edits preserved' );
+		$this->assertSame( '', $result['blocked'] );
+		$this->assertSame( FlowRecord::STATUS_ACTIVE, $result['flow']['status'], 'a conditional flow activates' );
+	}
+
+	public function test_an_extension_can_adjust_a_pending_save_through_the_presave_filter(): void {
+		$flows = new InMemoryFlowRepository();
+
+		Filters\expectApplied( FlowBuilderController::FILTER_PRESAVE )
+			->once()
+			->andReturnUsing(
+				static fn( array $pending ): array => array(
+					'record'  => $pending['record']->with_status( FlowRecord::STATUS_PAUSED ),
+					'blocked' => 'Saved, but not activated.',
+				)
+			);
+
+		$result = $this->controller( $flows )->create_flow( $this->email_payload( 'Welcome', 'active' ) );
+
+		$this->assertSame( 200, $result['status'] );
+		$this->assertSame( 'Saved, but not activated.', $result['blocked'] );
+		$this->assertSame( FlowRecord::STATUS_PAUSED, $flows->all()[0]->status );
 	}
 }

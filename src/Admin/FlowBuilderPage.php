@@ -58,6 +58,10 @@ final class FlowBuilderPage {
 			return;
 		}
 
+		// Which flow to open. This is a read-only screen render behind the
+		// manage_options check above — it changes no state, so there is nothing for
+		// a nonce to protect. Every state change happens through the REST routes the
+		// bundle calls, which check both the capability and the `wp_rest` nonce.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$flow_id = isset( $_GET['flow'] ) ? (int) $_GET['flow'] : 0;
 		$this->enqueue( $flow_id );
@@ -92,23 +96,31 @@ final class FlowBuilderPage {
 		\wp_style_add_data( self::STYLE_HANDLE, 'rtl', 'replace' );
 
 		/**
-		 * The config handed to the builder app. Add-ons extend it (e.g. the AI add-on
-		 * advertises its rewrite feature) via the `features` map without the free core
-		 * ever referencing paid code.
+		 * The config handed to the builder app: the REST root, a `wp_rest` nonce so
+		 * the capability-gated routes accept the request, and the flow being edited.
+		 * An extension may add its own keys.
 		 *
 		 * @param array<string, mixed> $config Builder bootstrap config.
 		 */
 		$config = \apply_filters(
 			'cartquill_builder_config',
 			array(
-				'root'     => \esc_url_raw( \rest_url() ),
-				'nonce'    => \wp_create_nonce( 'wp_rest' ),
-				'flowId'   => $flow_id,
-				'features' => array(),
+				'root'   => \esc_url_raw( \rest_url() ),
+				'nonce'  => \wp_create_nonce( 'wp_rest' ),
+				'flowId' => $flow_id,
 			)
 		);
 
 		\wp_localize_script( self::HANDLE, 'cartquillBuilder', $config );
+
+		/**
+		 * Fires once the builder bundle is enqueued, so an extension can enqueue its
+		 * own bundle alongside it — for instance to fill a builder slot. The builder
+		 * mounts on DOMContentLoaded, after every enqueued script has run.
+		 *
+		 * @param string $version The builder bundle's cache-busting version.
+		 */
+		\do_action( 'cartquill_builder_enqueued', $asset['version'] );
 	}
 
 	/**

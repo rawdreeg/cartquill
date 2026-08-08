@@ -1,7 +1,7 @@
 <?php
 /**
  * What the builder needs to know to offer a trigger: its identity, the context it
- * captures, and the plan it requires.
+ * captures, and the capability it requires.
  *
  * @package CartQuill
  */
@@ -18,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * A value object describing one flow trigger for the builder. `context_keys` are
  * the variables the trigger captures into the enrollment context (offered to the
  * merge-tag picker and value gates); `capability` is the {@see
- * \CartQuill\Licensing\Plans} constant a store must hold for the trigger to fire
- * (null for the core email triggers, which every tier ships).
+ * Availability} key an extension tags its own triggers with (null for the triggers
+ * CartQuill ships, which are always offered).
  */
 final class TriggerDescriptor {
 

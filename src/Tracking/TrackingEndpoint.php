@@ -77,11 +77,15 @@ final class TrackingEndpoint {
 	 * WordPress entry point: dispatch a tracking request if one is present.
 	 */
 	public function maybe_handle_request(): void {
-		if ( ! isset( $_GET[ TrackingUrls::PARAM ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		// These URLs are opened by a mail client on the recipient's behalf, so there
+		// is no WordPress session and no nonce to carry. Authenticity comes instead
+		// from the HMAC in `t`, which every handler below verifies against the
+		// install key before it records anything or follows a redirect.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		if ( ! isset( $_GET[ TrackingUrls::PARAM ] ) ) {
 			return;
 		}
 
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 		$action     = \sanitize_text_field( \wp_unslash( $_GET[ TrackingUrls::PARAM ] ) );
 		$message_id = isset( $_GET['mid'] ) ? (int) $_GET['mid'] : 0;
 		$token      = isset( $_GET['t'] ) ? \sanitize_text_field( \wp_unslash( $_GET['t'] ) ) : '';

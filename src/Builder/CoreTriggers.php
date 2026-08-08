@@ -14,10 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * The core (email) triggers, offered on every tier. The Automations add-on adds
- * its own triggers (order_alert, account_welcome, shipping_update) through the
- * {@see BuilderCatalog::FILTER_TRIGGERS} filter, so the paid trigger metadata lives
- * with the add-on and never has to be mirrored here.
+ * The email lifecycle triggers CartQuill ships, all always offered. An extension
+ * adds its own through the {@see BuilderCatalog::FILTER_TRIGGERS} filter, so its
+ * trigger metadata lives with the code that implements it.
  */
 final class CoreTriggers {
 

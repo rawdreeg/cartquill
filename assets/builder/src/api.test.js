@@ -67,21 +67,21 @@ describe( 'builder api', () => {
 		);
 	} );
 
-	it( 'POSTs an AI rewrite request with copy, instruction and acknowledgement', () => {
+	it( 'exposes a raw request helper an extension can call its own route with', () => {
 		createApi( {
 			root: 'https://example.test/wp-json/',
 			nonce: 'abc123',
-		} ).rewriteCopy( 'Hello', 'shorter', true );
+		} ).request( 'cartquill/v1/anything', {
+			method: 'POST',
+			body: JSON.stringify( { hello: true } ),
+		} );
 
 		expect( global.fetch ).toHaveBeenCalledWith(
-			'https://example.test/wp-json/cartquill/v1/ai/rewrite',
+			'https://example.test/wp-json/cartquill/v1/anything',
 			expect.objectContaining( {
 				method: 'POST',
-				body: JSON.stringify( {
-					copy: 'Hello',
-					instruction: 'shorter',
-					acknowledge: true,
-				} ),
+				body: JSON.stringify( { hello: true } ),
+				headers: expect.objectContaining( { 'X-WP-Nonce': 'abc123' } ),
 			} )
 		);
 	} );

@@ -57,8 +57,8 @@ final class Enroller {
 			return null;
 		}
 
-		// Block new enrollments once the monthly action cap is reached — no point
-		// starting a run that can only defer.
+		// Do not start a run the execution policy would immediately defer. CartQuill's
+		// own meter never declines, so this is a no-op unless an extension supplies one.
 		if ( $this->meter->would_exceed() ) {
 			return null;
 		}

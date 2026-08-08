@@ -56,8 +56,8 @@ final class AiAddonTest extends TestCase {
 			}
 		);
 
-		$addon = new AiAddon( new InMemoryFlowRepository(), new FlowLibrary(), new OptionLicense() );
-		$addon->boot( $license );
+		$addon = new AiAddon( new InMemoryFlowRepository(), new FlowLibrary(), $license );
+		$addon->boot();
 
 		return array(
 			'actions' => $actions,
@@ -65,11 +65,11 @@ final class AiAddonTest extends TestCase {
 		);
 	}
 
-	public function test_registers_the_builder_rewrite_route_and_feature_when_licensed(): void {
+	public function test_registers_the_builder_rewrite_route_and_bundle_when_licensed(): void {
 		$hooks = $this->boot( new ArrayLicense( array( Plans::AI ) ) );
 
 		$this->assertContains( 'rest_api_init', $hooks['actions'], 'the AI rewrite REST route is registered' );
-		$this->assertContains( 'cartquill_builder_config', $hooks['filters'], 'the builder learns the AI rewrite feature is available' );
+		$this->assertContains( 'cartquill_builder_enqueued', $hooks['actions'], "the add-on's builder bundle is enqueued alongside the builder" );
 	}
 
 	public function test_does_nothing_without_the_ai_plan(): void {
