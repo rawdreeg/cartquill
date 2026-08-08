@@ -19,11 +19,11 @@ use CartQuill\Persistence\FlowRecord;
 /**
  * The write side's gatekeeper: it checks a builder payload against the same
  * {@see BuilderCatalog} the front end rendered from — the flow's trigger, its status,
- * and each step's action (which must be known *and* available — a locked/upgrade
+ * and each step's action (which must be known *and* available — an unavailable
  * action is rejected), its config keys (valid for that action's descriptor, required
  * ones present, numbers numeric, selects within their options), its non-negative
  * delay, and its conditions (known type, valid params). It never trusts the client.
- * Plan *activation* limits are not its job — {@see \CartQuill\Licensing\PlanGate::enforce()}
+ * Adjusting a pending save is not its job — the `cartquill_flow_presave` filter
  * owns those; and input *sanitization* is applied at the REST boundary (see
  * {@see \CartQuill\Rest\FlowBuilderController::sanitize_payload()}), mirroring how the
  * admin editor sanitizes in `posted_steps()` before the pure transform.
@@ -112,7 +112,7 @@ final class FlowValidator {
 			return; // Cannot validate config without a known action descriptor.
 		}
 		if ( true !== $action['available'] ) {
-			$errors[] = $this->error( "steps.$index.action", \__( 'This action is not available on your plan yet.', 'cartquill' ) );
+			$errors[] = $this->error( "steps.$index.action", \__( 'This action is not available yet.', 'cartquill' ) );
 			return;
 		}
 

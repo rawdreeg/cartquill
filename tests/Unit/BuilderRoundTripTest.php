@@ -23,8 +23,7 @@ use CartQuill\Engine\Enroller;
 use CartQuill\Engine\MessageComposer;
 use CartQuill\Engine\StepRunner;
 use CartQuill\Flow\Renderer;
-use CartQuill\Licensing\ArrayLicense;
-use CartQuill\Licensing\PlanGate;
+use CartQuill\Builder\OpenAvailability;
 use CartQuill\Persistence\FlowRecord;
 use CartQuill\Persistence\InMemoryConnectionStore;
 use CartQuill\Persistence\InMemoryEnrollmentRepository;
@@ -67,14 +66,12 @@ final class BuilderRoundTripTest extends TestCase {
 		$flows = new InMemoryFlowRepository();
 
 		// 1. Author a two-step email flow through the builder write path (as the REST POST does).
-		$license    = new ArrayLicense();
-		$catalog    = new BuilderCatalog( $license, new InMemoryConnectionStore(), CoreActionDescriptors::all(), CoreTriggers::all() );
+		$catalog    = new BuilderCatalog( new OpenAvailability(), new InMemoryConnectionStore(), CoreActionDescriptors::all(), CoreTriggers::all() );
 		$controller = new FlowBuilderController(
 			$flows,
 			$catalog,
 			new FlowSerializer(),
-			new FlowValidator( $catalog ),
-			new PlanGate( $license, $flows )
+			new FlowValidator( $catalog )
 		);
 
 		$result = $controller->create_flow(
@@ -90,7 +87,7 @@ final class BuilderRoundTripTest extends TestCase {
 		);
 
 		$this->assertSame( 200, $result['status'] );
-		$this->assertSame( '', $result['plan_blocked'], 'a plain email flow activates on the default plan' );
+		$this->assertSame( '', $result['blocked'], 'nothing blocks a save' );
 
 		$stored = $flows->find( (int) $result['flow']['id'] );
 		$this->assertNotNull( $stored );

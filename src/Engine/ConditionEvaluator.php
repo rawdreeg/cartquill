@@ -44,7 +44,7 @@ final class ConditionEvaluator {
 
 	/**
 	 * Skip-unless-satisfied gate types — the data-driven branching conditions. This
-	 * is the "conditional logic" the plan gate meters (see {@see \CartQuill\Licensing\PlanGate}):
+	 * are the data-driven gates the builder lists as conditions:
 	 * the exit-on-conversion guard and plain delays are core drip primitives and are
 	 * deliberately excluded.
 	 */

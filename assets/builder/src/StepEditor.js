@@ -1,15 +1,15 @@
 import { __ } from '@wordpress/i18n';
-import { AiRewrite } from './AiRewrite';
 import { FieldControl } from './FieldControl';
 import { GateEditor } from './GateEditor';
+import { getSlot } from './slots';
 
 /*
  * The expanded editor for one step: the delay before it runs, the descriptor-driven
  * fields for its action, and its condition gates. Every edit reports through dispatch.
  * The field list comes from the catalog action, so a new channel authors itself with
  * no bespoke form. An action the catalog no longer offers still shows its delay + gates.
- * When the AI add-on advertises its rewrite feature, an email step also gets a
- * "Rewrite with AI" control for its body.
+ * An email step also renders the `emailCopyAssist` slot, which is empty unless an
+ * extension has filled it.
  */
 export function StepEditor( {
 	step,
@@ -17,14 +17,14 @@ export function StepEditor( {
 	catalog,
 	mergeTags,
 	api,
-	aiRewrite,
 	dispatch,
 } ) {
 	const action = ( catalog.actions || [] ).find(
 		( candidate ) => candidate.type === step.action
 	);
 	const fields = action ? action.fields || [] : [];
-	const showAiRewrite = aiRewrite && 'email' === step.action;
+	const CopyAssist = getSlot( 'emailCopyAssist' );
+	const showCopyAssist = CopyAssist && 'email' === step.action;
 
 	return (
 		<div className="cartquill-builder__editor">
@@ -57,8 +57,8 @@ export function StepEditor( {
 					}
 				/>
 			) ) }
-			{ showAiRewrite && (
-				<AiRewrite
+			{ showCopyAssist && (
+				<CopyAssist
 					api={ api }
 					idPrefix={ `step-${ index }` }
 					copy={ step.config.body || '' }

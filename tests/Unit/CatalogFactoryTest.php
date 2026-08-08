@@ -38,10 +38,9 @@ final class CatalogFactoryTest extends TestCase {
 		// No add-on hooked: the filters pass the core lists through unchanged.
 		Functions\when( 'apply_filters' )->alias( static fn( $hook, $value ) => $value );
 
-		$catalog = CatalogFactory::create( new ArrayLicense(), new InMemoryConnectionStore() );
+		$catalog = CatalogFactory::create( new InMemoryConnectionStore() );
 
-		$this->assertContains( 'email', array_column( $catalog->actions(), 'type' ) );
-		$this->assertContains( 'slack_post', array_column( $catalog->actions(), 'type' ) );
+		$this->assertSame( array( 'email' ), array_column( $catalog->actions(), 'type' ), 'only the action the plugin ships' );
 		$this->assertContains( 'abandoned_cart', array_column( $catalog->triggers(), 'type' ) );
 	}
 
@@ -56,13 +55,13 @@ final class CatalogFactoryTest extends TestCase {
 			}
 		);
 
-		$catalog = CatalogFactory::create( new ArrayLicense( array( Plans::GROWTH ), Plans::entitlements( Plans::GROWTH ) ), new InMemoryConnectionStore() );
+		$catalog = CatalogFactory::create( new InMemoryConnectionStore() );
 
 		$triggers = array();
 		foreach ( $catalog->triggers() as $trigger ) {
 			$triggers[ $trigger['type'] ] = $trigger;
 		}
 		$this->assertArrayHasKey( 'order_alert', $triggers );
-		$this->assertTrue( $triggers['order_alert']['available'], 'growth grants automations' );
+		$this->assertTrue( $triggers['order_alert']['available'], 'offered by default — nothing gates it' );
 	}
 }

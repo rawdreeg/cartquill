@@ -16,18 +16,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 use CartQuill\Admin\AdminAssets;
 use CartQuill\Admin\FlowBuilderPage;
 use CartQuill\Admin\FlowLibraryPage;
-use CartQuill\Admin\LicensePage;
 use CartQuill\Admin\Onboarding;
 use CartQuill\Admin\OnboardingPage;
 use CartQuill\Admin\ReportingPage;
 use CartQuill\Admin\SettingsPage;
 use CartQuill\Action\ActionRegistry;
-use CartQuill\Admin\UsageNotice;
-use CartQuill\Metering\UsageMeter;
-use CartQuill\Metering\WpdbUsageStore;
-use CartQuill\Licensing\FreemiusBridge;
-use CartQuill\Licensing\OptionLicense;
-use CartQuill\Licensing\PlanGate;
+use CartQuill\Metering\Meter;
+use CartQuill\Metering\NullMeter;
 use CartQuill\Security\InstallKey;
 use CartQuill\Security\SodiumCrypto;
 use CartQuill\Builder\CatalogFactory;
@@ -132,62 +127,50 @@ final class Plugin {
 		$tracking_urls = new TrackingUrls( \home_url( '/' ), $signer );
 		( new TrackingEndpoint( $messages, $signer, $tracking_urls ) )->register();
 
-		// Licensing + sender registry. Core ships wp_mail as the default sender.
-		$license = new OptionLicense();
-
-		// Freemius owns plan status in production. The bridge drives the licensing
-		// filters (cartquill_plan_active / _limits / _plan) from the customer's
-		// subscription tier, while OptionLicense stays the constructed gate and the
-		// manual/dev fallback. Both the SDK bootstrap and the bridge's provider are
-		// no-ops until the Freemius SDK and identifiers are present, so the free
-		// build behaves exactly as before.
-		self::boot_freemius();
-		( new FreemiusBridge() )->register();
-
-		// Usage metering: caps executed actions per month, fail-closed. The cap
-		// reads from the license limits seam (real per-tier numbers arrive with
-		// the tiers slice); an unconfigured cap is treated as unlimited.
-		$meter = new UsageMeter( new WpdbUsageStore(), $license, $clock );
-		( new UsageNotice( $meter ) )->register();
-
-		// Paid add-ons ship separately (Freemius) and self-register on the
-		// hooks fired below. This is a no-op in the free build, where their
-		// directories are absent.
+		// Extensions ship separately and self-register on the hooks fired below.
+		// This is a no-op when none is installed.
 		$this->load_addons();
 
 		$senders = new SenderRegistry( 'wp_mail' );
 		$senders->register( new WpMailSender() );
 		/**
-		 * Sender add-ons register their transports here (license-gated).
+		 * Extensions register additional sending transports here.
 		 *
 		 * @param SenderRegistry $senders The sender registry.
-		 * @param License        $license The licensing gate.
 		 */
-		\do_action( 'cartquill_register_senders', $senders, $license );
+		\do_action( 'cartquill_register_senders', $senders );
 		$senders->set_active( (string) \apply_filters( 'cartquill_active_sender', 'wp_mail' ) );
 
 		// Action registry: the multi-tool step layer. The core `email` action is
 		// always available (the step runner builds it from the composer + active
-		// sender below); add-on actions (slack_post, sheets_append, mailchimp_sync,
-		// sms_send) self-register here, gated on license + connection status.
+		// sender below); an extension's actions self-register here.
 		$actions = new ActionRegistry();
 		/**
-		 * Action add-ons register their step actions here.
+		 * Extensions register additional step actions here.
 		 *
 		 * @param ActionRegistry $actions The action registry.
-		 * @param License        $license The licensing gate.
 		 */
-		\do_action( 'cartquill_register_actions', $actions, $license );
+		\do_action( 'cartquill_register_actions', $actions );
 
 		$library = new FlowLibrary();
 
 		/**
-		 * General add-on registration point (e.g. the AI Flow Generation add-on,
-		 * which is not a sender). Add-ons check $license before wiring in.
-		 *
-		 * @param License $license The licensing gate.
+		 * General extension registration point, for anything that is neither a
+		 * sender nor a step action.
 		 */
-		\do_action( 'cartquill_register_addons', $license );
+		\do_action( 'cartquill_register_addons' );
+
+		/**
+		 * The execution policy the engine consults before running a step and after
+		 * one succeeds. Core supplies a no-op that never defers anything; an
+		 * extension can supply its own.
+		 *
+		 * @param Meter $meter A no-op meter.
+		 */
+		$meter = \apply_filters( 'cartquill_meter', new NullMeter() );
+		if ( ! $meter instanceof Meter ) {
+			$meter = new NullMeter();
+		}
 
 		$runner = new StepRunner(
 			$flows,
@@ -219,7 +202,6 @@ final class Plugin {
 		( new PostPurchaseTrigger( $type_enroller ) )->register();
 		( new WelcomeTrigger( $type_enroller, $activity ) )->register();
 		( new AdminAssets() )->register();
-		( new LicensePage( $license ) )->register();
 		( new OnboardingPage( new Onboarding(), $settings ) )->register();
 
 		( new FlowLibraryPage( $library, new FlowInstaller( $library, $flows ), $flows ) )->register();
@@ -228,21 +210,20 @@ final class Plugin {
 		( new AttributionTrigger( new Attributor( $messages, $attributions ) ) )->register();
 		( new ReportingPage( $flows, $messages, $attributions ) )->register();
 
-		// Builder REST read API (cartquill/v1): the catalog + stored flows the React
-		// builder loads. Built at rest_api_init so the catalog (which folds in add-on
-		// contributions via CatalogFactory) is only assembled for REST requests, after
-		// the add-ons registered on load_addons() above.
+		// Builder REST API (cartquill/v1): the catalog + stored flows the React
+		// builder loads and writes. Built at rest_api_init so the catalog (which folds
+		// in extension contributions via CatalogFactory) is only assembled for REST
+		// requests, after anything registered on load_addons() above.
 		$connections = new WpdbConnectionStore( new EncryptedCredentials( new SodiumCrypto( InstallKey::get() ) ) );
 		\add_action(
 			'rest_api_init',
-			static function () use ( $flows, $license, $connections ): void {
-				$catalog = CatalogFactory::create( $license, $connections );
+			static function () use ( $flows, $connections ): void {
+				$catalog = CatalogFactory::create( $connections );
 				( new FlowBuilderController(
 					$flows,
 					$catalog,
 					new FlowSerializer(),
-					new FlowValidator( $catalog ),
-					new PlanGate( $license, $flows )
+					new FlowValidator( $catalog )
 				) )->register_routes();
 			}
 		);
@@ -286,29 +267,17 @@ final class Plugin {
 	}
 
 	/**
-	 * Include any installed add-on bootstrap files so they can self-register on
-	 * the `cartquill_register_*` hooks before those hooks fire. Each paid add-on
-	 * owns a `src/<Addon>/addon.php`; the free WP.org build omits those
-	 * directories, so this loads whichever add-ons are actually present.
+	 * Include any installed extension bootstrap file so it can self-register on the
+	 * `cartquill_register_*` hooks before those hooks fire. An extension owns a
+	 * `src/<Name>/addon.php`; this plugin ships none, so the loop is a no-op unless
+	 * a separately distributed extension has been installed over it.
 	 */
 	private function load_addons(): void {
-		foreach ( array( 'Ai', 'Automations' ) as $addon ) {
+		foreach ( array( 'Licensing', 'Ai', 'Automations' ) as $addon ) {
 			$bootstrap = CARTQUILL_PATH . 'src/' . $addon . '/addon.php';
 			if ( is_readable( $bootstrap ) ) {
 				require_once $bootstrap;
 			}
-		}
-	}
-
-	/**
-	 * Load the Freemius SDK bootstrap and initialize the shared instance. A strict
-	 * no-op until the SDK is vendored and the product identifiers are defined (see
-	 * src/freemius.php), so this is safe to call on every install.
-	 */
-	private static function boot_freemius(): void {
-		require_once CARTQUILL_PATH . 'src/freemius.php';
-		if ( function_exists( 'cartquill_fs' ) ) {
-			\cartquill_fs();
 		}
 	}
 

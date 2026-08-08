@@ -53,6 +53,10 @@ final class UnsubscribeEndpoint {
 		// The signed params live in the query string of the List-Unsubscribe URL
 		// (a one-click client POSTs to that same URL), so read $_GET explicitly
 		// rather than $_REQUEST, whose contents depend on the PHP request_order.
+		//
+		// A recipient following this link has no WordPress session, so a nonce is
+		// not available: authenticity comes from the HMAC in `t`, verified against
+		// the install key before anyone is suppressed.
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 		if ( ! isset( $_GET[ UnsubscribeLink::PARAM ] ) ) {
 			return;

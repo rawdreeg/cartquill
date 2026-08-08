@@ -23,8 +23,8 @@ use CartQuill\Model\SendResult;
  * runner resolves a step's action by {@see self::type()} and calls
  * {@see self::execute()}, staying ignorant of *what* the action does. Core ships
  * the `email` action (which wraps the compose -> SenderInterface::send() path
- * unchanged); paid add-ons register additional actions on the
- * `cartquill_register_actions` hook, gated on license + connection status.
+ * unchanged); an extension registers additional actions on the
+ * `cartquill_register_actions` hook.
  *
  * The result is the same {@see SendResult} every sender returns — an
  * accepted/failed status plus an optional external id — so the runner's record,

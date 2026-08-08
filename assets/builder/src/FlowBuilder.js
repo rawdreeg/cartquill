@@ -13,23 +13,7 @@ import { buildPayload, flowReducer, initialFlowState } from './reducer';
  * button and a navigation-away warning. Descriptor-driven field editing and adding steps
  * arrive in the next slice; this slice makes the flow itself editable end to end.
  */
-function planBlockedMessage( reason ) {
-	if ( 'workflow_cap' === reason ) {
-		return __(
-			'The active-workflow limit for your plan was reached, so the flow was saved but not activated.',
-			'cartquill'
-		);
-	}
-	if ( 'conditional_logic' === reason ) {
-		return __(
-			'Conditional logic needs a higher plan, so the flow was saved but not activated.',
-			'cartquill'
-		);
-	}
-	return __( 'The flow was saved but not activated.', 'cartquill' );
-}
-
-export function FlowBuilder( { api, flowId, features = {} } ) {
+export function FlowBuilder( { api, flowId } ) {
 	const [ catalog, setCatalog ] = useState( null );
 	const [ phase, setPhase ] = useState( 'loading' );
 	const [ state, dispatch ] = useReducer( flowReducer, null, () =>
@@ -112,12 +96,11 @@ export function FlowBuilder( { api, flowId, features = {} } ) {
 					return;
 				}
 				dispatch( { type: 'saved', flow: result.flow } );
+				// `blocked` is a ready-to-display message an extension can return
+				// from the save; core never sets it, so the success notice shows.
 				setNotice(
-					result.plan_blocked
-						? {
-								type: 'warning',
-								text: planBlockedMessage( result.plan_blocked ),
-						  }
+					result.blocked
+						? { type: 'warning', text: result.blocked }
 						: {
 								type: 'success',
 								text: __( 'Flow saved.', 'cartquill' ),
@@ -199,7 +182,6 @@ export function FlowBuilder( { api, flowId, features = {} } ) {
 				catalog={ catalog }
 				mergeTags={ contextKeysFor( catalog, state.type ) }
 				api={ api }
-				aiRewrite={ !! features.aiRewrite }
 				dispatch={ dispatch }
 			/>
 

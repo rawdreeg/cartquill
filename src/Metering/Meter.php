@@ -1,6 +1,6 @@
 <?php
 /**
- * The usage meter the engine consults before/after executing an action.
+ * The execution policy the engine consults around each step.
  *
  * @package CartQuill
  */
@@ -14,23 +14,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Answers "how much of this month's action cap is used?" and records executions.
- * The engine checks {@see self::would_exceed()} before an action and calls
- * {@see self::increment()} after a successful one, so exactly `limit` actions
- * run per month and over-cap steps defer rather than being dropped.
+ * An extension point around step execution. CartQuill itself imposes no limit of
+ * any kind: the plugin wires {@see NullMeter}, which always answers "go ahead" and
+ * records nothing, so every flow runs as often as its triggers fire.
+ *
+ * The seam exists so a separately distributed extension that has its own reason to
+ * pace work — for instance one that talks to a third-party API with its own rate
+ * limits — can defer a step instead of failing it. The engine asks
+ * {@see self::would_exceed()} before running a step and calls
+ * {@see self::increment()} after a successful one; a step that is deferred stays
+ * enrolled and is retried later rather than being dropped.
  */
 interface Meter {
 
 	/** Actions executed in the current period. */
 	public function current(): int;
 
-	/** The monthly action cap. */
+	/** The ceiling for the current period; PHP_INT_MAX when there is none. */
 	public function limit(): int;
 
 	/** Actions still available this period (never negative). */
 	public function remaining(): int;
 
-	/** Whether executing one more action now would exceed the cap. */
+	/** Whether executing one more action now should be deferred. */
 	public function would_exceed(): bool;
 
 	/** Record one executed action against the current period. */

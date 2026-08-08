@@ -4,7 +4,26 @@ Guidance for AI coding agents working in this repo.
 
 ## What this is
 
-A standalone **WooCommerce email-automation plugin** (PHP 8.1+, WooCommerce 8+). Free core sends via `wp_mail`; **AI Flow Generation** and **Automations** ship as paid, license-gated add-ons. Deliverability is intentionally left to the store's own SMTP/ESP plugin (e.g. WP Mail SMTP) — CartQuill ships no bespoke sending integration. See `README.md` for the model and `WooCommerce-Automation-PRD.md` / `WooCommerce-Automation-v1-Build-Spec.md` for the full contract.
+A standalone **WooCommerce email-automation plugin** (PHP 8.1+, WooCommerce 8+). The plugin distributed on WordPress.org sends via `wp_mail`; **AI Flow Generation** and **Automations** ship separately as paid add-ons. Deliverability is intentionally left to the store's own SMTP/ESP plugin (e.g. WP Mail SMTP) — CartQuill ships no bespoke sending integration. See `README.md` for the model and `WooCommerce-Automation-PRD.md` / `WooCommerce-Automation-v1-Build-Spec.md` for the full contract.
+
+## The core/paid boundary
+
+**Core contains no licence check, plan, usage cap, or upgrade prompt.** It is a complete product on its own, not a limited preview of the paid one — the paid editions add capability rather than unlocking what is already there. Treat this as a hard constraint on every change.
+
+One source tree builds both editions. `.distignore` has a `# @cartquill:paid` marker; `bin/build.sh free` strips everything below it, `bin/build.sh premium` keeps it. Below the marker live `src/Ai`, `src/Automations`, **`src/Licensing`**, the usage-metering implementations, `src/freemius.php`, `LicensePage`, `UsageNotice`, and `assets/builder/src/ai`.
+
+Because of that, core code may **never** reference `CartQuill\Licensing\*` or the paid add-ons — not in a type hint, not in a docblock, not in a UI string. The premium layer attaches only through extension seams core already exposes:
+
+| Seam | Filter/action | Premium hooks it with |
+|---|---|---|
+| Builder availability | `cartquill_builder_availability` | `LicensedAvailability` |
+| Pending flow save | `cartquill_flow_presave` | `PlanGate::presave_filter()` |
+| Step execution policy | `cartquill_meter` | `UsageMeter` |
+| Builder UI components | `window.cartquillBuilderSlots` | the `ai` bundle entry |
+
+`src/<Name>/addon.php` is the bootstrap for each; `Plugin::load_addons()` includes whichever are present. `Meter` + `NullMeter` stay in core as a pure no-op seam — `NullMeter` never defers and never counts.
+
+The JS is compiled **inside the staged package**, after stripping, so the shipped bundle is provably a build of the shipped source. CI asserts both the file separation and that no licensing vocabulary survives in core.
 
 ## Commit conventions
 
@@ -38,6 +57,6 @@ Test **external behavior through the highest seam**, not private methods.
 
 ## Scope discipline
 
-**Product direction:** CartQuill is the no-code, multi-tool automation hub the marketing site (cartquill.com) describes — WooCommerce events fan out to Slack, Google Sheets, Mailchimp, and Twilio SMS via "recipes", billed by metered actions/month across Starter/Growth/Agency tiers — **not** an email-only tool. Email stays a first-class channel and every locked engine decision above still holds (SMS routes through the same step pipeline; metering is local and fail-closed). SMS and metered "actions/month" billing are therefore **in scope**. Flows are authored through a **linear drag-and-drop step-card builder** — an ordered list of step cards with per-step skip/exit gates and delays. This is the sanctioned no-code authoring surface; it matches the linear engine 1:1 and adds **no** branching. It is **in scope**.
+**Product direction:** CartQuill is the no-code, multi-tool automation hub the marketing site (cartquill.com) describes — WooCommerce events fan out to Slack, Google Sheets, Mailchimp, and Twilio SMS via "recipes", billed by metered actions/month across Starter/Growth/Agency tiers — **not** an email-only tool. Email stays a first-class channel and every locked engine decision above still holds (SMS routes through the same step pipeline). SMS and metered "actions/month" billing are therefore **in scope — for the premium edition only**, wired through the seams in "The core/paid boundary" above. Nothing about tiers, metering, or billing may appear in core. Flows are authored through a **linear drag-and-drop step-card builder** — an ordered list of step cards with per-step skip/exit gates and delays. This is the sanctioned no-code authoring surface; it matches the linear engine 1:1 and adds **no** branching. It is **in scope**.
 
 The v1 exclusion list is a **contract** — nothing on it ships in v1: **branching / conditional journey graphs** (if/else split paths into different downstream steps — the *linear* step-card builder above is in scope, but the engine stays linear and we do not add branching), full CRM, A/B testing, advanced/predictive segmentation, multi-ESP-at-launch, resold sending, browse-abandonment, and the **agency multi-site console / white-label workflows / team roles & audit log** (deferred — the Agency tier ships as a higher action cap only, with those features labeled "coming soon"). Do not add features from this list "while you're in there."

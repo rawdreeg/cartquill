@@ -17,7 +17,6 @@ use CartQuill\Builder\BuilderCatalog;
 use CartQuill\Builder\FlowSerializer;
 use CartQuill\Builder\FlowValidator;
 use CartQuill\Flow\FlowStep;
-use CartQuill\Licensing\PlanGate;
 use CartQuill\Persistence\FlowRecord;
 use CartQuill\Persistence\FlowRepository;
 
@@ -38,12 +37,17 @@ final class FlowBuilderController {
 
 	public const NAMESPACE = 'cartquill/v1';
 
+	/**
+	 * Filter applied to a validated record just before it is persisted, so an
+	 * extension can adjust the pending save. See {@see self::write()}.
+	 */
+	public const FILTER_PRESAVE = 'cartquill_flow_presave';
+
 	public function __construct(
 		private readonly FlowRepository $flows,
 		private readonly BuilderCatalog $catalog,
 		private readonly FlowSerializer $serializer,
 		private readonly FlowValidator $validator,
-		private readonly PlanGate $plan_gate,
 	) {}
 
 	/**
@@ -140,7 +144,7 @@ final class FlowBuilderController {
 	 *
 	 * @param array<string, mixed> $payload
 	 *
-	 * @return array<string, mixed> a result with a `status` (200/400) plus `flow`+`plan_blocked` or `errors`
+	 * @return array<string, mixed> a result with a `status` (200/400) plus `flow`+`blocked` or `errors`
 	 */
 	public function create_flow( array $payload ): array {
 		return $this->write( $payload, null );
@@ -162,10 +166,9 @@ final class FlowBuilderController {
 	}
 
 	/**
-	 * Validate → build → gate → persist. A payload the catalog rejects returns 400
-	 * with per-field errors and is never saved. A save that asks to activate a flow
-	 * the plan may not run active is persisted at a safe status and reports the block
-	 * reason in `plan_blocked` (the edits are kept — matching the admin editor).
+	 * Validate → build → persist. A payload the catalog rejects returns 400 with
+	 * per-field errors and is never saved; anything valid is saved exactly as the
+	 * builder sent it.
 	 *
 	 * @param array<string, mixed> $payload
 	 *
@@ -182,13 +185,39 @@ final class FlowBuilderController {
 
 		$source    = null !== $existing ? $existing->source : FlowRecord::SOURCE_BUILDER;
 		$candidate = $this->validator->to_record( $payload, $existing?->id, $source, $existing?->created_at );
-		$gated     = $this->plan_gate->enforce( $candidate, $existing );
-		$saved     = $this->flows->save( $gated['record'] );
+
+		/**
+		 * The record about to be persisted. An extension may return a different
+		 * record, plus a `blocked` message the builder shows in place of the usual
+		 * "Flow saved" notice. Core passes the record straight through and leaves
+		 * `blocked` empty.
+		 *
+		 * @param array{record: FlowRecord, blocked: string} $pending   The pending save.
+		 * @param FlowRecord                                 $candidate The record the builder sent.
+		 * @param FlowRecord|null                            $existing  The stored record being replaced.
+		 */
+		// The hook name is the `cartquill_`-prefixed self::FILTER_PRESAVE constant;
+		// PHPCS only reads literals, so it cannot see the prefix through it.
+		// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
+		$pending = \apply_filters(
+			self::FILTER_PRESAVE,
+			array(
+				'record'  => $candidate,
+				'blocked' => '',
+			),
+			$candidate,
+			$existing
+		);
+		// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
+
+		$record  = ( is_array( $pending ) && ( $pending['record'] ?? null ) instanceof FlowRecord ) ? $pending['record'] : $candidate;
+		$blocked = is_array( $pending ) ? (string) ( $pending['blocked'] ?? '' ) : '';
+		$saved   = $this->flows->save( $record );
 
 		return array(
-			'status'       => 200,
-			'flow'         => $this->serializer->serialize( $saved ),
-			'plan_blocked' => $gated['blocked'],
+			'status'  => 200,
+			'flow'    => $this->serializer->serialize( $saved ),
+			'blocked' => $blocked,
 		);
 	}
 
@@ -341,8 +370,8 @@ final class FlowBuilderController {
 
 		return \rest_ensure_response(
 			array(
-				'flow'         => $result['flow'] ?? null,
-				'plan_blocked' => $result['plan_blocked'] ?? '',
+				'flow'    => $result['flow'] ?? null,
+				'blocked' => $result['blocked'] ?? '',
 			)
 		);
 	}

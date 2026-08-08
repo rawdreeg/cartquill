@@ -22,14 +22,7 @@ import { StepCard } from './StepCard';
  * can expand into its editor. It stays otherwise presentational — state lives in the
  * reducer.
  */
-export function StepList( {
-	steps,
-	catalog,
-	mergeTags,
-	api,
-	aiRewrite,
-	dispatch,
-} ) {
+export function StepList( { steps, catalog, mergeTags, api, dispatch } ) {
 	const sensors = useSensors(
 		useSensor( PointerSensor, { activationConstraint: { distance: 5 } } ),
 		useSensor( KeyboardSensor, {
@@ -83,7 +76,6 @@ export function StepList( {
 							catalog={ catalog }
 							mergeTags={ mergeTags }
 							api={ api }
-							aiRewrite={ aiRewrite }
 							actionLabel={ actionLabel }
 							dispatch={ dispatch }
 						/>

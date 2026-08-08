@@ -1,7 +1,7 @@
 <?php
 /**
  * The metadata the flow builder renders from: available triggers, actions, and
- * conditions, each tagged with whether the held plan + connections unlock it.
+ * conditions, each tagged with whether it is available.
  *
  * @package CartQuill
  */
@@ -15,7 +15,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use CartQuill\Engine\ConditionEvaluator;
-use CartQuill\Licensing\License;
 use CartQuill\Persistence\ConnectionRecord;
 use CartQuill\Persistence\ConnectionStore;
 
@@ -23,24 +22,23 @@ use CartQuill\Persistence\ConnectionStore;
  * There is no single machine-readable description of what a flow can trigger on,
  * do, or gate on — the knowledge is scattered across trigger classes, action
  * `execute()` bodies, and the condition evaluator. This catalog gathers it into
- * one JSON-serializable shape the REST layer hands to the builder, and stamps each
- * entry with a live `available` flag + `lock_reason` computed from the held plan
- * (via the {@see License} seam) and connection status (via {@see ConnectionStore}).
+ * one JSON-serializable shape the REST layer hands to the builder.
  *
- * It computes availability but never enforces it — {@see \CartQuill\Licensing\PlanGate}
- * and the write-side validator are the gate. The catalog only tells the UI what to
- * show as available versus locked-with-an-upgrade-path.
+ * Everything CartQuill itself ships is offered unconditionally. Entries an
+ * extension contributes are stamped with a live `available` flag + `lock_reason`
+ * from the {@see Availability} seam and connection status (via
+ * {@see ConnectionStore}), so an integration that still needs its account
+ * connected can say so in the UI.
  */
 final class BuilderCatalog {
 
-	public const LOCK_PLAN              = 'requires_plan';
-	public const LOCK_CONNECTION        = 'requires_connection';
-	public const LOCK_CONDITIONAL_LOGIC = 'requires_conditional_logic';
+	public const LOCK_UNAVAILABLE = 'unavailable';
+	public const LOCK_CONNECTION  = 'requires_connection';
 
 	/**
-	 * Filters an add-on hooks to contribute its authoritative action descriptors and
-	 * its triggers, so paid metadata lives with the add-on and never has to be
-	 * mirrored into this core module.
+	 * Filters an extension hooks to contribute its own action descriptors and
+	 * triggers, so its metadata lives with the code that implements
+	 * it and never has to be mirrored into this module.
 	 */
 	public const FILTER_ACTIONS  = 'cartquill_builder_action_descriptors';
 	public const FILTER_TRIGGERS = 'cartquill_builder_triggers';
@@ -50,7 +48,7 @@ final class BuilderCatalog {
 	 * @param list<TriggerDescriptor> $triggers The trigger descriptors to offer.
 	 */
 	public function __construct(
-		private readonly License $license,
+		private readonly Availability $availability,
 		private readonly ConnectionStore $connections,
 		private readonly array $actions,
 		private readonly array $triggers,
@@ -69,14 +67,14 @@ final class BuilderCatalog {
 
 	/**
 	 * The flow triggers, with the context keys each captures (for the merge-tag
-	 * picker) and whether the held plan unlocks it.
+	 * picker). Core triggers are always offered.
 	 *
 	 * @return list<array<string, mixed>>
 	 */
 	public function triggers(): array {
 		$out = array();
 		foreach ( $this->triggers as $trigger ) {
-			$locked = null !== $trigger->capability && ! $this->license->is_active( $trigger->capability );
+			$locked = ! $this->availability->allows( $trigger->capability );
 
 			$out[] = array(
 				'type'         => $trigger->type,
@@ -84,16 +82,16 @@ final class BuilderCatalog {
 				'description'  => $trigger->description,
 				'context_keys' => array_values( array_unique( array_merge( $trigger->context_keys, array( 'customer_email' ) ) ) ),
 				'available'    => ! $locked,
-				'lock_reason'  => $locked ? self::LOCK_PLAN : '',
+				'lock_reason'  => $locked ? self::LOCK_UNAVAILABLE : '',
 			);
 		}
 		return $out;
 	}
 
 	/**
-	 * The step actions, with their editable fields and availability. A paid action
-	 * is locked when its capability is not licensed (upgrade), then when its
-	 * service is not connected (connect-first).
+	 * The step actions, with their editable fields and availability. Core actions
+	 * are always offered; an extension's action is offered once it is available and
+	 * its service is connected.
 	 *
 	 * @return list<array<string, mixed>>
 	 */
@@ -116,25 +114,26 @@ final class BuilderCatalog {
 	}
 
 	/**
-	 * The step conditions, with their editable params and whether they are the paid
-	 * conditional-logic feature (sourced from {@see ConditionEvaluator::GATES} so the
-	 * flag cannot drift from what the engine actually meters).
+	 * The step conditions, with their editable params. Whether a condition is a
+	 * data-driven gate is sourced from {@see ConditionEvaluator::GATES} so the flag
+	 * cannot drift from what the engine actually evaluates. Every condition
+	 * CartQuill ships is offered.
 	 *
 	 * @return list<array<string, mixed>>
 	 */
 	public function conditions(): array {
 		$out = array();
 		foreach ( self::CONDITIONS as $condition ) {
-			$is_conditional_logic = in_array( $condition['type'], ConditionEvaluator::GATES, true );
-			$locked               = $is_conditional_logic && ! $this->conditional_logic_enabled();
+			$is_gate = in_array( $condition['type'], ConditionEvaluator::GATES, true );
+			$locked  = $is_gate && ! $this->availability->allows_gates();
 
 			$out[] = array(
-				'type'              => $condition['type'],
-				'label'             => $condition['label'],
-				'params'            => $condition['params'],
-				'conditional_logic' => $is_conditional_logic,
-				'available'         => ! $locked,
-				'lock_reason'       => $locked ? self::LOCK_CONDITIONAL_LOGIC : '',
+				'type'        => $condition['type'],
+				'label'       => $condition['label'],
+				'params'      => $condition['params'],
+				'gate'        => $is_gate,
+				'available'   => ! $locked,
+				'lock_reason' => $locked ? self::LOCK_UNAVAILABLE : '',
 			);
 		}
 		return $out;
@@ -144,21 +143,18 @@ final class BuilderCatalog {
 	 * @return array{0: bool, 1: string} [available, lock_reason]
 	 */
 	private function action_availability( ActionDescriptor $action ): array {
-		if ( null === $action->capability ) {
-			return array( true, '' );
+		if ( ! $this->availability->allows( $action->capability ) ) {
+			return array( false, self::LOCK_UNAVAILABLE );
 		}
-		if ( ! $this->license->is_active( $action->capability ) ) {
-			return array( false, self::LOCK_PLAN );
-		}
-		if ( null !== $action->service && ! $this->is_connected( $action->service ) ) {
+		if ( null !== $action->capability && null !== $action->service && ! $this->is_connected( $action->service ) ) {
 			return array( false, self::LOCK_CONNECTION );
 		}
 		return array( true, '' );
 	}
 
 	/**
-	 * Whether a service has a healthy, configured connection — mirrors the gate the
-	 * add-on applies before registering the action for the engine.
+	 * Whether a service has a healthy, configured connection — mirrors the check an
+	 * extension applies before registering its action for the engine.
 	 */
 	private function is_connected( string $service ): bool {
 		$connection = $this->connections->find( $service );
@@ -167,14 +163,9 @@ final class BuilderCatalog {
 			&& $connection->is_configured();
 	}
 
-	private function conditional_logic_enabled(): bool {
-		return 0 !== (int) ( $this->license->limits()['conditional_logic'] ?? 0 );
-	}
-
 	/**
-	 * The step conditions and their editable params. Whether each is the paid
-	 * conditional-logic feature is derived from {@see ConditionEvaluator::GATES}, not
-	 * stored here.
+	 * The step conditions and their editable params. Whether each is a data-driven
+	 * gate is derived from {@see ConditionEvaluator::GATES}, not stored here.
 	 *
 	 * @var list<array{type: string, label: string, params: list<array<string, mixed>>}>
 	 */

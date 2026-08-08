@@ -15,12 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * The extension point mirroring {@see \CartQuill\Sender\SenderRegistry}: core
- * registers the `email` action; paid add-ons register additional actions
- * (slack_post, sheets_append, mailchimp_sync, sms_send) — gated by license +
+ * registers the `email` action; an extension registers additional actions
+ * — gated by
  * connection status — during the `cartquill_register_actions` hook.
  *
  * The step runner resolves a step's action with {@see self::get()}. An action
- * that is not registered (add-on absent, unlicensed, or its connection is down)
+ * that is not registered (the extension is absent, or its connection is down)
  * resolves to null, which the runner dead-letters rather than stalling on.
  */
 final class ActionRegistry {

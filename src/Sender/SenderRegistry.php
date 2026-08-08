@@ -15,8 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * The extension point for the locked `register_sender()` design: core registers
- * WpMailSender; paid add-ons register additional senders (e.g. an ESP-backed
- * sender) — gated by license — during the `cartquill_register_senders` hook. The store's
+ * WpMailSender; an extension registers additional senders (e.g. an ESP-backed
+ * sender) during the `cartquill_register_senders` hook. The store's
  * chosen sender becomes active; the engine always sends through active().
  */
 final class SenderRegistry {
@@ -36,7 +36,7 @@ final class SenderRegistry {
 
 	/**
 	 * Select the active sender by key. Ignored if that sender is not registered
-	 * (e.g. an add-on that is not installed/licensed), so the engine never falls
+	 * (e.g. an extension that is not installed), so the engine never falls
 	 * off a cliff to a missing sender.
 	 */
 	public function set_active( string $key ): void {
