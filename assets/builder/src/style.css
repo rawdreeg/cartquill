@@ -233,39 +233,6 @@
 	padding-top: 16px;
 }
 
-/* ---- AI rewrite ---- */
-
-.cartquill-builder__ai {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: flex-end;
-	gap: 8px;
-	padding: 14px;
-	margin: 8px 0 16px;
-	background: var(--cq-brand-tint);
-	border: 1px solid #d7ddfb;
-	border-radius: 8px;
-}
-
-.cartquill-builder__ai label {
-	flex: 1 1 100%;
-	font-weight: 600;
-	font-size: 13px;
-}
-
-.cartquill-builder__ai input {
-	flex: 1 1 240px;
-	border: 1px solid var(--cq-border);
-	border-radius: 6px;
-	padding: 7px 10px;
-}
-
-.cartquill-builder__error {
-	color: #d63638;
-	font-size: 13px;
-	margin: 8px 0 0;
-}
-
 /* ---- Gates ---- */
 
 .cartquill-builder__gates {

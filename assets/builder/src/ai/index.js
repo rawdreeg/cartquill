@@ -1,4 +1,5 @@
 import { AiRewrite } from './AiRewrite';
+import './style.css';
 
 /*
  * Entry point for the AI add-on's builder bundle. It fills the builder's

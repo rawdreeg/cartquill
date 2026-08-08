@@ -91,5 +91,14 @@ final class AiAddon {
 			true
 		);
 		\wp_set_script_translations( 'cartquill-flow-builder-ai', 'cartquill' );
+
+		// The control's own styles ship with this bundle, so the plugin's
+		// stylesheet carries no rules for markup it never renders.
+		\wp_enqueue_style(
+			'cartquill-flow-builder-ai',
+			\plugins_url( 'assets/builder/build/style-ai.css', CARTQUILL_FILE ),
+			array( 'cartquill-flow-builder-style' ),
+			$version
+		);
 	}
 }
