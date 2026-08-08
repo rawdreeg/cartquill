@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       CartQuill
  * Plugin URI:        https://github.com/rawdreeg/cartquill
- * Description:       Standalone WooCommerce email automation: install proven flows, generate them with AI, and report revenue per flow. Free core sends via wp_mail.
+ * Description:       Automated WooCommerce email flows — recover abandoned carts, welcome buyers, win back lapsed customers — with revenue reporting per flow.
  * Version:           0.1.0
  * Requires at least: 6.4
  * Requires PHP:      8.1
