@@ -1,6 +1,6 @@
-=== CartQuill ===
+=== CartQuill – Abandoned Cart Recovery & Email Automation for WooCommerce ===
 Contributors: rawdreeg
-Tags: woocommerce, email, automation, marketing, ecommerce
+Tags: abandoned cart, woocommerce, email marketing, automation, ecommerce
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1

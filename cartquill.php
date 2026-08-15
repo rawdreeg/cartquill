@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       CartQuill
+ * Plugin Name:       CartQuill – Abandoned Cart Recovery & Email Automation for WooCommerce
  * Plugin URI:        https://github.com/rawdreeg/cartquill
  * Description:       Automated WooCommerce email flows — recover abandoned carts, welcome buyers, win back lapsed customers — with revenue reporting per flow.
  * Version:           0.1.0
