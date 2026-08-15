@@ -25,6 +25,18 @@ Because of that, core code may **never** reference `CartQuill\Licensing\*` or th
 
 The JS is compiled **inside the staged package**, after stripping, so the shipped bundle is provably a build of the shipped source. CI asserts both the file separation and that no licensing vocabulary survives in core.
 
+## Releasing
+
+Publishing a GitHub release deploys core to WordPress.org (`.github/workflows/release.yml`). Before tagging, bump the version in **all four** places — `cartquill.php` (the `Version:` header *and* `CARTQUILL_VERSION`), `readme.txt` (`Stable tag:` *and* a new `= x.y.z =` changelog heading), and `package.json`. `bin/check-version.sh` enforces it, in CI and again at release; the directory resolves a release by `Stable tag:`, so drift there publishes a version it cannot serve.
+
+`bin/verify-package.sh` holds the core/paid separation gate. CI and the release workflow both call it, so it is the one place that assertion lives — do not inline a copy into a workflow. A pre-release builds and verifies but never deploys, and the premium zip is uploaded as a workflow artifact rather than a release asset (this repo is public).
+
+`.wordpress-org/` holds the directory-listing artwork — icon and banners now, screenshots when they exist. It syncs to the top-level `assets/` path in SVN — outside trunk, so it never reaches an install — and the sync deletes anything not in it, making the directory the whole source of truth for that artwork. It is in `.distignore`, because the packaging rsync would otherwise ship it inside the plugin.
+
+Do not hand-edit the icon or banners: `bin/render-wporg-assets.mjs` renders them (`npm install --no-save sharp && node bin/render-wporg-assets.mjs`), taking the mark from `assets/admin/icon.svg` so there is one source of truth for it. The directory requires a PNG fallback alongside an SVG icon, and the render is deterministic — re-running it on an unchanged mark produces byte-identical files.
+
+The `screenshot-N.png` files are captures of the real admin, so they are only as current as the UI was when taken — re-shoot them when a screen they show changes, and keep the numbered captions under `== Screenshots ==` in `readme.txt` in step, since the directory pairs them by number.
+
 ## Commit conventions
 
 - **No AI attribution in commits.** Never add `Co-Authored-By: Claude` or a "Generated with Claude Code" trailer. Write plain, imperative commit messages.
