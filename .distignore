@@ -7,6 +7,9 @@
 .github
 .gitignore
 .distignore
+# Directory-listing artwork (icon/banner/screenshots). Deployed to the SVN
+# top-level assets/ dir by the release workflow — it is not part of the plugin.
+.wordpress-org
 .editorconfig
 .phpunit.cache
 tests
