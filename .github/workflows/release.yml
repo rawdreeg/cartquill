@@ -1,0 +1,166 @@
+name: Release
+
+# Publishing a GitHub release ships that version to WordPress.org.
+#
+# One-time setup: add the repository secrets SVN_USERNAME and SVN_PASSWORD.
+# The password is the one set under "Account & Security" on the wordpress.org
+# profile that owns the plugin (rawdreeg) — not the wordpress.org login password.
+#
+# To cut a release:
+#   1. Bump the version in cartquill.php (the Version: header AND
+#      CARTQUILL_VERSION), readme.txt (Stable tag AND a new changelog heading)
+#      and package.json. `bin/check-version.sh` checks all of them.
+#   2. Merge to main.
+#   3. Publish a GitHub release tagged with that version (a leading `v` is fine).
+#
+# Nothing is committed to Subversion unless the version strings agree, the built
+# package passes the same separation gate CI runs, and Plugin Check is clean.
+# A pre-release builds and verifies but never reaches WordPress.org, and
+# re-running against an already-published version is a no-op rather than an error.
+#
+# Artwork for the directory listing lives in `.wordpress-org/` and is synced to
+# the top-level `assets/` path in Subversion — outside trunk, so it updates the
+# listing without shipping to anyone's install. It holds the icon and banners;
+# `screenshot-N.png` can be dropped in later and deploys on the next release.
+# The sync deletes whatever is not there, so keep it to artwork only — every file
+# in it is copied verbatim and is publicly visible.
+# Regenerate with bin/render-wporg-assets.mjs.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g. 0.2.0)'
+        required: true
+      dry_run:
+        description: 'Build and verify, but skip the Subversion commit'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write # to attach the built packages to the release
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to WordPress.org
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer:v2
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      # Read the release inputs through the environment rather than interpolating
+      # them into the script, so a tag name can never be executed as shell.
+      - name: Resolve the release
+        id: release
+        env:
+          EVENT: ${{ github.event_name }}
+          TAG: ${{ github.event.release.tag_name }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            version="${INPUT_VERSION#v}"
+            dry_run="$INPUT_DRY_RUN"
+          else
+            version="${TAG#v}"
+            # A pre-release is built and verified but never published: the
+            # directory has no concept of one, so it would ship to every user.
+            dry_run="$PRERELEASE"
+          fi
+          [ -n "$version" ] || { echo "::error::no version to release"; exit 1; }
+          # Normalise to exactly true/false: an unset field would otherwise reach
+          # the deploy action as an empty string.
+          [ "$dry_run" = "true" ] || dry_run=false
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "dry_run=$dry_run" >> "$GITHUB_OUTPUT"
+          echo "Releasing $version (dry run: $dry_run)"
+
+      - name: Check the version is consistent everywhere
+        run: bash bin/check-version.sh "${{ steps.release.outputs.version }}"
+
+      # This publishes straight to every user of the plugin, so a release re-runs
+      # the suites rather than trusting that CI was green on whatever commit the
+      # tag points at. The wp-env integration suite is left to CI: it needs Docker
+      # and covers nothing the package gate below does not.
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run PHP tests
+        run: ./vendor/bin/phpunit
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Test JS
+        run: npm run test:js
+
+      - name: Build the core package
+        run: bash bin/build.sh core
+
+      - name: Verify the core package
+        run: bash bin/verify-package.sh core
+
+      # A hard gate here, unlike CI's informational run: this package goes
+      # straight to every user, and the built package currently reports no errors.
+      - name: Run Plugin Check
+        uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: ./build/cartquill
+          ignore-warnings: true
+
+      # Deploys the contents of build/cartquill as-is — the paid code is already
+      # stripped and the front-end already compiled, so .distignore is not
+      # consulted and nothing is rebuilt from the repo root.
+      - name: Deploy to WordPress.org
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        with:
+          dry-run: ${{ steps.release.outputs.dry_run }}
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: cartquill
+          VERSION: ${{ steps.release.outputs.version }}
+          BUILD_DIR: ./build/cartquill
+
+      # The core package is what WordPress.org now serves; attaching it to the
+      # release records exactly which bytes shipped for this tag.
+      - name: Attach the core package to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" build/cartquill.zip --clobber
+
+      # Built from the same tree and the same commit, for upload to Freemius.
+      - name: Build the premium package
+        run: bash bin/build.sh premium
+
+      - name: Verify the premium package
+        run: bash bin/verify-package.sh premium
+
+      # An artifact, NOT a release asset: this repository is public, and a
+      # release asset would make the paid edition a free download.
+      - name: Upload the premium package
+        uses: actions/upload-artifact@v5
+        with:
+          name: cartquill-premium-${{ steps.release.outputs.version }}
+          path: build/cartquill-premium.zip
+          retention-days: 90
