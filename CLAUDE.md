@@ -33,7 +33,9 @@ Publishing a GitHub release deploys core to WordPress.org (`.github/workflows/re
 
 `.wordpress-org/` holds the directory-listing artwork — icon and banners now, screenshots when they exist. It syncs to the top-level `assets/` path in SVN — outside trunk, so it never reaches an install — and the sync deletes anything not in it, making the directory the whole source of truth for that artwork. It is in `.distignore`, because the packaging rsync would otherwise ship it inside the plugin.
 
-Do not hand-edit those files: `bin/render-wporg-assets.mjs` renders all of them (`npm install --no-save sharp && node bin/render-wporg-assets.mjs`), taking the mark from `assets/admin/icon.svg` so there is one source of truth for it. The directory requires a PNG fallback alongside an SVG icon, and the render is deterministic — re-running it on an unchanged mark produces byte-identical files.
+Do not hand-edit the icon or banners: `bin/render-wporg-assets.mjs` renders them (`npm install --no-save sharp && node bin/render-wporg-assets.mjs`), taking the mark from `assets/admin/icon.svg` so there is one source of truth for it. The directory requires a PNG fallback alongside an SVG icon, and the render is deterministic — re-running it on an unchanged mark produces byte-identical files.
+
+The `screenshot-N.png` files are captures of the real admin, so they are only as current as the UI was when taken — re-shoot them when a screen they show changes, and keep the numbered captions under `== Screenshots ==` in `readme.txt` in step, since the directory pairs them by number.
 
 ## Commit conventions
 

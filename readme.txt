@@ -68,6 +68,13 @@ Nothing, by default — your flows, enrollments, and reports are kept, so you ca
 
 Only who your emails come from. After activating, CartQuill walks you through setting a from-name and from-address, then points you at the flow library.
 
+== Screenshots ==
+
+1. The step builder: an ordered list of step cards you reorder by dragging. Each step carries its own copy, its own delay, and its own condition gates — here, leave the flow as soon as the customer orders.
+2. Your flows, and the library they came from: install a welcome, post-purchase, abandoned cart, or win-back flow in one click, then edit it like any other.
+3. Reporting: emails sent, opens, clicks, and the revenue each flow drove, attributed last-touch inside your attribution window.
+4. Settings: the identity your emails come from, how long the attribution window runs, and whether CartQuill removes its data when you delete it.
+
 == Changelog ==
 
 = 0.1.0 =
