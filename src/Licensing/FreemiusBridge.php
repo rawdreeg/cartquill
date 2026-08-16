@@ -15,14 +15,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Drives the `cartquill_plan_active`, `cartquill_plan_limits`, and `cartquill_plan`
- * seams from the tier Freemius reports, so in production the paid capabilities and
- * numeric limits follow the customer's subscription.
+ * seams from the tier Freemius reports, so the paid capabilities and numeric
+ * limits follow the customer's subscription.
  *
- * It does NOT replace {@see OptionLicense}, which stays the dev/manual fallback:
- * when Freemius has no opinion (no SDK, or the site cannot use premium code) the
- * provider returns '' and every filter passes its input straight through. The
- * active filter only ever *unions* capabilities on — it never revokes a grant the
- * local license already made.
+ * The bridge runs in one of two modes, decided by cartquill_fs_owns_plan():
+ *
+ * AUTHORITATIVE (every premium build). Freemius is the only source of plan
+ * truth. `plan_active_filter` answers purely from the reported tier and ignores
+ * the value passed in, so {@see OptionLicense}'s stored keys cannot grant a
+ * capability. This is the mode that matters: OptionLicense treats any non-empty
+ * string as a held plan, by design, which without this would make the admin
+ * license form a one-field unlock for anyone holding a copy of the premium zip.
+ *
+ * FALLBACK (dev/demo, opted into with CARTQUILL_LOCAL_LICENSE in wp-config.php).
+ * Freemius merely *unions* capabilities on and never revokes a local grant, so
+ * the add-ons can be built and demonstrated without a live subscription.
+ *
+ * In both modes a tier of '' means Freemius has no opinion, and the numeric
+ * limits fall through to the defaults — which for an unlicensed premium install
+ * are the uncapped core ones. That is the intended shape: without a licence the
+ * paid capabilities are off and everything core ships stays uncapped, exactly as
+ * it is in the free edition.
  *
  * The Freemius SDK is touched only inside the default provider, so the bridge's
  * logic is exercised DB-free by injecting a fake slug provider in tests.
@@ -32,29 +45,41 @@ final class FreemiusBridge {
 	/** @var callable(): string The current Freemius tier slug ('' when Freemius has no opinion). */
 	private $provider;
 
+	/** Whether Freemius is the sole authority on plan status. */
+	private bool $owns_plan;
+
 	/**
-	 * @param callable(): string|null $provider Returns the current Freemius tier slug
-	 *                                          ('starter'|'growth'|'agency'|'pro'|''); defaults to
-	 *                                          the SDK-backed provider, which is a no-op ('') without
-	 *                                          the SDK. Tests inject a fake provider.
+	 * @param callable(): string|null $provider  Returns the current Freemius tier slug
+	 *                                           ('starter'|'growth'|'agency'|'pro'|''); defaults to
+	 *                                           the SDK-backed provider, which reports '' without
+	 *                                           the SDK. Tests inject a fake provider.
+	 * @param bool|null               $owns_plan Whether Freemius is authoritative; defaults to
+	 *                                           cartquill_fs_owns_plan().
 	 */
-	public function __construct( ?callable $provider = null ) {
-		$this->provider = $provider ?? self::default_provider();
+	public function __construct( ?callable $provider = null, ?bool $owns_plan = null ) {
+		$this->provider  = $provider ?? self::default_provider();
+		$this->owns_plan = $owns_plan ?? self::default_owns_plan();
 	}
 
 	/**
-	 * Union the capabilities the reported tier grants onto the local decision. When
-	 * Freemius has no opinion the local `$active` value passes through untouched.
+	 * Decide whether the capability is active.
+	 *
+	 * Authoritative: the reported tier decides, alone — an unrecognized or empty
+	 * tier grants nothing. Fallback: union the tier's grants onto the local
+	 * decision, leaving a locally-active capability active.
 	 *
 	 * @param bool   $active     Whether the capability is active locally.
 	 * @param string $capability The Plans::* capability being checked.
 	 */
 	public function plan_active_filter( bool $active, string $capability ): bool {
-		$tier = ( $this->provider )();
-		if ( '' === $tier ) {
-			return $active;
+		$tier   = ( $this->provider )();
+		$grants = '' !== $tier && in_array( $capability, Plans::grants( $tier ), true );
+
+		if ( $this->owns_plan ) {
+			return $grants;
 		}
-		return $active || in_array( $capability, Plans::grants( $tier ), true );
+
+		return $active || $grants;
 	}
 
 	/**
@@ -77,13 +102,20 @@ final class FreemiusBridge {
 	}
 
 	/**
-	 * Drive the displayed plan from the reported tier, falling back to the locally
-	 * computed plan when Freemius has no opinion.
+	 * Drive the displayed plan from the reported tier.
+	 *
+	 * Authoritative: the tier is the whole answer, including '' for an install
+	 * with no subscription — the locally computed plan is never shown, because a
+	 * stored key is not evidence of anything. Fallback: keep the local plan when
+	 * Freemius has no opinion.
 	 *
 	 * @param string $plan The locally computed plan.
 	 */
 	public function plan_filter( string $plan ): string {
 		$tier = ( $this->provider )();
+		if ( $this->owns_plan ) {
+			return $tier;
+		}
 		return '' !== $tier ? $tier : $plan;
 	}
 
@@ -109,14 +141,14 @@ final class FreemiusBridge {
 	 * The returned slug is normalized (trimmed + lower-cased) and is expected to be
 	 * one of the {@see Plans} tier slugs — the Freemius plans MUST use the unique
 	 * names 'starter'/'growth'/'agency' (matching the dashboard) for their grants to
-	 * resolve; an unrecognized slug simply grants nothing beyond the local license.
+	 * resolve; an unrecognized slug simply grants nothing.
 	 *
 	 * @return callable(): string
 	 */
 	private static function default_provider(): callable {
 		return static function (): string {
 			try {
-				if ( function_exists( 'cartquill_fs' ) && \cartquill_fs()->can_use_premium_code() ) {
+				if ( function_exists( 'cartquill_fs' ) && \cartquill_fs()?->can_use_premium_code() ) {
 					return strtolower( trim( (string) \cartquill_fs()->get_plan_name() ) );
 				}
 			} catch ( \Throwable $e ) {
@@ -124,5 +156,14 @@ final class FreemiusBridge {
 			}
 			return '';
 		};
+	}
+
+	/**
+	 * Authoritative wherever the premium bootstrap is present, which is every
+	 * premium build. Absent (the DB-free test harness, or a tree where
+	 * src/freemius.php was not loaded) the bridge keeps its permissive fallback.
+	 */
+	private static function default_owns_plan(): bool {
+		return function_exists( 'cartquill_fs_owns_plan' ) && \cartquill_fs_owns_plan();
 	}
 }

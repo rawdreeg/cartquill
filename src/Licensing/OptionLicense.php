@@ -17,15 +17,23 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Stores which plans a store holds (and their license keys) in a wp_option, and
  * answers the gate from it.
  *
- * SCAFFOLD: in production the plan-active decision is owned by Freemius (which
- * validates keys against the store). The `cartquill_plan_active` filter is the
- * seam where the Freemius SDK overrides this — until then, entering a key marks
- * the plan active locally so the add-ons can be developed and demoed.
+ * Read the `held_plans()` test carefully before trusting this class: any
+ * non-empty string counts as holding the plan. Nothing here is verified against
+ * anything, and it never was — which is exactly why
+ * {@see FreemiusBridge::plan_active_filter()} overrides rather than unions on a
+ * premium build. In production this class answers into a filter that discards
+ * its answer; it decides anything only under CARTQUILL_LOCAL_LICENSE, the
+ * wp-config.php opt-in that exists so the add-ons can be developed and demoed.
+ *
+ * Its remaining production job is the *shape* of the defaults: the limits below
+ * are what an install with no subscription runs under, and they are deliberately
+ * uncapped, because a premium build without a licence must behave exactly like
+ * the free edition — complete and unmetered — rather than like a crippled trial.
  *
  * Note: these are *entitlement* keys (they identify a purchase), not ESP send
- * credentials. They are short-lived scaffold state that Freemius replaces, so
- * they are stored plainly here; the credential encryption the data model
- * mandates applies to add-on connection credentials, not to this.
+ * credentials. They hold no access to anything, so they are stored plainly; the
+ * credential encryption the data model mandates applies to add-on connection
+ * credentials, not to this.
  */
 final class OptionLicense implements License {
 
