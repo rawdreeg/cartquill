@@ -9,9 +9,10 @@
 # Both editions regenerate a no-dev optimized autoloader and strip the dev/meta
 # files listed in .distignore. The core edition ADDITIONALLY strips everything
 # below the `# @cartquill:paid` marker in .distignore, so it cannot ship (or
-# unlock) paid code. The premium edition keeps that paid section, so the
-# Freemius package ships the gated add-ons the license unlocks — assembled from
-# the exact same tree, with no second source of truth.
+# unlock) paid code — including the vendored Freemius SDK, which is what makes
+# core provably free of any licence check. The premium edition keeps that paid
+# section, so the Freemius package ships the gated add-ons the license unlocks
+# — assembled from the exact same tree, with no second source of truth.
 #
 # The JavaScript is compiled INSIDE the staged package, after the paid section
 # has been stripped. That is what guarantees the shipped bundle is an exact build
@@ -26,10 +27,19 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD="$ROOT/build"
 
 EDITION="${1:-core}"
-# The plugin folder inside every zip is `cartquill/` (both editions install to
-# the same slug — premium is a superset that replaces the core install). The
-# core edition stages directly in build/ (where CI and Plugin Check expect it);
-# premium stages under build/premium/ so the two never clobber each other.
+# The two editions install to DIFFERENT folders — `cartquill/` and
+# `cartquill-premium/` — and that is deliberate, not cosmetic.
+#
+# WordPress asks api.wordpress.org about every installed folder name. A premium
+# install sitting in `cartquill/` therefore gets offered the free directory
+# version as an update, and the only thing standing between a paying customer
+# and a silent downgrade is the SDK stripping that entry out of the update
+# transient on every check. A distinct folder removes the collision instead of
+# defending against it, and it is the name the SDK's own auto-installer uses
+# (`premium_slug` in src/freemius.php — the two MUST agree).
+#
+# The core edition stages directly in build/ (where CI and Plugin Check expect
+# it); premium stages under build/premium/ so the two never clobber each other.
 case "$EDITION" in
 	core|free) # `free` kept as an alias so existing callers keep working.
 		SLUG="cartquill"
@@ -47,7 +57,9 @@ case "$EDITION" in
 		;;
 esac
 
-STAGE="$STAGE_PARENT/cartquill"
+# The folder inside the zip carries the slug, so the package extracts straight
+# into the plugin directory the edition is meant to occupy.
+STAGE="$STAGE_PARENT/$SLUG"
 ZIP="$BUILD/$SLUG.zip"
 
 for tool in composer rsync zip npm; do
@@ -133,6 +145,6 @@ rm -rf "$STAGE/vendor/bin"
 
 echo "==> Zipping"
 rm -f "$ZIP"
-( cd "$STAGE_PARENT" && zip -rqX "$ZIP" cartquill )
+( cd "$STAGE_PARENT" && zip -rqX "$ZIP" "$SLUG" )
 
 echo "==> Built $ZIP"

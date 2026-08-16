@@ -3,12 +3,13 @@
 # Assert a built package is what it claims to be.
 #
 #   bin/verify-package.sh core      # checks build/cartquill
-#   bin/verify-package.sh premium   # checks build/premium/cartquill
+#   bin/verify-package.sh premium   # checks build/premium/cartquill-premium
 #
 # Core is a complete product, not a limited preview: it must contain no licence
-# check, plan gate, usage cap or upgrade prompt, and none of the paid add-ons.
-# Premium is the same tree with the paid section kept — and must actually carry
-# it, autoloadable, with no dev cruft in either.
+# check, plan gate, usage cap or upgrade prompt, and none of the paid add-ons —
+# nor the Freemius SDK that implements all of them. Premium is the same tree with
+# the paid section kept, and must actually carry it: autoloadable, SDK vendored,
+# declaring itself premium, in the folder the SDK expects. No dev cruft in either.
 #
 # CI runs this on every push and the release workflow runs it again before
 # anything reaches WordPress.org, so the published package clears the same bar.
@@ -32,9 +33,11 @@ DEV_CRUFT=(
 	node_modules package.json package-lock.json webpack.config.js
 )
 
-# Paid code core strips and premium keeps.
+# Paid code core strips and premium keeps. `freemius` is the vendored SDK: it is
+# the licence check and the update channel in one, so its absence from core is
+# the strongest single statement that core is ungated.
 PAID_PATHS=(
-	src/Ai src/Automations src/Licensing src/freemius.php
+	src/Ai src/Automations src/Licensing src/freemius.php freemius
 	src/Admin/AiGeneratePage.php src/Admin/LicensePage.php src/Admin/UsageNotice.php
 	src/Metering/UsageMeter.php src/Metering/UsageStore.php
 	src/Metering/WpdbUsageStore.php src/Metering/InMemoryUsageStore.php
@@ -79,14 +82,33 @@ verify_core() {
 }
 
 verify_premium() {
-	local pkg="$ROOT/build/premium/cartquill"
-	[ -d "$pkg" ] || fail "no premium package at build/premium/cartquill — run bin/build.sh premium first"
+	# The folder name is load-bearing, not cosmetic — see bin/build.sh.
+	local folder="cartquill-premium"
+	local pkg="$ROOT/build/premium/$folder"
+	[ -d "$pkg" ] || fail "no premium package at build/premium/$folder — run bin/build.sh premium first"
 
 	local entry
 	# The paid add-ons core strips must be PRESENT in premium...
 	for entry in src/Ai/addon.php src/Automations/addon.php src/Admin/AiGeneratePage.php; do
 		[ -e "$pkg/$entry" ] || fail "premium build is missing paid file '$entry'"
 	done
+
+	# The SDK is what turns a licence into an update. Without it the package is
+	# just an unlicensed superset of core that can never update itself.
+	[ -f "$pkg/freemius/start.php" ] || fail "premium build is missing the vendored Freemius SDK (freemius/start.php)"
+	[ -f "$pkg/src/freemius.php" ] || fail "premium build is missing the Freemius bootstrap (src/freemius.php)"
+
+	# The silent failure this guards: a premium package that reports is_premium
+	# false identifies to Freemius as the FREE edition, so the API never offers it
+	# a premium update. Nothing errors — the customer simply never sees one.
+	grep -q "CARTQUILL_FS_IS_PREMIUM', true" "$pkg/src/freemius.php" \
+		|| fail "premium build does not declare CARTQUILL_FS_IS_PREMIUM — Freemius would treat it as the free edition"
+
+	# `premium_slug` is the folder the SDK's auto-installer extracts into. If it
+	# disagrees with the folder this package actually ships, an auto-install and a
+	# manual zip upload land in different directories on the same site.
+	grep -q "'premium_slug'[[:space:]]*=>[[:space:]]*'$folder'" "$pkg/src/freemius.php" \
+		|| fail "premium_slug in src/freemius.php does not match the packaged folder '$folder'"
 
 	# ...and their classes must be in the optimized classmap so they autoload
 	# (the classmap maps each paid class to its src/ path — assert on that).
@@ -108,7 +130,7 @@ verify_premium() {
 	# Building premium must not have clobbered the core zip.
 	[ -f "$ROOT/build/cartquill.zip" ] || fail "the core zip disappeared while building premium"
 
-	echo "==> Premium package verified: paid add-ons present and autoloadable, no dev cruft"
+	echo "==> Premium package verified: paid add-ons present and autoloadable, SDK vendored, declares itself premium, no dev cruft"
 }
 
 case "${1:-core}" in
