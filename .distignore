@@ -58,4 +58,9 @@ src/Admin/DeliverabilityPage.php
 src/Admin/LicensePage.php
 src/Admin/UsageNotice.php
 src/freemius.php
+# The vendored Freemius SDK. Core must not contain a byte of it: the SDK *is*
+# the licence check and the premium update channel, and the WordPress.org build
+# has neither. It also carries its own GPL-3.0 licence, which core stays clear
+# of by never shipping it.
+freemius
 assets/builder/src/ai
