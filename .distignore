@@ -22,6 +22,8 @@ phpunit-9.phar
 .wp-env.json
 .wp-env.override.json
 CLAUDE.md
+# Developer-facing; readme.txt is the one users and the directory read.
+README.md
 build
 dist
 node_modules
