@@ -31,6 +31,8 @@ Because of that, core code may **never** reference `CartQuill\Licensing\*` or th
 
 `src/<Name>/addon.php` is the bootstrap for each; `Plugin::load_addons()` includes whichever are present. `Meter` + `NullMeter` stay in core as a pure no-op seam — `NullMeter` never defers and never counts.
 
+There is a second, deliberately narrow bootstrap: `src/<Name>/early.php`, included by `Plugin::load_early_extensions()` from `cartquill.php` at file scope. WordPress fires `plugins_loaded` and only *then* includes the plugin file when a plugin is being activated, so anything deferred to `boot()` is absent from the one request where `register_activation_hook()` still matters — verified by probe, not inference. Only the SDK start-up lives there. Everything else belongs in `addon.php`, whose ordering `boot()` controls on purpose (add-on submenus must register after the parent menu, or they resolve the wrong page hook). Starting the SDK early does not break that: it hooks `admin_menu` at `WP_FS__LOWEST_PRIORITY`.
+
 The JS is compiled **inside the staged package**, after stripping, so the shipped bundle is provably a build of the shipped source. CI asserts both the file separation and that no licensing vocabulary survives in core.
 
 ## Releasing

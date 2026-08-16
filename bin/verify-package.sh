@@ -44,6 +44,15 @@ PAID_PATHS=(
 	assets/builder/src/ai assets/builder/build/ai.js
 )
 
+# Extensions that register their own activation hook have to be included while
+# the main plugin file is read: WordPress fires `plugins_loaded` before it
+# includes that file during an activation request, so anything deferred to
+# Plugin::boot() misses the request the plugin is activated in.
+assert_early_extension_hook() {
+	grep -q 'load_early_extensions' "$1/cartquill.php" \
+		|| fail "cartquill.php no longer calls load_early_extensions() — the premium edition would lose its activation hook"
+}
+
 verify_core() {
 	local pkg="$ROOT/build/cartquill"
 	[ -d "$pkg" ] || fail "no core package at build/cartquill — run bin/build.sh first"
@@ -78,6 +87,11 @@ verify_core() {
 	[ -f "$pkg/assets/builder/build/index.js" ] || fail "built package is missing the compiled flow builder bundle"
 	[ -f "$pkg/assets/builder/build/style-index.css" ] || fail "built package is missing the compiled flow builder stylesheet"
 
+	# A no-op in core, but the entry point premium's early bootstrap hangs off.
+	# cartquill.php is shared, so losing the call here silently costs the premium
+	# edition its activation hook — assert it in both editions.
+	assert_early_extension_hook "$pkg"
+
 	echo "==> Core package verified: no paid code, no gating vocabulary, production autoloader present"
 }
 
@@ -97,6 +111,11 @@ verify_premium() {
 	# just an unlicensed superset of core that can never update itself.
 	[ -f "$pkg/freemius/start.php" ] || fail "premium build is missing the vendored Freemius SDK (freemius/start.php)"
 	[ -f "$pkg/src/freemius.php" ] || fail "premium build is missing the Freemius bootstrap (src/freemius.php)"
+
+	# Both halves of the early bootstrap: the call site in the shared plugin file,
+	# and the premium-only file it looks for.
+	assert_early_extension_hook "$pkg"
+	[ -f "$pkg/src/Licensing/early.php" ] || fail "premium build is missing src/Licensing/early.php — the SDK would start too late to register its activation hook"
 
 	# The silent failure this guards: a premium package that reports is_premium
 	# false identifies to Freemius as the FREE edition, so the API never offers it

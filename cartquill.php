@@ -49,6 +49,13 @@ if ( ! is_readable( $cartquill_autoload ) ) {
 
 require_once $cartquill_autoload;
 
+// Extensions that must be running before `plugins_loaded`, because they register
+// activation hooks of their own. WordPress fires `plugins_loaded` and only then
+// includes this file when a plugin is being activated, so anything deferred to
+// Plugin::boot() below simply does not exist during that request. A no-op unless
+// a separately distributed extension has been installed over this plugin.
+\CartQuill\Plugin::load_early_extensions();
+
 register_activation_hook( __FILE__, array( \CartQuill\Activation::class, 'activate' ) );
 register_deactivation_hook( __FILE__, array( \CartQuill\Activation::class, 'deactivate' ) );
 

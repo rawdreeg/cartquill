@@ -34,13 +34,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $cartquill_license = new OptionLicense();
 
-// Freemius owns plan status in production; the bridge drives the licensing
-// filters from the customer's subscription tier. Both the SDK bootstrap and the
-// bridge's provider are no-ops until the SDK and identifiers are present.
+// Freemius owns plan status; the bridge drives the licensing filters from the
+// customer's subscription tier. The SDK itself is already running by now —
+// early.php starts it while the main plugin file is read, because it has an
+// activation hook to register and this file is included too late for that. The
+// require_once here is only a safety net keeping cartquill_fs_owns_plan()
+// defined if this file is ever reached without early.php having run; when it
+// has, it costs nothing.
 require_once CARTQUILL_PATH . 'src/freemius.php';
-if ( function_exists( 'cartquill_fs' ) ) {
-	cartquill_fs();
-}
 ( new FreemiusBridge() )->register();
 
 ( new LicensePage( $cartquill_license ) )->register();

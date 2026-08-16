@@ -266,6 +266,9 @@ final class Plugin {
 		);
 	}
 
+	/** Directories an extension may occupy. Each may ship the bootstraps below. */
+	private const EXTENSIONS = array( 'Licensing', 'Ai', 'Automations' );
+
 	/**
 	 * Include any installed extension bootstrap file so it can self-register on the
 	 * `cartquill_register_*` hooks before those hooks fire. An extension owns a
@@ -273,8 +276,37 @@ final class Plugin {
 	 * a separately distributed extension has been installed over it.
 	 */
 	private function load_addons(): void {
-		foreach ( array( 'Licensing', 'Ai', 'Automations' ) as $addon ) {
-			$bootstrap = CARTQUILL_PATH . 'src/' . $addon . '/addon.php';
+		self::require_extension_bootstraps( 'addon.php' );
+	}
+
+	/**
+	 * The same, for the small number of extensions that cannot wait for boot().
+	 *
+	 * `boot()` runs on `plugins_loaded`, and WordPress fires `plugins_loaded`
+	 * *before* it includes the plugin file during an activation request — so a
+	 * hook registered from boot() is never registered in the request where the
+	 * plugin is actually activated. An extension that needs its own
+	 * `register_activation_hook()` to fire therefore has to be included while this
+	 * file is being read, not later. That is all `src/<Name>/early.php` is for:
+	 * keep it to the one thing that genuinely cannot be deferred, and leave
+	 * everything else in `addon.php`, whose ordering boot() controls on purpose.
+	 *
+	 * @param string|null $base Plugin root, for tests; defaults to CARTQUILL_PATH.
+	 */
+	public static function load_early_extensions( ?string $base = null ): void {
+		self::require_extension_bootstraps( 'early.php', $base );
+	}
+
+	/**
+	 * @param string|null $base Plugin root, for tests; defaults to CARTQUILL_PATH.
+	 */
+	private static function require_extension_bootstraps( string $filename, ?string $base = null ): void {
+		$base ??= defined( 'CARTQUILL_PATH' ) ? CARTQUILL_PATH : '';
+		if ( '' === $base ) {
+			return;
+		}
+		foreach ( self::EXTENSIONS as $extension ) {
+			$bootstrap = $base . 'src/' . $extension . '/' . $filename;
 			if ( is_readable( $bootstrap ) ) {
 				require_once $bootstrap;
 			}
