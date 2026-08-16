@@ -7,17 +7,17 @@ name: Release
 # The password is the one set under "Account & Security" on the wordpress.org
 # profile that owns the plugin (rawdreeg) — not the wordpress.org login password.
 #
-# For the premium half, add FREEMIUS_DEV_ID, FREEMIUS_PUBLIC_KEY and
-# FREEMIUS_SECRET_KEY. All three are DEVELOPER-scope credentials, so they come
-# from "My Profile" in the top-right menu of the Freemius dashboard, under its
-# Keys section — NOT from the product's own Settings → Keys, which is the
-# plugin scope this action does not use. (The product id is public and lives in
-# src/freemius.php, so it is passed inline below rather than as a secret.)
+# For the premium half, add one secret: FREEMIUS_API_KEY. Get it from
+# dashboard.freemius.com → the product's Settings page → API & Keys tab → "API
+# Bearer Authorization Token". It is product-scoped, so it is the only credential
+# the deploy needs — no developer id, and not the secret key, which the v1 API
+# does not use for this. (The product id and public key are public and already
+# live in src/freemius.php.)
 #
-# Without the secrets the release still completes and the premium package is
-# still built, verified and attached as an artifact — only the upload is
-# skipped, with a warning. The secret key belongs here and nowhere else: it must
-# never appear in plugin code or in a build.
+# Without it the release still completes and the premium package is still built,
+# verified and attached as an artifact — only the upload is skipped, with a
+# warning. The API key belongs in GitHub secrets and nowhere else: it must never
+# appear in plugin code or in a build.
 #
 # To cut a release:
 #   1. Bump the version in cartquill.php (the Version: header AND
@@ -179,69 +179,69 @@ jobs:
           path: build/cartquill-premium.zip
           retention-days: 90
 
-      # Missing credentials warn and skip rather than fail: the WordPress.org
-      # deploy above has already happened by this point, and failing the job here
-      # would report a release that actually shipped as broken.
-      - name: Check for Freemius credentials
+      # A missing key warns and skips rather than failing: WordPress.org has
+      # already been published by this point, and a red job here would report a
+      # release that actually shipped as broken.
+      - name: Check for the Freemius API key
         id: freemius
         env:
-          FREEMIUS_SECRET_KEY: ${{ secrets.FREEMIUS_SECRET_KEY }}
+          FREEMIUS_API_KEY: ${{ secrets.FREEMIUS_API_KEY }}
         run: |
-          if [ -n "$FREEMIUS_SECRET_KEY" ]; then
+          if [ -n "$FREEMIUS_API_KEY" ]; then
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::FREEMIUS_SECRET_KEY is not set — skipping the Freemius upload. Download the premium artifact above and upload it by hand, or add the secret."
+            echo "::warning::FREEMIUS_API_KEY is not set — skipping the Freemius upload. Download the premium artifact above and upload it by hand, or add the secret."
           fi
 
-      # The action reads the package from the repository root.
-      - name: Stage the premium package for Freemius
-        if: steps.freemius.outputs.configured == 'true' && steps.release.outputs.dry_run == 'false'
-        run: cp build/cartquill-premium.zip ./cartquill-premium.zip
-
-      # Uploaded as `pending`, never `released`: a paid update reaches live stores
-      # with no directory review in front of it, so promoting the version stays a
-      # deliberate click in the Freemius dashboard. That is also where staged
-      # rollouts live, which is the right way to ship this to real stores.
+      # Two dozen lines of curl instead of a third-party action, because the
+      # alternative would hold the credential and could not report a failure: the
+      # community action exits 0 from both of its error paths and from its catch
+      # block, so a rejected upload would land as a green release with nothing
+      # deployed. Here a non-200 fails the job and the recorded version is checked
+      # against the one being released.
       #
-      # Pinned to a commit, not a tag: this is a third-party Docker action and it
-      # receives the Freemius secret key.
+      # `release_mode` defaults to `pending`, which is what we want and why there
+      # is no follow-up PUT: a paid update reaches live stores with no directory
+      # review in front of it, so promoting a version stays a deliberate click in
+      # the dashboard. Staged and incremental rollouts live on that same PUT.
       - name: Deploy the premium package to Freemius
         if: steps.freemius.outputs.configured == 'true' && steps.release.outputs.dry_run == 'false'
-        uses: buttonizer/freemius-deploy@dcbf3a1a0217c8235657b66ac86704437f87d5ee # v0.1.3
-        with:
-          file_name: cartquill-premium.zip
-          version: ${{ steps.release.outputs.version }}
-          release_mode: pending
         env:
-          DEV_ID: ${{ secrets.FREEMIUS_DEV_ID }}
+          # Product-scoped bearer token, from the product's Settings → API & Keys.
+          FREEMIUS_API_KEY: ${{ secrets.FREEMIUS_API_KEY }}
           # Public, and already in src/freemius.php — a secret would be theatre.
-          PLUGIN_ID: 33952
-          PLUGIN_SLUG: cartquill
-          PUBLIC_KEY: ${{ secrets.FREEMIUS_PUBLIC_KEY }}
-          SECRET_KEY: ${{ secrets.FREEMIUS_SECRET_KEY }}
-
-      # The action cannot fail. Its two error paths call bare die() and its catch
-      # block only prints "Freemius server has problems" — all three exit 0, so a
-      # rejected upload would land here as a green step and nothing on Freemius.
-      #
-      # It writes the round-tripped packages to disk only after the API call
-      # succeeds (on the "uploaded" and the "already deployed" paths alike), so
-      # their presence is the post-condition worth asserting.
-      - name: Confirm the Freemius upload actually landed
-        if: steps.freemius.outputs.configured == 'true' && steps.release.outputs.dry_run == 'false'
+          PRODUCT_ID: '33952'
+          VERSION: ${{ steps.release.outputs.version }}
         run: |
-          if [ ! -f ./cartquill-premium__free.zip ]; then
-            echo "::error::The Freemius upload did not complete — the action exits 0 even when it fails, so check its log above and the Deployment page in the dashboard."
+          set -euo pipefail
+          body="$(mktemp)"
+          # Built as an array rather than a backslash-continued command
+          # substitution: bash 3.2 mis-parses nested quotes across continuations
+          # inside $(), so this form stays checkable with `bash -n` anywhere.
+          args=( -sS -o "$body" -w '%{http_code}'
+                 -X POST "https://api.freemius.com/v1/products/${PRODUCT_ID}/tags.json"
+                 -H "Authorization: Bearer ${FREEMIUS_API_KEY}"
+                 -H 'Accept: application/json'
+                 -F 'file=@build/cartquill-premium.zip' )
+          status=$(curl "${args[@]}")
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Freemius rejected the upload (HTTP $status)."
+            jq . "$body" 2>/dev/null || cat "$body"
             exit 1
           fi
-          echo "Freemius returned version ${{ steps.release.outputs.version }}; promote it to Released in the dashboard when ready."
 
-      # Both root zips are Freemius's own round-trip, not our build: it overwrites
-      # cartquill-premium.zip with the pro package it generated and writes
-      # __free.zip beside it. That "free" one is byte-identical to the paid build,
-      # because this repo strips its own editions and ships no __premium_only
-      # markers for Freemius to act on. Delete both so no later step can glob them.
-      - name: Remove the round-tripped packages
-        if: always()
-        run: rm -f ./cartquill-premium.zip ./cartquill-premium__free.zip
+          tag_id="$(jq -r '.id // empty' "$body")"
+          deployed="$(jq -r '.version // empty' "$body")"
+          if [ -z "$tag_id" ]; then
+            echo "::error::Freemius returned 200 with no deployment id."
+            cat "$body"
+            exit 1
+          fi
+          if [ "$deployed" != "$VERSION" ]; then
+            echo "::error::Freemius recorded version '$deployed' but this release is '$VERSION'."
+            exit 1
+          fi
+
+          echo "::notice::Deployed $deployed to Freemius as tag $tag_id, release_mode=pending. Promote it in the dashboard to ship it to customers."
