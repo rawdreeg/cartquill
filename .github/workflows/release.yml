@@ -7,12 +7,17 @@ name: Release
 # The password is the one set under "Account & Security" on the wordpress.org
 # profile that owns the plugin (rawdreeg) — not the wordpress.org login password.
 #
-# For the premium half, add FREEMIUS_DEV_ID, FREEMIUS_PLUGIN_ID,
-# FREEMIUS_PUBLIC_KEY and FREEMIUS_SECRET_KEY, all from the Freemius dashboard
-# under Settings → Keys. Without them the release still completes and the premium
-# package is still built, verified and attached as an artifact — only the upload
-# is skipped, with a warning. The secret key belongs here and nowhere else: it
-# must never appear in plugin code or in a build.
+# For the premium half, add FREEMIUS_DEV_ID, FREEMIUS_PUBLIC_KEY and
+# FREEMIUS_SECRET_KEY. All three are DEVELOPER-scope credentials, so they come
+# from "My Profile" in the top-right menu of the Freemius dashboard, under its
+# Keys section — NOT from the product's own Settings → Keys, which is the
+# plugin scope this action does not use. (The product id is public and lives in
+# src/freemius.php, so it is passed inline below rather than as a secret.)
+#
+# Without the secrets the release still completes and the premium package is
+# still built, verified and attached as an artifact — only the upload is
+# skipped, with a warning. The secret key belongs here and nowhere else: it must
+# never appear in plugin code or in a build.
 #
 # To cut a release:
 #   1. Bump the version in cartquill.php (the Version: header AND
@@ -210,7 +215,33 @@ jobs:
           release_mode: pending
         env:
           DEV_ID: ${{ secrets.FREEMIUS_DEV_ID }}
-          PLUGIN_ID: ${{ secrets.FREEMIUS_PLUGIN_ID }}
+          # Public, and already in src/freemius.php — a secret would be theatre.
+          PLUGIN_ID: 33952
           PLUGIN_SLUG: cartquill
           PUBLIC_KEY: ${{ secrets.FREEMIUS_PUBLIC_KEY }}
           SECRET_KEY: ${{ secrets.FREEMIUS_SECRET_KEY }}
+
+      # The action cannot fail. Its two error paths call bare die() and its catch
+      # block only prints "Freemius server has problems" — all three exit 0, so a
+      # rejected upload would land here as a green step and nothing on Freemius.
+      #
+      # It writes the round-tripped packages to disk only after the API call
+      # succeeds (on the "uploaded" and the "already deployed" paths alike), so
+      # their presence is the post-condition worth asserting.
+      - name: Confirm the Freemius upload actually landed
+        if: steps.freemius.outputs.configured == 'true' && steps.release.outputs.dry_run == 'false'
+        run: |
+          if [ ! -f ./cartquill-premium__free.zip ]; then
+            echo "::error::The Freemius upload did not complete — the action exits 0 even when it fails, so check its log above and the Deployment page in the dashboard."
+            exit 1
+          fi
+          echo "Freemius returned version ${{ steps.release.outputs.version }}; promote it to Released in the dashboard when ready."
+
+      # Both root zips are Freemius's own round-trip, not our build: it overwrites
+      # cartquill-premium.zip with the pro package it generated and writes
+      # __free.zip beside it. That "free" one is byte-identical to the paid build,
+      # because this repo strips its own editions and ships no __premium_only
+      # markers for Freemius to act on. Delete both so no later step can glob them.
+      - name: Remove the round-tripped packages
+        if: always()
+        run: rm -f ./cartquill-premium.zip ./cartquill-premium__free.zip
