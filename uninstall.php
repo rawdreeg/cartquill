@@ -1,11 +1,17 @@
 <?php
 /**
- * Uninstall cleanup.
+ * Uninstall entry point.
  *
- * WordPress runs this only when the store owner deletes CartQuill. The recurring
- * background scans are always unscheduled; the plugin's data (custom tables and
- * stored options/transients) is preserved unless "Delete all CartQuill data" was
- * enabled in CartQuill Settings before deletion.
+ * WordPress runs this only when the store owner deletes CartQuill, and it runs
+ * standalone — `uninstall_plugin()` includes this file and returns without
+ * loading the plugin — so the autoloader has to be pulled in here.
+ *
+ * The cleanup itself lives in {@see \CartQuill\Uninstaller} rather than here,
+ * because WordPress's two uninstall mechanisms are mutually exclusive:
+ * `uninstall_plugin()` checks for this file *before* the `uninstall_plugins`
+ * option and returns when it finds it, so an extension that needs its own
+ * `register_uninstall_hook()` cannot ship this file and must call the class from
+ * that hook instead. Both routes run the same code.
  *
  * @package CartQuill
  */
@@ -16,56 +22,13 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-/**
- * Remove CartQuill data from the current site, but only if the store opted in.
- */
-function cartquill_uninstall_current_site(): void {
-	global $wpdb;
-
-	$settings = get_option( 'cartquill_settings', array() );
-	if ( ! is_array( $settings ) || empty( $settings['remove_data_on_uninstall'] ) ) {
-		return;
-	}
-
-	$tables = array(
-		'cartquill_flows',
-		'cartquill_enrollments',
-		'cartquill_messages',
-		'cartquill_attributions',
-		'cartquill_settings',
-		'cartquill_cart_captures',
-	);
-	foreach ( $tables as $table ) {
-		$name = $wpdb->prefix . $table;
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
-		$wpdb->query( "DROP TABLE IF EXISTS `{$name}`" );
-	}
-
-	$prefix_like = $wpdb->esc_like( 'cartquill_' ) . '%';
-	$trans_like  = $wpdb->esc_like( '_transient_cartquill_' ) . '%';
-	$ttime_like  = $wpdb->esc_like( '_transient_timeout_cartquill_' ) . '%';
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-	$wpdb->query(
-		$wpdb->prepare(
-			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
-			$prefix_like,
-			$trans_like,
-			$ttime_like
-		)
-	);
+$cartquill_autoload = __DIR__ . '/vendor/autoload.php';
+if ( ! is_readable( $cartquill_autoload ) ) {
+	// Nothing to clean up safely without the plugin's own classes, and a fatal
+	// here would leave the store unable to finish deleting the plugin.
+	return;
 }
 
-// Always stop the recurring background scans, regardless of the data setting.
-if ( function_exists( 'as_unschedule_all_actions' ) ) {
-	as_unschedule_all_actions( '', array(), 'cartquill' );
-}
+require_once $cartquill_autoload;
 
-if ( is_multisite() ) {
-	foreach ( get_sites( array( 'fields' => 'ids', 'number' => 0 ) ) as $cartquill_site_id ) {
-		switch_to_blog( (int) $cartquill_site_id );
-		cartquill_uninstall_current_site();
-		restore_current_blog();
-	}
-} else {
-	cartquill_uninstall_current_site();
-}
+\CartQuill\Uninstaller::run();

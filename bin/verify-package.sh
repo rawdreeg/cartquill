@@ -71,6 +71,10 @@ verify_core() {
 	# Ships on purpose: Plugin Check reports missing_composer_json_file for a
 	# vendor/ directory with no composer.json beside it.
 	[ -f "$pkg/composer.json" ] || fail "built package is missing composer.json"
+	# The only cleanup route this edition has: it ships no code that registers an
+	# uninstall hook, and WordPress would ignore one anyway while this file exists.
+	[ -f "$pkg/uninstall.php" ] || fail "core package is missing uninstall.php"
+
 	[ -f "$pkg/assets/builder/build/index.js" ] || fail "built package is missing the compiled flow builder bundle"
 	[ -f "$pkg/assets/builder/build/style-index.css" ] || fail "built package is missing the compiled flow builder stylesheet"
 
