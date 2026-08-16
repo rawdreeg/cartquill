@@ -3,12 +3,9 @@
 # Assert a built package is what it claims to be.
 #
 #   bin/verify-package.sh core      # checks build/cartquill
-#   bin/verify-package.sh premium   # checks build/premium/cartquill
 #
 # Core is a complete product, not a limited preview: it must contain no licence
 # check, plan gate, usage cap or upgrade prompt, and none of the paid add-ons.
-# Premium is the same tree with the paid section kept — and must actually carry
-# it, autoloadable, with no dev cruft in either.
 #
 # CI runs this on every push and the release workflow runs it again before
 # anything reaches WordPress.org, so the published package clears the same bar.
@@ -32,7 +29,9 @@ DEV_CRUFT=(
 	node_modules package.json package-lock.json webpack.config.js
 )
 
-# Paid code core strips and premium keeps.
+# Paid code that must never appear in this repository. The premium edition is
+# developed separately; this list is the tripwire that catches it being
+# committed here by accident.
 PAID_PATHS=(
 	src/Ai src/Automations src/Licensing src/freemius.php
 	src/Admin/AiGeneratePage.php src/Admin/LicensePage.php src/Admin/UsageNotice.php
@@ -78,41 +77,7 @@ verify_core() {
 	echo "==> Core package verified: no paid code, no gating vocabulary, production autoloader present"
 }
 
-verify_premium() {
-	local pkg="$ROOT/build/premium/cartquill"
-	[ -d "$pkg" ] || fail "no premium package at build/premium/cartquill — run bin/build.sh premium first"
-
-	local entry
-	# The paid add-ons core strips must be PRESENT in premium...
-	for entry in src/Ai/addon.php src/Automations/addon.php src/Admin/AiGeneratePage.php; do
-		[ -e "$pkg/$entry" ] || fail "premium build is missing paid file '$entry'"
-	done
-
-	# ...and their classes must be in the optimized classmap so they autoload
-	# (the classmap maps each paid class to its src/ path — assert on that).
-	grep -q "src/Ai/AiAddon.php" "$pkg/vendor/composer/autoload_classmap.php" \
-		|| fail "premium autoloader classmap is missing the paid AI classes"
-
-	# ...while dev/meta files stay out of premium too.
-	for entry in "${DEV_CRUFT[@]}"; do
-		if [ -e "$pkg/$entry" ]; then
-			fail "'$entry' leaked into the premium build"
-		fi
-	done
-
-	if find "$pkg" -name '*.test.js' | grep -q .; then
-		fail "a *.test.js file leaked into the premium build"
-	fi
-
-	[ -f "$pkg/vendor/autoload.php" ] || fail "premium package is missing vendor/autoload.php"
-	# Building premium must not have clobbered the core zip.
-	[ -f "$ROOT/build/cartquill.zip" ] || fail "the core zip disappeared while building premium"
-
-	echo "==> Premium package verified: paid add-ons present and autoloadable, no dev cruft"
-}
-
 case "${1:-core}" in
 	core|free) verify_core ;;
-	premium)   verify_premium ;;
-	*)         fail "unknown edition '${1:-}' (use 'core' or 'premium')" ;;
+	*)         fail "unknown edition '${1:-}' (this repository verifies only 'core')" ;;
 esac

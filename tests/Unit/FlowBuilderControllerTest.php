@@ -20,7 +20,6 @@ use CartQuill\Builder\FlowSerializer;
 use CartQuill\Builder\FlowValidator;
 use CartQuill\Flow\FlowStep;
 use CartQuill\Builder\OpenAvailability;
-use CartQuill\Licensing\Plans;
 use CartQuill\Persistence\FlowRecord;
 use CartQuill\Persistence\InMemoryConnectionStore;
 use CartQuill\Persistence\InMemoryFlowRepository;
@@ -29,6 +28,9 @@ use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 
 final class FlowBuilderControllerTest extends TestCase {
+
+	/** A capability no shipped descriptor requires; see BuilderCatalogTest. */
+	private const EXTENSION = 'x-extension';
 
 	use MockeryPHPUnitIntegration;
 
@@ -62,7 +64,7 @@ final class FlowBuilderControllerTest extends TestCase {
 			'slack_post',
 			'Post to Slack',
 			'slack',
-			Plans::AUTOMATIONS,
+			self::EXTENSION,
 			false,
 			array(
 				array( 'key' => 'channel', 'label' => 'Channel', 'type' => 'text' ),

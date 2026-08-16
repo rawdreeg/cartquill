@@ -14,13 +14,14 @@ use Brain\Monkey\Functions;
 use CartQuill\Builder\BuilderCatalog;
 use CartQuill\Builder\CatalogFactory;
 use CartQuill\Builder\TriggerDescriptor;
-use CartQuill\Licensing\ArrayLicense;
-use CartQuill\Licensing\Plans;
 use CartQuill\Persistence\InMemoryConnectionStore;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 
 final class CatalogFactoryTest extends TestCase {
+
+	/** A capability no shipped descriptor requires; see BuilderCatalogTest. */
+	private const EXTENSION = 'x-extension';
 
 	use MockeryPHPUnitIntegration;
 
@@ -49,7 +50,7 @@ final class CatalogFactoryTest extends TestCase {
 		Functions\when( 'apply_filters' )->alias(
 			static function ( $hook, $value ) {
 				if ( BuilderCatalog::FILTER_TRIGGERS === $hook ) {
-					$value[] = new TriggerDescriptor( 'order_alert', 'New paid order', 'An order was paid.', array( 'order_total' ), Plans::AUTOMATIONS );
+					$value[] = new TriggerDescriptor( 'order_alert', 'New paid order', 'An order was paid.', array( 'order_total' ), self::EXTENSION );
 				}
 				return $value;
 			}

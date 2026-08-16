@@ -19,49 +19,61 @@ use CartQuill\Builder\CoreTriggers;
 use CartQuill\Builder\DescribesConfig;
 use CartQuill\Builder\OpenAvailability;
 use CartQuill\Builder\TriggerDescriptor;
-use CartQuill\Licensing\ArrayLicense;
-use CartQuill\Licensing\LicensedAvailability;
-use CartQuill\Licensing\Plans;
+use CartQuill\Builder\Availability;
 use CartQuill\Persistence\ConnectionRecord;
 use CartQuill\Persistence\ConnectionStore;
 use CartQuill\Persistence\InMemoryConnectionStore;
+use CartQuill\Tests\Fake\FakeAvailability;
 use PHPUnit\Framework\TestCase;
 
 final class BuilderCatalogTest extends TestCase {
+
+	/**
+	 * A capability no descriptor this plugin ships requires. The catalog treats
+	 * capabilities as opaque strings, so a fictional one proves the gating works
+	 * for whatever an extension asks for rather than for one known value.
+	 */
+	private const EXTENSION = 'x-extension';
 
 	/** The catalog exactly as the plugin ships it: everything offered. */
 	private function shipped_catalog(): BuilderCatalog {
 		return new BuilderCatalog( new OpenAvailability(), new InMemoryConnectionStore(), CoreActionDescriptors::all(), CoreTriggers::all() );
 	}
 
-	/** The premium adapter's view, for the extension-contributed descriptors. */
-	private function catalog( ArrayLicense $license, ConnectionStore $connections, ?array $triggers = null, ?array $actions = null ): BuilderCatalog {
+	/** An extension's view, for the descriptors it contributes. */
+	private function catalog( Availability $availability, ConnectionStore $connections, ?array $triggers = null, ?array $actions = null ): BuilderCatalog {
 		return new BuilderCatalog(
-			new LicensedAvailability( $license ),
+			$availability,
 			$connections,
 			$actions ?? $this->actions_with_paid(),
 			$triggers ?? CoreTriggers::all()
 		);
 	}
 
-	/** Core actions plus a paid one, as the Automations add-on contributes it. */
+	/** Core actions plus one an extension contributes, requiring a capability. */
 	private function actions_with_paid(): array {
 		return array_merge(
 			CoreActionDescriptors::all(),
-			array( new ActionDescriptor( 'slack_post', 'Post to Slack', 'slack', Plans::AUTOMATIONS, false, array() ) )
+			array( new ActionDescriptor( 'slack_post', 'Post to Slack', 'slack', self::EXTENSION, false, array() ) )
 		);
 	}
 
-	/** Core triggers plus a paid one, as the Automations add-on would contribute. */
+	/** Core triggers plus one an extension contributes, requiring a capability. */
 	private function triggers_with_paid(): array {
 		return array_merge(
 			CoreTriggers::all(),
-			array( new TriggerDescriptor( 'order_alert', 'New paid order', 'An order was paid.', array( 'order_id', 'order_total' ), Plans::AUTOMATIONS ) )
+			array( new TriggerDescriptor( 'order_alert', 'New paid order', 'An order was paid.', array( 'order_id', 'order_total' ), self::EXTENSION ) )
 		);
 	}
 
-	private function tier( string $tier ): ArrayLicense {
-		return new ArrayLicense( array( $tier ), Plans::entitlements( $tier ) );
+	/** An extension that grants its capability and offers the data-driven gates. */
+	private function granting(): FakeAvailability {
+		return new FakeAvailability( array( self::EXTENSION ), true );
+	}
+
+	/** Grants the capability, but not the data-driven gates. */
+	private function granting_without_gates(): FakeAvailability {
+		return new FakeAvailability( array( self::EXTENSION ), false );
 	}
 
 	private function connected( string $service ): InMemoryConnectionStore {
@@ -154,7 +166,7 @@ final class BuilderCatalogTest extends TestCase {
 	}
 
 	public function test_paid_actions_are_locked_without_the_automations_plan(): void {
-		$actions = $this->by_type( $this->catalog( new ArrayLicense(), new InMemoryConnectionStore() )->actions() );
+		$actions = $this->by_type( $this->catalog( new FakeAvailability(), new InMemoryConnectionStore() )->actions() );
 
 		$this->assertFalse( $actions['slack_post']['available'] );
 		$this->assertSame( BuilderCatalog::LOCK_UNAVAILABLE, $actions['slack_post']['lock_reason'] );
@@ -162,14 +174,14 @@ final class BuilderCatalogTest extends TestCase {
 
 	public function test_paid_action_is_locked_when_licensed_but_not_connected(): void {
 		// Growth grants the automations capability, but no Slack connection exists.
-		$actions = $this->by_type( $this->catalog( $this->tier( Plans::GROWTH ), new InMemoryConnectionStore() )->actions() );
+		$actions = $this->by_type( $this->catalog( $this->granting(), new InMemoryConnectionStore() )->actions() );
 
 		$this->assertFalse( $actions['slack_post']['available'] );
 		$this->assertSame( BuilderCatalog::LOCK_CONNECTION, $actions['slack_post']['lock_reason'] );
 	}
 
 	public function test_paid_action_is_available_when_licensed_and_connected(): void {
-		$actions = $this->by_type( $this->catalog( $this->tier( Plans::GROWTH ), $this->connected( 'slack' ) )->actions() );
+		$actions = $this->by_type( $this->catalog( $this->granting(), $this->connected( 'slack' ) )->actions() );
 
 		$this->assertTrue( $actions['slack_post']['available'] );
 		$this->assertSame( '', $actions['slack_post']['lock_reason'] );
@@ -177,12 +189,12 @@ final class BuilderCatalogTest extends TestCase {
 
 	public function test_contributed_paid_triggers_track_the_plan(): void {
 		// A paid trigger (as the add-on contributes it) is locked without the plan.
-		$free = $this->by_type( $this->catalog( new ArrayLicense(), new InMemoryConnectionStore(), $this->triggers_with_paid() )->triggers() );
+		$free = $this->by_type( $this->catalog( new FakeAvailability(), new InMemoryConnectionStore(), $this->triggers_with_paid() )->triggers() );
 		$this->assertFalse( $free['order_alert']['available'], 'no automations plan' );
 		$this->assertSame( BuilderCatalog::LOCK_UNAVAILABLE, $free['order_alert']['lock_reason'] );
 
 		// Available on a plan that grants automations; core triggers never gate.
-		$paid = $this->by_type( $this->catalog( $this->tier( Plans::GROWTH ), new InMemoryConnectionStore(), $this->triggers_with_paid() )->triggers() );
+		$paid = $this->by_type( $this->catalog( $this->granting(), new InMemoryConnectionStore(), $this->triggers_with_paid() )->triggers() );
 		$this->assertTrue( $paid['order_alert']['available'] );
 		$this->assertTrue( $paid['abandoned_cart']['available'] );
 	}
@@ -197,7 +209,7 @@ final class BuilderCatalogTest extends TestCase {
 
 	public function test_conditional_logic_gates_are_locked_without_the_entitlement(): void {
 		// Starter holds the automations plan but not the conditional-logic entitlement.
-		$starter = $this->by_type( $this->catalog( $this->tier( Plans::STARTER ), new InMemoryConnectionStore() )->conditions() );
+		$starter = $this->by_type( $this->catalog( $this->granting_without_gates(), new InMemoryConnectionStore() )->conditions() );
 		$this->assertFalse( $starter['cart_value_gt']['available'] );
 		$this->assertSame( BuilderCatalog::LOCK_UNAVAILABLE, $starter['cart_value_gt']['lock_reason'] );
 
@@ -205,7 +217,7 @@ final class BuilderCatalogTest extends TestCase {
 		$this->assertTrue( $starter['exit_if_ordered']['available'] );
 
 		// Growth unlocks conditional logic.
-		$growth = $this->by_type( $this->catalog( $this->tier( Plans::GROWTH ), new InMemoryConnectionStore() )->conditions() );
+		$growth = $this->by_type( $this->catalog( $this->granting(), new InMemoryConnectionStore() )->conditions() );
 		$this->assertTrue( $growth['cart_value_gt']['available'] );
 		$this->assertSame( '', $growth['cart_value_gt']['lock_reason'] );
 	}

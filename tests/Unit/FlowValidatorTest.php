@@ -19,17 +19,18 @@ use CartQuill\Builder\CoreTriggers;
 use CartQuill\Builder\FlowValidator;
 use CartQuill\Builder\OpenAvailability;
 use CartQuill\Builder\TriggerDescriptor;
-use CartQuill\Licensing\ArrayLicense;
-use CartQuill\Licensing\LicensedAvailability;
-use CartQuill\Licensing\Plans;
 use CartQuill\Persistence\ConnectionRecord;
 use CartQuill\Persistence\ConnectionStore;
 use CartQuill\Persistence\FlowRecord;
 use CartQuill\Persistence\InMemoryConnectionStore;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use CartQuill\Tests\Fake\FakeAvailability;
 use PHPUnit\Framework\TestCase;
 
 final class FlowValidatorTest extends TestCase {
+
+	/** A capability no shipped descriptor requires; see BuilderCatalogTest. */
+	private const EXTENSION = 'x-extension';
 
 	use MockeryPHPUnitIntegration;
 
@@ -55,14 +56,13 @@ final class FlowValidatorTest extends TestCase {
 		$connections->save( new ConnectionRecord( null, 'slack', ConnectionRecord::STATUS_CONNECTED, array( 'webhook_url' => 'https://x.test' ) ) );
 		$triggers = array_merge(
 			CoreTriggers::all(),
-			array( new TriggerDescriptor( 'order_alert', 'New paid order', '', array( 'order_total' ), Plans::AUTOMATIONS ) )
+			array( new TriggerDescriptor( 'order_alert', 'New paid order', '', array( 'order_total' ), self::EXTENSION ) )
 		);
 		$actions = array_merge(
 			CoreActionDescriptors::all(),
-			array( new ActionDescriptor( 'slack_post', 'Post to Slack', 'slack', Plans::AUTOMATIONS, false, array() ) )
+			array( new ActionDescriptor( 'slack_post', 'Post to Slack', 'slack', self::EXTENSION, false, array() ) )
 		);
-		$license = new ArrayLicense( array( Plans::GROWTH ), Plans::entitlements( Plans::GROWTH ) );
-		return new FlowValidator( new BuilderCatalog( new LicensedAvailability( $license ), $connections, $actions, $triggers ) );
+		return new FlowValidator( new BuilderCatalog( new FakeAvailability( array( self::EXTENSION ), true ), $connections, $actions, $triggers ) );
 	}
 
 	/** @return array<string, string> field => message */

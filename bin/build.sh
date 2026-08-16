@@ -1,52 +1,26 @@
 #!/usr/bin/env bash
 #
-# Build a production CartQuill package.
+# Build the production CartQuill package -> build/cartquill.zip
 #
-#   bin/build.sh            # core                -> build/cartquill.zip
-#   bin/build.sh core       # (the default, spelled out; `free` is an alias)
-#   bin/build.sh premium    # core + paid add-ons -> build/cartquill-premium.zip
+# Regenerates a no-dev optimized autoloader and strips the dev/meta files listed
+# in .distignore.
 #
-# Both editions regenerate a no-dev optimized autoloader and strip the dev/meta
-# files listed in .distignore. The core edition ADDITIONALLY strips everything
-# below the `# @cartquill:paid` marker in .distignore, so it cannot ship (or
-# unlock) paid code. The premium edition keeps that paid section, so the
-# Freemius package ships the gated add-ons the license unlocks — assembled from
-# the exact same tree, with no second source of truth.
-#
-# The JavaScript is compiled INSIDE the staged package, after the paid section
-# has been stripped. That is what guarantees the shipped bundle is an exact build
-# of the shipped source: core's builder is compiled from a tree with no add-on
-# entry point in it, so no add-on code can end up in its bundle.
-#
-# Each edition wipes and rebuilds only its own staging dir and zip, so
-# `bin/build.sh core && bin/build.sh premium` leaves both zips side by side.
+# The JavaScript is compiled INSIDE the staged package, which is what guarantees
+# the shipped bundle is an exact build of the shipped source.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD="$ROOT/build"
 
-EDITION="${1:-core}"
-# The plugin folder inside every zip is `cartquill/` (both editions install to
-# the same slug — premium is a superset that replaces the core install). The
-# core edition stages directly in build/ (where CI and Plugin Check expect it);
-# premium stages under build/premium/ so the two never clobber each other.
-case "$EDITION" in
-	core|free) # `free` kept as an alias so existing callers keep working.
-		SLUG="cartquill"
-		STAGE_PARENT="$BUILD"
-		KEEP_PAID=0
-		;;
-	premium)
-		SLUG="cartquill-premium"
-		STAGE_PARENT="$BUILD/premium"
-		KEEP_PAID=1
-		;;
-	*)
-		echo "error: unknown edition '$EDITION' (use 'core' or 'premium')" >&2
-		exit 1
-		;;
+# `core` and `free` are accepted so existing callers keep working; this
+# repository builds one package.
+case "${1:-core}" in
+	core|free) ;;
+	*) echo "error: unknown edition '${1:-}' (this repository builds only 'core')" >&2; exit 1 ;;
 esac
 
+SLUG="cartquill"
+STAGE_PARENT="$BUILD"
 STAGE="$STAGE_PARENT/cartquill"
 ZIP="$BUILD/$SLUG.zip"
 
@@ -54,7 +28,7 @@ for tool in composer rsync zip npm; do
 	command -v "$tool" >/dev/null 2>&1 || { echo "error: '$tool' is required" >&2; exit 1; }
 done
 
-echo "==> Building the $EDITION package"
+echo "==> Building the CartQuill package"
 
 echo "==> Installing front-end build dependencies"
 npm --prefix "$ROOT" ci
@@ -68,37 +42,19 @@ mkdir -p "$STAGE"
 # (assets/builder/build) still ships; exclude node_modules entirely.
 rsync -a --exclude='.git' --exclude='vendor' --exclude='node_modules' --exclude='/build' --exclude='/dist' "$ROOT/" "$STAGE/"
 
-# Read .distignore into two lists: the dev/meta entries above the marker, and the
-# paid entries below it. They are stripped at different points — paid code must be
-# gone BEFORE the front-end is compiled, while the dev/meta files (package.json,
-# webpack.config.js, …) are needed until after it.
+# Read .distignore into the list of dev/meta files to strip. They come out after
+# the front-end is compiled, since package.json and webpack.config.js are needed
+# until then.
 dev_patterns=()
-paid_patterns=()
-in_paid=0
 while IFS= read -r pattern || [ -n "$pattern" ]; do
 	pattern="${pattern%%$'\r'}"
-	if [ "$pattern" = '# @cartquill:paid' ]; then
-		in_paid=1
-		continue
-	fi
 	[ -z "$pattern" ] && continue
 	case "$pattern" in
 		\#*) continue ;;
 		composer.json|composer.lock) continue ;; # kept for the install step below
 	esac
-	if [ "$in_paid" = 1 ]; then
-		paid_patterns+=( "$pattern" )
-	else
-		dev_patterns+=( "$pattern" )
-	fi
+	dev_patterns+=( "$pattern" )
 done < "$ROOT/.distignore"
-
-if [ "$KEEP_PAID" = 0 ]; then
-	echo "==> Removing paid code before the front-end is compiled"
-	for pattern in "${paid_patterns[@]}"; do
-		rm -rf "${STAGE:?}/${pattern#/}"
-	done
-fi
 
 echo "==> Building the flow builder front-end from the staged source"
 # Start from an empty output dir so a bundle rsynced in from the working tree

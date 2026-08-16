@@ -148,19 +148,3 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
         run: gh release upload "$TAG" build/cartquill.zip --clobber
-
-      # Built from the same tree and the same commit, for upload to Freemius.
-      - name: Build the premium package
-        run: bash bin/build.sh premium
-
-      - name: Verify the premium package
-        run: bash bin/verify-package.sh premium
-
-      # An artifact, NOT a release asset: this repository is public, and a
-      # release asset would make the paid edition a free download.
-      - name: Upload the premium package
-        uses: actions/upload-artifact@v5
-        with:
-          name: cartquill-premium-${{ steps.release.outputs.version }}
-          path: build/cartquill-premium.zip
-          retention-days: 90

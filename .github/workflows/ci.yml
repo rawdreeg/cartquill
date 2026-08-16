@@ -127,19 +127,11 @@ jobs:
       - name: Assert core/paid separation and a production autoloader
         run: bash bin/verify-package.sh core
 
-      - name: Build premium package
-        run: bash bin/build.sh premium
-
-      - name: Assert the premium package ships the paid add-ons but no dev cruft
-        run: bash bin/verify-package.sh premium
-
       - name: Upload package artifacts
         uses: actions/upload-artifact@v5
         with:
           name: cartquill-plugin
-          path: |
-            build/cartquill.zip
-            build/cartquill-premium.zip
+          path: build/cartquill.zip
 
       # Plugin Check runs against the built core package. Informational for now:
       # some checks need a live WP environment and the AI proxy legal URLs are
